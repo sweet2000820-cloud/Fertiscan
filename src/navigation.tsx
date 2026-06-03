@@ -1,3 +1,4 @@
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { NavigationContainer } from '@react-navigation/native'
@@ -62,7 +63,7 @@ function TabNavigator() {
 export default function Navigation() {
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { paddingTop: 50 } }}>
         <Stack.Screen name="Main" component={TabNavigator} />
         <Stack.Screen name="PreCheck" component={PreCheckScreen} />
         <Stack.Screen name="PreQuestionnaire" component={PreQuestionnaireScreen} />
