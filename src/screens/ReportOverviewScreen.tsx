@@ -94,7 +94,7 @@ export default function ReportOverviewScreen({ navigation }: any) {
 
         {/* 按鈕 */}
         <View style={styles.btnRow}>
-          <TouchableOpacity style={styles.btnSecondary}>
+          <TouchableOpacity style={styles.btnSecondary} onPress={() => navigation.navigate('Main', { screen: '紀錄' })}>
             <Text style={styles.btnSecondaryText}>存入紀錄</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.btnPrimary}>
@@ -102,7 +102,7 @@ export default function ReportOverviewScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.btnGray}>
+        <TouchableOpacity style={styles.btnGray} onPress={() => alert('連結已複製！\nfertiscan.app/r/FS-4A2C-x8kqp')}>
           <Text style={styles.btnGrayText}>複製分享連結</Text>
         </TouchableOpacity>
 
