@@ -1,23 +1,155 @@
-import { View, Text, StyleSheet } from 'react-native'
-import { colors } from '../theme'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
+import { colors, typography } from '../theme'
+
+const records = [
+  { date: '2026/04/23', time: '上午 8:15', tc: '0.68', status: '邊緣', lot: 'LOT-2025-A' },
+  { date: '2026/03/10', time: '上午 9:02', tc: '0.91', status: '正常', lot: 'LOT-2025-A' },
+  { date: '2026/02/14', time: '上午 8:40', tc: '0.88', status: '正常', lot: 'LOT-2024-B' },
+  { date: '2026/01/20', time: '上午 10:15', tc: '0.61', status: '偏低', lot: 'LOT-2024-B' },
+  { date: '2025/12/05', time: '上午 8:55', tc: '0.85', status: '正常', lot: 'LOT-2024-A' },
+]
+
+function getBadgeStyle(status: string) {
+  switch (status) {
+    case '正常': return { bg: colors.successLight, text: colors.success }
+    case '邊緣': return { bg: colors.warningLight, text: colors.warning }
+    case '偏低': return { bg: colors.dangerLight, text: colors.danger }
+    default: return { bg: colors.gray100, text: colors.gray500 }
+  }
+}
+
+function getTCColor(status: string) {
+  switch (status) {
+    case '正常': return colors.primary
+    case '邊緣': return colors.warning
+    case '偏低': return colors.danger
+    default: return colors.gray500
+  }
+}
 
 export default function HistoryScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>歷史紀錄</Text>
+      <View style={styles.appbar}>
+        <Text style={styles.appbarTitle}>歷史紀錄</Text>
+      </View>
+
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+
+        {/* 趨勢圖卡片 */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>T/C 比值趨勢（近 5 次）</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 60, gap: 6, marginBottom: 4 }}>
+            {[
+              { h: 52, color: colors.primary, label: '1月' },
+              { h: 50, color: colors.primary, label: '2月' },
+              { h: 38, color: '#EF9F27', label: '3月' },
+              { h: 40, color: '#EF9F27', label: '4月' },
+              { h: 36, color: '#EF9F27', label: '本次' },
+            ].map((bar, i) => (
+              <View key={i} style={{ flex: 1, alignItems: 'stretch', gap: 3 }}>
+                <View style={{ width: '100%', height: bar.h, backgroundColor: bar.color, borderRadius: 2 }} />
+                <Text style={{ fontSize: 8, color: i === 4 ? colors.warning : colors.gray400, textAlign: 'center', fontWeight: i === 4 ? '500' : '400' }}>{bar.label}</Text>
+              </View>
+            ))}
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.hint}>平均</Text>
+              <Text style={[styles.statValue, { color: colors.primary }]}>0.74</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.hint}>最高</Text>
+              <Text style={[styles.statValue, { color: colors.success }]}>0.91</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.hint}>最低</Text>
+              <Text style={[styles.statValue, { color: colors.danger }]}>0.61</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* 紀錄列表 */}
+        <Text style={styles.sectionTitle}>所有紀錄</Text>
+        <View style={styles.listCard}>
+          {records.map((r, i) => {
+            const badge = getBadgeStyle(r.status)
+            return (
+              <TouchableOpacity key={i} style={[styles.row, i === records.length - 1 && { borderBottomWidth: 0 }]}>
+                <View>
+                  <Text style={styles.date}>{r.date}</Text>
+                  <Text style={styles.hint}>{r.time} · {r.lot}</Text>
+                </View>
+                <View style={styles.right}>
+                  <Text style={[styles.tc, { color: getTCColor(r.status) }]}>{r.tc}</Text>
+                  <View style={[styles.badge, { backgroundColor: badge.bg }]}>
+                    <Text style={[styles.badgeText, { color: badge.text }]}>{r.status}</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            )
+          })}
+        </View>
+
+      </ScrollView>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-    alignItems: 'center',
+  container: { flex: 1, backgroundColor: colors.white },
+  appbar: {
+    height: 46,
     justifyContent: 'center',
+    paddingHorizontal: 16,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.gray200,
   },
-  text: {
-    fontSize: 16,
+  appbarTitle: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    color: colors.gray900,
+  },
+  scroll: { flex: 1, padding: 18 },
+  card: {
+    backgroundColor: colors.gray100,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 14,
+  },
+  sectionTitle: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
     color: colors.gray500,
+    marginBottom: 8,
   },
+  divider: { height: 0.5, backgroundColor: colors.gray200, marginVertical: 8 },
+  statsRow: { flexDirection: 'row' },
+  statItem: { flex: 1, alignItems: 'center' },
+  hint: { fontSize: typography.sizes.sm, color: colors.gray400 },
+  statValue: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    marginTop: 2,
+  },
+  listCard: {
+    borderWidth: 0.5,
+    borderColor: colors.gray200,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.gray100,
+  },
+  date: { fontSize: typography.sizes.md, color: colors.gray500 },
+  right: { alignItems: 'flex-end', gap: 4 },
+  tc: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium },
+  badge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 4 },
+  badgeText: { fontSize: typography.sizes.xs, fontWeight: typography.weights.medium },
 })
