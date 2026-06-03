@@ -1,10 +1,10 @@
 import { StatusBar } from 'expo-status-bar'
-import DashboardScreen from './src/screens/DashboardScreen'
+import Navigation from './src/navigation'
 
 export default function App() {
   return (
     <>
-      <DashboardScreen />
+      <Navigation />
       <StatusBar style="auto" />
     </>
   )
