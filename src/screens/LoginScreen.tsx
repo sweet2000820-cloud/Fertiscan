@@ -1,8 +1,30 @@
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native'
+import { useState } from 'react'
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native'
+import { signInWithEmailAndPassword } from 'firebase/auth'
+import { auth } from '../firebase'
 import { colors, typography } from '../theme'
 import Button from '../components/Button'
 
 export default function LoginScreen() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  async function handleLogin() {
+    if (!email || !password) {
+      Alert.alert('請填寫', '請輸入信箱和密碼')
+      return
+    }
+    setLoading(true)
+    try {
+      await signInWithEmailAndPassword(auth, email, password)
+    } catch (error: any) {
+      Alert.alert('登入失敗', '信箱或密碼錯誤')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <View style={styles.container}>
       
@@ -24,6 +46,9 @@ export default function LoginScreen() {
             placeholder="example@gmail.com"
             placeholderTextColor={colors.gray400}
             keyboardType="email-address"
+            autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
           />
         </View>
         <View style={styles.field}>
@@ -33,12 +58,13 @@ export default function LoginScreen() {
             placeholder="••••••••"
             placeholderTextColor={colors.gray400}
             secureTextEntry
+            value={password}
+            onChangeText={setPassword}
           />
         </View>
       </View>
 
-      {/* 按鈕 */}
-      <Button title="登入" onPress={() => {}} />
+      <Button title={loading ? '登入中...' : '登入'} onPress={handleLogin} />
       
       <TouchableOpacity style={styles.forgotBtn}>
         <Text style={styles.forgotText}>忘記密碼？</Text>

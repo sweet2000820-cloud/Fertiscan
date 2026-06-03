@@ -17,26 +17,25 @@ export default function DashboardScreen() {
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         
         <Text style={styles.greeting}>早安，陳小明</Text>
-
-        {/* 趨勢卡片 */}
+     {/* 趨勢卡片 */}
         <View style={styles.tealCard}>
           <Text style={styles.cardTitle}>近 4 次 T/C 比值趨勢</Text>
-          <View style={styles.chart}>
-            <View style={styles.barWrap}>
-              <View style={[styles.bar, { height: 32, backgroundColor: colors.primary }]} />
-              <Text style={styles.barLabel}>2月</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 60, gap: 6, marginBottom: 4 }}>
+            <View style={{ flex: 1, alignItems: 'stretch', gap: 3 }}>
+              <View style={{ width: '100%', height: 44, backgroundColor: colors.primary, borderRadius: 2 }} />
+              <Text style={{ fontSize: 8, color: colors.gray400 }}>2月</Text>
             </View>
-            <View style={styles.barWrap}>
-              <View style={[styles.bar, { height: 28, backgroundColor: '#EF9F27' }]} />
-              <Text style={styles.barLabel}>3月</Text>
+            <View style={{ flex: 1, alignItems: 'stretch', gap: 3 }}>
+              <View style={{ width: '100%', height: 28, backgroundColor: '#EF9F27', borderRadius: 2 }} />
+              <Text style={{ fontSize: 8, color: colors.gray400 }}>3月</Text>
             </View>
-            <View style={styles.barWrap}>
-              <View style={[styles.bar, { height: 34, backgroundColor: colors.primary }]} />
-              <Text style={styles.barLabel}>4月</Text>
+            <View style={{ flex: 1, alignItems: 'stretch', gap: 3 }}>
+              <View style={{ width: '100%', height: 50, backgroundColor: colors.primary, borderRadius: 2 }} />
+              <Text style={{ fontSize: 8, color: colors.gray400 }}>4月</Text>
             </View>
-            <View style={styles.barWrap}>
-              <View style={[styles.bar, { height: 30, backgroundColor: '#EF9F27' }]} />
-              <Text style={[styles.barLabel, { color: colors.warning }]}>最近</Text>
+            <View style={{ flex: 1, alignItems: 'stretch', gap: 3 }}>
+              <View style={{ width: '100%', height: 35, backgroundColor: '#EF9F27', borderRadius: 2 }} />
+              <Text style={{ fontSize: 8, color: colors.warning, fontWeight: '500' }}>最近</Text>
             </View>
           </View>
           <View style={styles.divider} />
@@ -159,11 +158,14 @@ const styles = StyleSheet.create({
   barWrap: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'flex-end',
+    height: '100%',
     gap: 2,
   },
   bar: {
     width: '100%',
     borderRadius: 2,
+    minHeight: 4,
   },
   barLabel: {
     fontSize: 8,
