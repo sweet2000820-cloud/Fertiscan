@@ -1,0 +1,144 @@
+import { useState, useEffect } from 'react'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
+import { colors, typography } from '../theme'
+
+export default function AnalysisScreen({ navigation }: any) {
+  const [progress, setProgress] = useState(0)
+  const [step, setStep] = useState(0)
+  const [done, setDone] = useState(false)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setProgress(p => {
+        const next = p + 1.5
+        if (next >= 40 && step < 1) setStep(1)
+        if (next >= 70 && step < 2) setStep(2)
+        if (next >= 100) {
+          clearInterval(timer)
+          setDone(true)
+          return 100
+        }
+        return next
+      })
+    }, 60)
+    return () => clearInterval(timer)
+  }, [])
+
+  const steps = [
+    { label: '白場基底扣除完成', done: true },
+    { label: '試紙 ROI 自動定位', done: true },
+    { label: '灰階積分計算', active: step === 0, done: step > 0 },
+    { label: 'T/C 比值正規化', active: step === 1, done: step > 1 },
+    { label: '標準曲線對照換算', active: step === 2, done: done },
+  ]
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.appbar}>
+        <Text style={styles.appbarTitle}>影像分析中</Text>
+      </View>
+
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+
+        <View style={styles.progressRow}>
+          <Text style={styles.hint}>步驟 6 / 6</Text>
+          <Text style={styles.hint}>AI 本機分析</Text>
+        </View>
+        <View style={styles.progressBg}>
+          <View style={[styles.progressFill, { width: `${Math.min(progress, 100)}%` }]} />
+        </View>
+        <Text style={styles.pct}>{Math.round(Math.min(progress, 100))}%</Text>
+
+        {/* 分析步驟 */}
+        <View style={styles.darkCard}>
+          <Text style={styles.darkLabel}>影像處理管線</Text>
+          {steps.map((s, i) => (
+            <View key={i} style={styles.stepRow}>
+              <View style={[styles.stepIcon, s.done && styles.iconDone, s.active && styles.iconActive]}>
+                <Text style={[styles.stepIconText, s.done && { color: colors.success }, s.active && { color: colors.white }]}>
+                  {s.done ? '✓' : i + 1}
+                </Text>
+              </View>
+              <Text style={[styles.stepLabel, s.active && { color: '#facc15' }, s.done && { color: '#aaa' }]}>
+                {s.active ? s.label + '中…' : s.label + (s.done ? '完成' : '')}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        {/* 數值卡片 */}
+        <View style={styles.listCard}>
+          <Text style={styles.sectionTitle}>T/C 預估值</Text>
+          <Text style={styles.tcValue}>{done ? '0.68' : '—'}</Text>
+          <View style={styles.divider} />
+          <View style={styles.dataRow}>
+            <Text style={styles.hint}>C line AUC</Text>
+            <Text style={styles.dataValue}>2,847</Text>
+          </View>
+          <View style={styles.dataRow}>
+            <Text style={styles.hint}>T line AUC</Text>
+            <Text style={styles.dataValue}>1,936</Text>
+          </View>
+        </View>
+
+        {done && (
+          <TouchableOpacity style={styles.resultBtn} onPress={() => navigation.navigate('ReportOverview')}>
+            <Text style={styles.resultBtnText}>查看結果 ›</Text>
+          </TouchableOpacity>
+        )}
+
+      </ScrollView>
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.white },
+  appbar: {
+    height: 46,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.gray200,
+  },
+  appbarTitle: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    color: colors.gray900,
+  },
+  scroll: { flex: 1, padding: 18 },
+  progressRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  hint: { fontSize: typography.sizes.sm, color: colors.gray400 },
+  progressBg: { height: 4, backgroundColor: colors.gray200, borderRadius: 2, marginBottom: 4 },
+  progressFill: { height: '100%', backgroundColor: colors.primary, borderRadius: 2 },
+  pct: { fontSize: typography.sizes.sm, color: colors.primary, textAlign: 'center', marginBottom: 16 },
+  darkCard: { backgroundColor: '#0a0e0f', borderRadius: 10, padding: 12, marginBottom: 14 },
+  darkLabel: { fontSize: typography.sizes.xs, color: '#4ade80', marginBottom: 10 },
+  stepRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5 },
+  stepIcon: {
+    width: 18, height: 18, borderRadius: 9,
+    backgroundColor: '#2a2a2a',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  iconDone: { backgroundColor: colors.successLight },
+  iconActive: { backgroundColor: colors.primary },
+  stepIconText: { fontSize: 9, color: '#555', fontWeight: typography.weights.medium },
+  stepLabel: { fontSize: typography.sizes.xs, color: '#666' },
+  listCard: {
+    borderWidth: 0.5, borderColor: colors.gray200,
+    borderRadius: 10, padding: 12, marginBottom: 14,
+  },
+  sectionTitle: { fontSize: typography.sizes.sm, color: colors.gray500, marginBottom: 6 },
+  tcValue: {
+    fontSize: 28, fontWeight: typography.weights.medium,
+    color: colors.warning, textAlign: 'center', marginVertical: 8,
+  },
+  divider: { height: 0.5, backgroundColor: colors.gray200, marginVertical: 8 },
+  dataRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
+  dataValue: { fontSize: typography.sizes.sm, color: colors.gray900 },
+  resultBtn: {
+    height: 42, borderRadius: 9, backgroundColor: colors.primary,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 20,
+  },
+  resultBtnText: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.white },
+})

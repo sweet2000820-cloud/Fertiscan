@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { colors, typography } from '../theme'
 import Button from '../components/Button'
 
-export default function DashboardScreen() {
+export default function DashboardScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       
@@ -58,7 +58,7 @@ export default function DashboardScreen() {
         </View>
 
         {/* 開始檢測按鈕 */}
-        <Button title="開始新一次檢測" onPress={() => {}} />
+        <Button title="開始新一次檢測" onPress={() => navigation.navigate('PreCheck')} />
 
         <View style={styles.divider} />
         <Text style={styles.sectionTitle}>最近紀錄</Text>
