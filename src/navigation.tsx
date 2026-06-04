@@ -31,6 +31,8 @@ import ClinicSuccessScreen from './screens/ClinicSuccessScreen'
 import ShareRecordScreen from './screens/ShareRecordScreen'
 import ShareSentScreen from './screens/ShareSentScreen'
 import ReportLinkScreen from './screens/ReportLinkScreen'
+import AIAdviceScreen from './screens/AIAdviceScreen'
+import AIChatScreen from './screens/AIChatScreen'
 
 
 const Tab = createBottomTabNavigator()
@@ -105,6 +107,8 @@ export default function Navigation() {
         <Stack.Screen name="ShareRecord" component={ShareRecordScreen} />
         <Stack.Screen name="ShareSent" component={ShareSentScreen} />
         <Stack.Screen name="ReportLink" component={ReportLinkScreen} />
+        <Stack.Screen name="AIAdvice" component={AIAdviceScreen} />
+        <Stack.Screen name="AIChat" component={AIChatScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   )
