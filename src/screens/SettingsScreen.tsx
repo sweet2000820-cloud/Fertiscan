@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native'
 import { colors, typography } from '../theme'
 
-export default function SettingsScreen() {
+export default function SettingsScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <View style={styles.appbar}>
@@ -10,8 +10,7 @@ export default function SettingsScreen() {
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        {/* 個人資料卡片 */}
-        <TouchableOpacity style={styles.profileCard}>
+        <TouchableOpacity style={styles.profileCard} onPress={() => navigation.navigate('Profile')}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>陳</Text>
           </View>
@@ -22,7 +21,6 @@ export default function SettingsScreen() {
           <Text style={styles.editBtn}>編輯 ›</Text>
         </TouchableOpacity>
 
-        {/* 方案卡片 */}
         <TouchableOpacity style={styles.planCard}>
           <View style={styles.planIcon}>
             <Text style={{ fontSize: 18 }}>★</Text>
@@ -39,7 +37,6 @@ export default function SettingsScreen() {
           <Text style={styles.planArrow}>›</Text>
         </TouchableOpacity>
 
-        {/* 檢測設定 */}
         <Text style={styles.sectionTitle}>檢測設定</Text>
         <View style={styles.listCard}>
           <View style={styles.row}>
@@ -56,7 +53,6 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* 隱私與資料 */}
         <Text style={styles.sectionTitle}>隱私與資料</Text>
         <View style={styles.listCard}>
           <View style={styles.row}>
@@ -71,10 +67,9 @@ export default function SettingsScreen() {
 
         <View style={styles.tealCard}>
           <Text style={styles.tealTitle}>隱私說明</Text>
-          <Text style={styles.tealText}>所有影像與分析均在手機本地完成，原始影像不會上傳。分享診所需您明確授權每一次。</Text>
+          <Text style={styles.tealText}>所有影像與分析均在手機本地完成，原始影像不會上傳。</Text>
         </View>
 
-        {/* 其他 */}
         <Text style={styles.sectionTitle}>其他</Text>
         <View style={styles.listCard}>
           <View style={styles.row}>

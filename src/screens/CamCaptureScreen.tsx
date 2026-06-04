@@ -13,7 +13,10 @@ export default function CamCaptureScreen({ navigation }: any) {
       <View style={styles.content}>
         <Text style={styles.text}>相機畫面（開發中）</Text>
         <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate('Analysis')}>
-          <Text style={styles.btnText}>模擬拍攝 → 分析</Text>
+          <Text style={styles.btnText}>模擬拍攝成功 → 分析</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.btnRed} onPress={() => navigation.navigate('QCFail')}>
+          <Text style={styles.btnRedText}>模擬 QC 失敗</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -36,7 +39,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.medium,
     color: colors.gray900,
   },
-  content: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 20 },
+  content: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
   text: { fontSize: typography.sizes.md, color: colors.gray500 },
   btn: {
     backgroundColor: colors.primary,
@@ -45,4 +48,12 @@ const styles = StyleSheet.create({
     borderRadius: 9,
   },
   btnText: { color: colors.white, fontSize: typography.sizes.md, fontWeight: typography.weights.medium },
+  btnRed: {
+    borderWidth: 1.5,
+    borderColor: colors.danger,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 9,
+  },
+  btnRedText: { color: colors.danger, fontSize: typography.sizes.md },
 })

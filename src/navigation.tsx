@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native'
 import { Text } from 'react-native'
 import { colors, typography } from './theme'
 
+
 import DashboardScreen from './screens/DashboardScreen'
 import HistoryScreen from './screens/HistoryScreen'
 import CalibrationScreen from './screens/CalibrationScreen'
@@ -16,6 +17,8 @@ import AnalysisScreen from './screens/AnalysisScreen'
 import ReportOverviewScreen from './screens/ReportOverviewScreen'
 import RegisterScreen from './screens/RegisterScreen'
 import LoginScreen from './screens/LoginScreen'
+import QCFailScreen from './screens/QCFailScreen'
+import ProfileScreen from './screens/ProfileScreen'
 
 const Tab = createBottomTabNavigator()
 const Stack = createNativeStackNavigator()
@@ -57,6 +60,7 @@ function TabNavigator() {
       <Tab.Screen name="紀錄" component={HistoryScreen} />
       <Tab.Screen name="校準" component={CalibrationScreen} />
       <Tab.Screen name="設定" component={SettingsScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen}options={{ tabBarButton: () => null, tabBarLabel: '' }}/>
     </Tab.Navigator>
   )
 }
@@ -74,6 +78,8 @@ export default function Navigation() {
         <Stack.Screen name="CamCapture" component={CamCaptureScreen} />
         <Stack.Screen name="Analysis" component={AnalysisScreen} />
         <Stack.Screen name="ReportOverview" component={ReportOverviewScreen} />
+        <Stack.Screen name="QCFail" component={QCFailScreen} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   )
