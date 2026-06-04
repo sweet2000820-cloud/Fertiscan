@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0d7a8a"/>
+      <stop offset="100%" stop-color="#064a57"/>
+    </linearGradient>
+    <linearGradient id="strip" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#e8f4f6" stop-opacity="1"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- 背景 -->
+  <rect width="1024" height="1024" rx="240" fill="url(#bg)"/>
+  
+  <!-- 背景裝飾圓圈 -->
+  <circle cx="820" cy="180" r="160" fill="white" opacity="0.04"/>
+  <circle cx="200" cy="850" r="200" fill="white" opacity="0.04"/>
+
+  <!-- 試紙本體 - 更大 -->
+  <rect x="280" y="130" width="464" height="660" rx="60" fill="url(#strip)"/>
+  
+  <!-- 試紙頂部吸管口 -->
+  <rect x="390" y="108" width="244" height="66" rx="33" fill="#0A5C6B"/>
+  <rect x="410" y="120" width="204" height="42" rx="21" fill="white" opacity="0.2"/>
+
+  <!-- 試紙視窗區域 -->
+  <rect x="316" y="270" width="392" height="340" rx="24" fill="#e8f4f6" opacity="0.6"/>
+
+  <!-- C line -->
+  <rect x="336" y="340" width="352" height="28" rx="14" fill="#1a6fbe"/>
+  <text x="316" y="364" font-family="-apple-system, Arial" font-weight="700" font-size="28" fill="#1a6fbe">C</text>
+
+  <!-- T line 淡色 -->
+  <rect x="336" y="430" width="352" height="28" rx="14" fill="#c0392b" opacity="0.45"/>
+  <text x="316" y="454" font-family="-apple-system, Arial" font-weight="700" font-size="28" fill="#c0392b" opacity="0.6">T</text>
+
+  <!-- 底部掃描波形裝飾 -->
+  <polyline points="280,730 330,730 356,695 388,760 420,705 456,748 492,712 528,748 560,700 596,760 628,712 660,730 744,730" 
+    fill="none" stroke="white" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+
+  <!-- 底部品牌 -->
+  <text x="512" y="890" font-family="-apple-system, Arial" font-weight="700" font-size="58" fill="white" text-anchor="middle" opacity="0.95" letter-spacing="2">FertiScan</text>
+  <text x="512" y="935" font-family="-apple-system, Arial" font-weight="400" font-size="26" fill="white" text-anchor="middle" opacity="0.5" letter-spacing="4">OPTICAL</text>
+</svg>
