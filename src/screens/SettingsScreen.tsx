@@ -37,6 +37,17 @@ export default function SettingsScreen({ navigation }: any) {
           <Text style={styles.planArrow}>›</Text>
         </TouchableOpacity>
 
+        <TouchableOpacity style={styles.clinicBanner} onPress={() => navigation.navigate('ClinicList')}>
+          <View style={styles.clinicBannerIcon}>
+            <Text style={{ fontSize: 18, color: '#fff' }}>＋</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.clinicBannerTitle}>連結診所 / 醫師</Text>
+            <Text style={styles.clinicBannerSub}>已連結 1 間診所 · 點擊管理</Text>
+          </View>
+          <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>›</Text>
+        </TouchableOpacity>
+
         <Text style={styles.sectionTitle}>檢測設定</Text>
         <View style={styles.listCard}>
           <View style={styles.row}>
@@ -118,42 +129,23 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 46, height: 46, borderRadius: 23,
     backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center',
   },
-  avatarText: {
-    fontSize: 16,
-    fontWeight: typography.weights.medium,
-    color: colors.primary,
-  },
+  avatarText: { fontSize: 16, fontWeight: typography.weights.medium, color: colors.primary },
   profileInfo: { flex: 1 },
-  profileName: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.medium,
-    color: colors.gray900,
-  },
+  profileName: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
   profileEmail: { fontSize: typography.sizes.xs, color: colors.gray400, marginTop: 2 },
   editBtn: { fontSize: typography.sizes.sm, color: colors.primary },
   planCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#0a1628',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: '#0a1628', borderRadius: 12, padding: 12, marginBottom: 10,
   },
   planIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+    width: 40, height: 40, borderRadius: 10,
     backgroundColor: 'rgba(93,191,204,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center',
   },
   planInfo: { flex: 1 },
   planRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
@@ -162,48 +154,34 @@ const styles = StyleSheet.create({
   freeBadgeText: { fontSize: typography.sizes.xs, color: 'rgba(255,255,255,0.5)' },
   planSub: { fontSize: typography.sizes.xs, color: 'rgba(255,255,255,0.45)' },
   planArrow: { color: 'rgba(255,255,255,0.4)', fontSize: 14 },
+  clinicBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: colors.primary, borderRadius: 12, padding: 12, marginBottom: 16,
+  },
+  clinicBannerIcon: {
+    width: 40, height: 40, borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  clinicBannerTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: '#fff' },
+  clinicBannerSub: { fontSize: typography.sizes.xs, color: 'rgba(255,255,255,0.65)', marginTop: 2 },
   sectionTitle: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.medium,
-    color: colors.gray500,
-    marginBottom: 8,
-    marginTop: 4,
+    fontSize: typography.sizes.sm, fontWeight: typography.weights.medium,
+    color: colors.gray500, marginBottom: 8, marginTop: 4,
   },
   listCard: {
-    borderWidth: 0.5,
-    borderColor: colors.gray200,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    marginBottom: 16,
+    borderWidth: 0.5, borderColor: colors.gray200,
+    borderRadius: 10, paddingHorizontal: 14, marginBottom: 16,
   },
   row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.gray100,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingVertical: 10, borderBottomWidth: 0.5, borderBottomColor: colors.gray100,
   },
   rowLabel: { fontSize: typography.sizes.md, color: colors.gray900 },
   rowValue: { fontSize: typography.sizes.md, color: colors.primary },
   rowHint: { fontSize: typography.sizes.md, color: colors.gray400 },
-  tealCard: {
-    backgroundColor: colors.primaryLight,
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 16,
-  },
-  tealTitle: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.medium,
-    color: colors.primary,
-    marginBottom: 4,
-  },
+  tealCard: { backgroundColor: colors.primaryLight, borderRadius: 10, padding: 12, marginBottom: 16 },
+  tealTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.primary, marginBottom: 4 },
   tealText: { fontSize: typography.sizes.xs, color: '#0d7a8f', lineHeight: 18 },
-  disclaimer: {
-    fontSize: typography.sizes.xs,
-    color: colors.gray400,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
+  disclaimer: { fontSize: typography.sizes.xs, color: colors.gray400, textAlign: 'center', marginBottom: 20 },
 })

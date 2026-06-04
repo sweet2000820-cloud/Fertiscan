@@ -18,6 +18,7 @@ import ReportOverviewScreen from './screens/ReportOverviewScreen'
 import RegisterScreen from './screens/RegisterScreen'
 import LoginScreen from './screens/LoginScreen'
 import QCFailScreen from './screens/QCFailScreen'
+import ClinicListScreen from './screens/ClinicListScreen'
 import ProfileScreen from './screens/ProfileScreen'
 import PlanScreen from './screens/PlanScreen'
 
@@ -80,6 +81,7 @@ export default function Navigation() {
         <Stack.Screen name="Analysis" component={AnalysisScreen} />
         <Stack.Screen name="ReportOverview" component={ReportOverviewScreen} />
         <Stack.Screen name="QCFail" component={QCFailScreen} />
+        <Stack.Screen name="ClinicList" component={ClinicListScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="Plan" component={PlanScreen} />
       </Stack.Navigator>
