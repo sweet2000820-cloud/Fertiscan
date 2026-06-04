@@ -78,7 +78,7 @@ export default function BrightnessCalibScreen({ navigation }: any) {
           </View>
         ))}
 
-        <Button title="拍攝空白白場 ›" onPress={() => navigation.navigate('CamCapture')} />
+        <Button title="拍攝空白白場 ›" onPress={() => navigation.navigate('WhiteCapture')} />
 
       </ScrollView>
     </View>

@@ -33,6 +33,7 @@ import ShareSentScreen from './screens/ShareSentScreen'
 import ReportLinkScreen from './screens/ReportLinkScreen'
 import AIAdviceScreen from './screens/AIAdviceScreen'
 import AIChatScreen from './screens/AIChatScreen'
+import WhiteCaptureScreen from './screens/WhiteCaptureScreen'
 
 const Tab = createBottomTabNavigator()
 const Stack = createNativeStackNavigator()
@@ -107,6 +108,7 @@ export default function Navigation({ onLogout }: any) {
         <Stack.Screen name="ReportLink" component={ReportLinkScreen} />
         <Stack.Screen name="AIAdvice" component={AIAdviceScreen} />
         <Stack.Screen name="AIChat" component={AIChatScreen} />
+        <Stack.Screen name="WhiteCapture" component={WhiteCaptureScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   )
