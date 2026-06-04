@@ -20,7 +20,7 @@ export default function RegisterScreen({ navigation }: any) {
       Alert.alert('請同意', '請同意服務條款與隱私政策')
       return
     }
-    Alert.alert('註冊成功', '帳號已建立！')
+    navigation.navigate('Main')
   }
 
   const strength = password.length === 0 ? 0 : password.length < 6 ? 1 : password.length < 10 ? 3 : 4

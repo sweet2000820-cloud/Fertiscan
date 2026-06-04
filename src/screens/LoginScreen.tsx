@@ -1,34 +1,14 @@
 import { useState } from 'react'
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { signInWithEmailAndPassword } from 'firebase/auth'
-import { auth } from '../firebase'
+import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native'
 import { colors, typography } from '../theme'
 import Button from '../components/Button'
 
-export default function LoginScreen() {
-  const insets = useSafeAreaInsets()
+export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-
-  async function handleLogin() {
-    if (!email || !password) {
-      Alert.alert('請填寫', '請輸入信箱和密碼')
-      return
-    }
-    setLoading(true)
-    try {
-      await signInWithEmailAndPassword(auth, email, password)
-    } catch (error: any) {
-      Alert.alert('登入失敗', '信箱或密碼錯誤')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       
       {/* Logo */}
       <View style={styles.logoArea}>
@@ -66,7 +46,7 @@ export default function LoginScreen() {
         </View>
       </View>
 
-      <Button title={loading ? '登入中...' : '登入'} onPress={handleLogin} />
+      <Button title="登入" onPress={() => navigation.navigate('Main')} />
       
       <TouchableOpacity style={styles.forgotBtn}>
         <Text style={styles.forgotText}>忘記密碼？</Text>
@@ -78,7 +58,7 @@ export default function LoginScreen() {
         <View style={styles.divider} />
       </View>
 
-      <Button title="建立新帳號" onPress={() => {}} variant="secondary" />
+      <Button title="建立新帳號" onPress={() => navigation.navigate('Register')} variant="secondary" />
 
     </View>
   )

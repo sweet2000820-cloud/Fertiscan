@@ -15,6 +15,7 @@ import CamCaptureScreen from './screens/CamCaptureScreen'
 import AnalysisScreen from './screens/AnalysisScreen'
 import ReportOverviewScreen from './screens/ReportOverviewScreen'
 import RegisterScreen from './screens/RegisterScreen'
+import LoginScreen from './screens/LoginScreen'
 
 const Tab = createBottomTabNavigator()
 const Stack = createNativeStackNavigator()
@@ -64,8 +65,9 @@ export default function Navigation() {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Main" component={TabNavigator} />
+        <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="Main" component={TabNavigator} />
         <Stack.Screen name="PreCheck" component={PreCheckScreen} />
         <Stack.Screen name="PreQuestionnaire" component={PreQuestionnaireScreen} />
         <Stack.Screen name="BrightnessCalib" component={BrightnessCalibScreen} />
