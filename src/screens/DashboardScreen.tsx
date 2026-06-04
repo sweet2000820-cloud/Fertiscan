@@ -99,7 +99,7 @@ export default function DashboardScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.white },
+  container: { flex: 1, backgroundColor: colors.white},
   appbar: {
     height: 56, flexDirection: 'row', alignItems: 'center',
     paddingTop: 10,

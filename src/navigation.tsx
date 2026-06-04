@@ -53,37 +53,35 @@ function TabIcon({ label, focused }: { label: string; focused: boolean }) {
 
 function TabNavigator() {
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          headerShown: false,
-          tabBarIcon: ({ focused }) => (
-            <TabIcon label={route.name} focused={focused} />
-          ),
-          tabBarActiveTintColor: colors.primary,
-          tabBarInactiveTintColor: colors.gray400,
-          tabBarLabelStyle: { fontSize: 12 },
-          tabBarStyle: {
-            borderTopWidth: 0.5,
-            borderTopColor: colors.gray200,
-            height: 80,
-            paddingBottom: 5,
-          },
-        })}
-      >
-        <Tab.Screen name="首頁" component={DashboardScreen} />
-        <Tab.Screen name="紀錄" component={HistoryScreen} />
-        <Tab.Screen name="校準" component={CalibrationScreen} />
-        <Tab.Screen name="設定" component={SettingsScreen} />
-      </Tab.Navigator>
-    </SafeAreaView>
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarIcon: ({ focused }) => (
+          <TabIcon label={route.name} focused={focused} />
+        ),
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.gray400,
+        tabBarLabelStyle: { fontSize: 12 },
+        tabBarStyle: {
+          borderTopWidth: 0.5,
+          borderTopColor: colors.gray200,
+          height: 80,
+          paddingBottom: 5,
+        },
+      })}
+    >
+      <Tab.Screen name="首頁" component={DashboardScreen} />
+      <Tab.Screen name="紀錄" component={HistoryScreen} />
+      <Tab.Screen name="校準" component={CalibrationScreen} />
+      <Tab.Screen name="設定" component={SettingsScreen} />
+    </Tab.Navigator>
   )
 }
 
 export default function Navigation() {
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { paddingTop: 50 } }}>
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Main" component={TabNavigator} />
