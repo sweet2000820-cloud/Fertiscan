@@ -1,10 +1,25 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import * as Brightness from 'expo-brightness'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
 import { colors, typography } from '../theme'
 import Button from '../components/Button'
 
 export default function BrightnessCalibScreen({ navigation }: any) {
   const [brightness, setBrightness] = useState(88)
+
+  useEffect(() => {
+    async function setupBrightness() {
+      const { status } = await Brightness.requestPermissionsAsync()
+      if (status === 'granted') {
+        await Brightness.setSystemBrightnessAsync(1.0)
+        setBrightness(100)
+      }
+    }
+    setupBrightness()
+    return () => {
+      Brightness.useSystemBrightnessAsync()
+    }
+  }, [])
 
   return (
     <View style={styles.container}>
@@ -43,10 +58,17 @@ export default function BrightnessCalibScreen({ navigation }: any) {
             <View style={[styles.sliderFill, { width: `${brightness}%` }]} />
           </View>
           <View style={styles.sliderBtns}>
-            <TouchableOpacity onPress={() => setBrightness(Math.max(0, brightness - 5))} style={styles.sliderBtn}>
+           <TouchableOpacity onPress={async () => {
+            const newVal = Math.max(0, brightness - 5)
+            setBrightness(newVal)
+            await Brightness.setSystemBrightnessAsync(newVal / 100)}} style={styles.sliderBtn}>
               <Text style={styles.sliderBtnText}>−</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setBrightness(Math.min(100, brightness + 5))} style={styles.sliderBtn}>
+            <TouchableOpacity onPress={async () => {
+              const newVal = Math.min(100, brightness + 5)
+              setBrightness(newVal)
+              await Brightness.setSystemBrightnessAsync(newVal / 100)
+            }} style={styles.sliderBtn}>
               <Text style={styles.sliderBtnText}>+</Text>
             </TouchableOpacity>
           </View>
