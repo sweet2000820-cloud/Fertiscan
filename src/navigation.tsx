@@ -4,7 +4,6 @@ import { NavigationContainer } from '@react-navigation/native'
 import { Text } from 'react-native'
 import { colors, typography } from './theme'
 
-
 import DashboardScreen from './screens/DashboardScreen'
 import HistoryScreen from './screens/HistoryScreen'
 import CalibrationScreen from './screens/CalibrationScreen'
@@ -26,14 +25,13 @@ import ClinicQRScreen from './screens/ClinicQRScreen'
 import ClinicCodeScreen from './screens/ClinicCodeScreen'
 import ClinicSearchScreen from './screens/ClinicSearchScreen'
 import ConsentScreen from './screens/ConsentScreen'
-import ClinicConfirmScreen from './screens/ClinicConfirmScreen' 
+import ClinicConfirmScreen from './screens/ClinicConfirmScreen'
 import ClinicSuccessScreen from './screens/ClinicSuccessScreen'
 import ShareRecordScreen from './screens/ShareRecordScreen'
 import ShareSentScreen from './screens/ShareSentScreen'
 import ReportLinkScreen from './screens/ReportLinkScreen'
 import AIAdviceScreen from './screens/AIAdviceScreen'
 import AIChatScreen from './screens/AIChatScreen'
-
 
 const Tab = createBottomTabNavigator()
 const Stack = createNativeStackNavigator()
@@ -46,7 +44,7 @@ function TabIcon({ label, focused }: { label: string; focused: boolean }) {
     '設定': '⚙',
   }
   return (
-    <Text style={{ fontSize: 18, color: focused ? colors.primary : colors.gray400 }}>
+    <Text style={{ fontSize: 25, color: focused ? colors.primary : colors.gray400 }}>
       {icons[label]}
     </Text>
   )
@@ -62,12 +60,12 @@ function TabNavigator() {
         ),
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.gray400,
-        tabBarLabelStyle: { fontSize: typography.sizes.xs },
+        tabBarLabelStyle: { fontSize: 12 },
         tabBarStyle: {
           borderTopWidth: 0.5,
           borderTopColor: colors.gray200,
-          height: 54,
-          paddingBottom: 6,
+          height: 80,
+          paddingBottom: 5,
         },
       })}
     >
@@ -75,7 +73,6 @@ function TabNavigator() {
       <Tab.Screen name="紀錄" component={HistoryScreen} />
       <Tab.Screen name="校準" component={CalibrationScreen} />
       <Tab.Screen name="設定" component={SettingsScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen}options={{ tabBarButton: () => null, tabBarLabel: '' }}/>
     </Tab.Navigator>
   )
 }
@@ -87,6 +84,8 @@ export default function Navigation() {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Main" component={TabNavigator} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="Plan" component={PlanScreen} />
         <Stack.Screen name="PreCheck" component={PreCheckScreen} />
         <Stack.Screen name="PreQuestionnaire" component={PreQuestionnaireScreen} />
         <Stack.Screen name="BrightnessCalib" component={BrightnessCalibScreen} />
@@ -95,8 +94,6 @@ export default function Navigation() {
         <Stack.Screen name="ReportOverview" component={ReportOverviewScreen} />
         <Stack.Screen name="QCFail" component={QCFailScreen} />
         <Stack.Screen name="ClinicList" component={ClinicListScreen} />
-        <Stack.Screen name="Profile" component={ProfileScreen} />
-        <Stack.Screen name="Plan" component={PlanScreen} />
         <Stack.Screen name="ClinicAdd" component={ClinicAddScreen} />
         <Stack.Screen name="ClinicQR" component={ClinicQRScreen} />
         <Stack.Screen name="ClinicCode" component={ClinicCodeScreen} />

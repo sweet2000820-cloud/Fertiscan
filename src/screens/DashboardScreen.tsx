@@ -101,7 +101,8 @@ export default function DashboardScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46, flexDirection: 'row', alignItems: 'center',
+    height: 56, flexDirection: 'row', alignItems: 'center',
+    paddingTop: 10,
     paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
   },
   appbarTitle: { flex: 1, fontSize: typography.sizes.lg, fontWeight: typography.weights.medium, color: colors.primary },
@@ -131,10 +132,10 @@ const styles = StyleSheet.create({
   badgeGood: { backgroundColor: colors.successLight, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 4 },
   badgeGoodText: { fontSize: typography.sizes.xs, color: colors.success, fontWeight: typography.weights.medium },
   fab: {
-    position: 'absolute', bottom: 70, right: 16,
-    width: 42, height: 42, borderRadius: 21,
+    position: 'absolute', bottom: 30, right: 20,
+    width: 70, height: 70, borderRadius: 35,
     backgroundColor: colors.primary,
     alignItems: 'center', justifyContent: 'center',
   },
-  fabText: { color: '#fff', fontSize: typography.sizes.sm, fontWeight: typography.weights.medium },
+  fabText: { color: '#fff', fontSize: 23, fontWeight: typography.weights.medium },
 })
