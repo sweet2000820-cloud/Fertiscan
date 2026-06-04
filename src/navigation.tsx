@@ -1,4 +1,3 @@
-import { SafeAreaView } from 'react-native-safe-area-context'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { NavigationContainer } from '@react-navigation/native'
@@ -15,6 +14,7 @@ import BrightnessCalibScreen from './screens/BrightnessCalibScreen'
 import CamCaptureScreen from './screens/CamCaptureScreen'
 import AnalysisScreen from './screens/AnalysisScreen'
 import ReportOverviewScreen from './screens/ReportOverviewScreen'
+import RegisterScreen from './screens/RegisterScreen'
 
 const Tab = createBottomTabNavigator()
 const Stack = createNativeStackNavigator()
@@ -63,8 +63,9 @@ function TabNavigator() {
 export default function Navigation() {
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { paddingTop: 50 } }}>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Main" component={TabNavigator} />
+        <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="PreCheck" component={PreCheckScreen} />
         <Stack.Screen name="PreQuestionnaire" component={PreQuestionnaireScreen} />
         <Stack.Screen name="BrightnessCalib" component={BrightnessCalibScreen} />

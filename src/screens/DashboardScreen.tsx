@@ -1,12 +1,10 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { colors, typography } from '../theme'
 import Button from '../components/Button'
 
 export default function DashboardScreen({ navigation }: any) {
- const insets = useSafeAreaInsets()
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       
       {/* AppBar */}
       <View style={styles.appbar}>
@@ -101,7 +99,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.white,
-    paddingTop: 50,
   },
   appbar: {
     height: 46,
