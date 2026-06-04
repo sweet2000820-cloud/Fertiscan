@@ -21,6 +21,17 @@ import QCFailScreen from './screens/QCFailScreen'
 import ClinicListScreen from './screens/ClinicListScreen'
 import ProfileScreen from './screens/ProfileScreen'
 import PlanScreen from './screens/PlanScreen'
+import ClinicAddScreen from './screens/ClinicAddScreen'
+import ClinicQRScreen from './screens/ClinicQRScreen'
+import ClinicCodeScreen from './screens/ClinicCodeScreen'
+import ClinicSearchScreen from './screens/ClinicSearchScreen'
+import ConsentScreen from './screens/ConsentScreen'
+import ClinicConfirmScreen from './screens/ClinicConfirmScreen' 
+import ClinicSuccessScreen from './screens/ClinicSuccessScreen'
+import ShareRecordScreen from './screens/ShareRecordScreen'
+import ShareSentScreen from './screens/ShareSentScreen'
+import ReportLinkScreen from './screens/ReportLinkScreen'
+
 
 const Tab = createBottomTabNavigator()
 const Stack = createNativeStackNavigator()
@@ -84,6 +95,16 @@ export default function Navigation() {
         <Stack.Screen name="ClinicList" component={ClinicListScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="Plan" component={PlanScreen} />
+        <Stack.Screen name="ClinicAdd" component={ClinicAddScreen} />
+        <Stack.Screen name="ClinicQR" component={ClinicQRScreen} />
+        <Stack.Screen name="ClinicCode" component={ClinicCodeScreen} />
+        <Stack.Screen name="ClinicSearch" component={ClinicSearchScreen} />
+        <Stack.Screen name="Consent" component={ConsentScreen} />
+        <Stack.Screen name="ClinicConfirm" component={ClinicConfirmScreen} />
+        <Stack.Screen name="ClinicSuccess" component={ClinicSuccessScreen} />
+        <Stack.Screen name="ShareRecord" component={ShareRecordScreen} />
+        <Stack.Screen name="ShareSent" component={ShareSentScreen} />
+        <Stack.Screen name="ReportLink" component={ReportLinkScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   )
