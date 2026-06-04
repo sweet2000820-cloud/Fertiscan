@@ -1,11 +1,9 @@
 import { useState } from 'react'
 import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { colors, typography } from '../theme'
 import Button from '../components/Button'
 
 export default function RegisterScreen({ navigation }: any) {
-  const insets = useSafeAreaInsets()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -26,7 +24,7 @@ export default function RegisterScreen({ navigation }: any) {
   const strength = password.length === 0 ? 0 : password.length < 6 ? 1 : password.length < 10 ? 3 : 4
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       <View style={styles.appbar}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.back}>‹</Text>
@@ -109,11 +107,12 @@ export default function RegisterScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.white },
+  container: { flex: 1, backgroundColor: colors.white, paddingTop: 50 },
   appbar: {
-    height: 46,
+    height: 56,
     flexDirection: 'row',
     alignItems: 'center',
+    paddingTop: 10,
     paddingHorizontal: 16,
     borderBottomWidth: 0.5,
     borderBottomColor: colors.gray200,
