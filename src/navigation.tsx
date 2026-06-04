@@ -1,3 +1,4 @@
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { NavigationContainer } from '@react-navigation/native'
@@ -52,28 +53,30 @@ function TabIcon({ label, focused }: { label: string; focused: boolean }) {
 
 function TabNavigator() {
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarIcon: ({ focused }) => (
-          <TabIcon label={route.name} focused={focused} />
-        ),
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.gray400,
-        tabBarLabelStyle: { fontSize: 12 },
-        tabBarStyle: {
-          borderTopWidth: 0.5,
-          borderTopColor: colors.gray200,
-          height: 80,
-          paddingBottom: 5,
-        },
-      })}
-    >
-      <Tab.Screen name="首頁" component={DashboardScreen} />
-      <Tab.Screen name="紀錄" component={HistoryScreen} />
-      <Tab.Screen name="校準" component={CalibrationScreen} />
-      <Tab.Screen name="設定" component={SettingsScreen} />
-    </Tab.Navigator>
+    <SafeAreaView style={{ flex: 1 }}>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon label={route.name} focused={focused} />
+          ),
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.gray400,
+          tabBarLabelStyle: { fontSize: 12 },
+          tabBarStyle: {
+            borderTopWidth: 0.5,
+            borderTopColor: colors.gray200,
+            height: 80,
+            paddingBottom: 5,
+          },
+        })}
+      >
+        <Tab.Screen name="首頁" component={DashboardScreen} />
+        <Tab.Screen name="紀錄" component={HistoryScreen} />
+        <Tab.Screen name="校準" component={CalibrationScreen} />
+        <Tab.Screen name="設定" component={SettingsScreen} />
+      </Tab.Navigator>
+    </SafeAreaView>
   )
 }
 
