@@ -21,7 +21,7 @@ export default function SettingsScreen({ navigation }: any) {
           <Text style={styles.editBtn}>編輯 ›</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.planCard}>
+        <TouchableOpacity style={styles.planCard} onPress={() => navigation.navigate('Plan')}>
           <View style={styles.planIcon}>
             <Text style={{ fontSize: 18 }}>★</Text>
           </View>

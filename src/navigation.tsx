@@ -19,6 +19,7 @@ import RegisterScreen from './screens/RegisterScreen'
 import LoginScreen from './screens/LoginScreen'
 import QCFailScreen from './screens/QCFailScreen'
 import ProfileScreen from './screens/ProfileScreen'
+import PlanScreen from './screens/PlanScreen'
 
 const Tab = createBottomTabNavigator()
 const Stack = createNativeStackNavigator()
@@ -80,6 +81,7 @@ export default function Navigation() {
         <Stack.Screen name="ReportOverview" component={ReportOverviewScreen} />
         <Stack.Screen name="QCFail" component={QCFailScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="Plan" component={PlanScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   )
