@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native'
 import { colors, typography } from '../theme'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 export default function SettingsScreen({ navigation }: any) {
   return (
@@ -91,10 +92,13 @@ export default function SettingsScreen({ navigation }: any) {
             <Text style={styles.rowLabel}>關於 FertiScan</Text>
             <Text style={styles.rowHint}>›</Text>
           </View>
-          <View style={[styles.row, { borderBottomWidth: 0 }]}>
-            <Text style={[styles.rowLabel, { color: colors.danger }]}>登出帳號</Text>
-            <Text style={styles.rowHint}>›</Text>
-          </View>
+          <TouchableOpacity style={[styles.row, { borderBottomWidth: 0 }]} onPress={async () => {
+            await AsyncStorage.removeItem('isLoggedIn')
+            navigation.navigate('Login')
+            }}>
+              <Text style={[styles.rowLabel, { color: colors.danger }]}>登出帳號</Text>
+              <Text style={styles.rowHint}>›</Text>
+              </TouchableOpacity>
         </View>
 
         <Text style={styles.disclaimer}>本產品僅供初步參考，不構成醫療診斷</Text>

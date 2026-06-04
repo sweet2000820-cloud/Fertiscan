@@ -78,7 +78,7 @@ function TabNavigator() {
   )
 }
 
-export default function Navigation() {
+export default function Navigation({ onLogout }: any) {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { paddingTop: 50 } }}>
