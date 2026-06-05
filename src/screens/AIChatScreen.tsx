@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native'
 import { colors, typography } from '../theme'
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Image } from 'react-native'
 
 type Message = { role: 'user' | 'bot', text: string }
 
@@ -36,7 +36,7 @@ export default function AIChatScreen({ navigation }: any) {
         reply = '睡眠不足會導致皮質醇偏高，影響荷爾蒙平衡，建議每晚保持 7-8 小時睡眠。'
       } else if (text.includes('壓力')) {
         reply = '長期壓力確實會影響生殖健康，建議透過運動、冥想等方式減壓。'
-      } else if (text.includes('多久') || text.includes('幾次')) {
+      } else if (text.includes('多久檢測') || text.includes('幾次')) {
         reply = '一般建議每 4-8 週檢測一次，可以追蹤趨勢變化。如有異常建議諮詢醫師。'
       } else if (text.includes('運動')) {
         reply = '規律運動有助於改善睡眠品質、降低壓力荷爾蒙，建議每週至少 3 次有氧運動。'
@@ -55,8 +55,8 @@ export default function AIChatScreen({ navigation }: any) {
         </TouchableOpacity>
         <View style={styles.appbarCenter}>
           <View style={styles.botAvatar}>
-            <Text style={{ fontSize: 12 }}>AI</Text>
-          </View>
+            <Image source={require('../../assets/sprite.png')} style={{ width: 28, height: 30 }} />
+            </View>
           <View>
             <Text style={styles.appbarTitle}>AI 生育小幫手</Text>
             <Text style={styles.onlineText}>線上</Text>
@@ -74,7 +74,7 @@ export default function AIChatScreen({ navigation }: any) {
           <View key={i} style={[styles.msgRow, msg.role === 'user' && styles.msgRowUser]}>
             {msg.role === 'bot' && (
               <View style={styles.botAvatarSmall}>
-                <Text style={{ fontSize: 9, color: colors.primary }}>AI</Text>
+                <Image source={require('../../assets/sprite.png')} style={{ width: 22, height: 24 }} />
               </View>
             )}
             <View style={[styles.bubble, msg.role === 'user' ? styles.bubbleUser : styles.bubbleBot]}>
@@ -85,7 +85,7 @@ export default function AIChatScreen({ navigation }: any) {
         {loading && (
           <View style={styles.msgRow}>
             <View style={styles.botAvatarSmall}>
-              <Text style={{ fontSize: 9, color: colors.primary }}>AI</Text>
+              <Image source={require('../../assets/sprite.png')} style={{ width: 22, height: 24 }} />
             </View>
             <View style={styles.bubbleBot}>
               <Text style={styles.bubbleText}>思考中...</Text>

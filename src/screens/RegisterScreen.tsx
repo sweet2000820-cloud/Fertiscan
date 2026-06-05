@@ -10,16 +10,16 @@ export default function RegisterScreen({ navigation }: any) {
   const [agreed, setAgreed] = useState(false)
 
   function handleRegister() {
-    if (!name || !email || !password) {
-      Alert.alert('請填寫', '請填寫所有欄位')
-      return
-    }
-    if (!agreed) {
-      Alert.alert('請同意', '請同意服務條款與隱私政策')
-      return
-    }
-    navigation.navigate('Main')
+  if (!name || !email || !password) {
+    Alert.alert('請填寫', '請填寫所有欄位')
+    return
   }
+  if (!agreed) {
+    Alert.alert('請同意', '請同意服務條款與隱私政策')
+    return
+  }
+  navigation.navigate('VerifyEmail', { email })
+}
 
   const strength = password.length === 0 ? 0 : password.length < 6 ? 1 : password.length < 10 ? 3 : 4
 

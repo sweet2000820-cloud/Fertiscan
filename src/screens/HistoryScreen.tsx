@@ -27,7 +27,7 @@ function getTCColor(status: string) {
   }
 }
 
-export default function HistoryScreen() {
+export default function HistoryScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <View style={styles.appbar}>
@@ -76,7 +76,7 @@ export default function HistoryScreen() {
           {records.map((r, i) => {
             const badge = getBadgeStyle(r.status)
             return (
-              <TouchableOpacity key={i} style={[styles.row, i === records.length - 1 && { borderBottomWidth: 0 }]}>
+              <TouchableOpacity key={i} style={[styles.row, i === records.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.getParent()?.navigate('ReportOverview', { record: r })}>
                 <View>
                   <Text style={styles.date}>{r.date}</Text>
                   <Text style={styles.hint}>{r.time} · {r.lot}</Text>

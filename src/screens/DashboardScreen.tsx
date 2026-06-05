@@ -1,6 +1,6 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
 import { colors, typography } from '../theme'
 import Button from '../components/Button'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native'
 
 export default function DashboardScreen({ navigation }: any) {
   return (
@@ -91,7 +91,8 @@ export default function DashboardScreen({ navigation }: any) {
 
       {/* AI FAB 按鈕 */}
       <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('AIChat')}>
-        <Text style={styles.fabText}>AI</Text>
+        <Image source={require('../../assets/sprite.png')} style={{ width: 80, height: 80          
+        }} />
       </TouchableOpacity>
 
     </View>
@@ -132,10 +133,9 @@ const styles = StyleSheet.create({
   badgeGood: { backgroundColor: colors.successLight, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 4 },
   badgeGoodText: { fontSize: typography.sizes.xs, color: colors.success, fontWeight: typography.weights.medium },
   fab: {
-    position: 'absolute', bottom: 30, right: 20,
-    width: 70, height: 70, borderRadius: 35,
-    backgroundColor: colors.primary,
-    alignItems: 'center', justifyContent: 'center',
+    position: 'absolute', bottom: 50, right: 40,
+    width: 60, height: 60,
+    backgroundColor: 'transparent',
   },
   fabText: { color: '#fff', fontSize: 23, fontWeight: typography.weights.medium },
 })
