@@ -107,12 +107,11 @@ export default function RegisterScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.white, paddingTop: 50 },
+  container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 56,
+    height: 46,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 10,
     paddingHorizontal: 16,
     borderBottomWidth: 0.5,
     borderBottomColor: colors.gray200,
