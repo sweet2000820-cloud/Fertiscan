@@ -1,59 +1,131 @@
 import { colors, typography } from '../theme'
 import Button from '../components/Button'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native'
+import { useEffect, useState } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getRecords, TestRecord } from '../storage'
 
 export default function DashboardScreen({ navigation }: any) {
+  const [daysSince, setDaysSince] = useState<string>('12天前')
+  const [records, setRecords] = useState<TestRecord[]>([])
+  const [strips, setStrips] = useState<number>(6)
+  const [userName, setUserName] = useState<string>('陳小明')
+
+  useEffect(() => {
+    AsyncStorage.getItem('userName').then(val => {
+      if (val) setUserName(val)
+    })
+    AsyncStorage.getItem('lastTestDate').then(val => {
+      if (val) {
+        const diff = Math.floor((Date.now() - new Date(val).getTime()) / (1000 * 60 * 60 * 24))
+        setDaysSince(diff === 0 ? '今天' : `${diff} 天前`)
+      }
+    })
+    AsyncStorage.getItem('strips').then(val => {
+      if (val !== null) setStrips(parseInt(val))
+      else {
+        setStrips(6)
+        AsyncStorage.setItem('strips', '6')
+      }
+    })
+    getRecords().then(r => setRecords(r))
+  }, [])
+
+  const displayRecords = records.length > 0 ? records.slice(0, 3) : [
+    { date: '2026/04/23', time: '上午 8:15', tc: '0.68', status: '邊緣', lot: 'LOT-2025-A' },
+    { date: '2026/03/10', time: '上午 9:02', tc: '0.91', status: '正常', lot: 'LOT-2025-A' },
+  ]
+
+  function getStatusColor(status: string) {
+    switch (status) {
+      case '正常': return colors.primary
+      case '邊緣': return colors.warning
+      default: return colors.danger
+    }
+  }
+
+  function getStatusBg(status: string) {
+    switch (status) {
+      case '正常': return colors.successLight
+      case '邊緣': return colors.warningLight
+      default: return colors.dangerLight
+    }
+  }
+
+  function handleStripsPress() {
+    Alert.prompt(
+      '更新試紙數量',
+      '請輸入目前剩餘試紙數量',
+      [
+        { text: '取消', style: 'cancel' },
+        { text: '確認', onPress: (val: string | undefined) => {
+          if (val && !isNaN(parseInt(val))) {
+            const n = parseInt(val)
+            setStrips(n)
+            AsyncStorage.setItem('strips', String(n))
+          }
+        }},
+      ],
+      'plain-text',
+      String(strips)
+    )
+  }
+
   return (
     <View style={styles.container}>
-      
-      {/* AppBar */}
       <View style={styles.appbar}>
         <Text style={styles.appbarTitle}>FertiScan</Text>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>陳</Text>
-        </View>
+        <TouchableOpacity style={styles.avatar} onPress={() => navigation.navigate('Profile')}>
+          <Text style={styles.avatarText}>{userName.slice(0, 1)}</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         
-        <Text style={styles.greeting}>早安，陳小明</Text>
+        <Text style={styles.greeting}>
+          {(() => {
+            const h = new Date().getHours()
+            if (h < 12) return `早安，${userName}`
+            if (h < 18) return `午安，${userName}`
+            return `晚安，${userName}`
+          })()}
+        </Text>
 
         <View style={styles.tealCard}>
-          <Text style={styles.cardTitle}>近 4 次 T/C 比值趨勢</Text>
+          <Text style={styles.cardTitle}>近 {Math.min(displayRecords.length, 4)} 次 T/C 比值趨勢</Text>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 60, gap: 6, marginBottom: 4 }}>
-            <View style={{ flex: 1, alignItems: 'stretch', gap: 3 }}>
-              <View style={{ width: '100%', height: 44, backgroundColor: colors.primary, borderRadius: 2 }} />
-              <Text style={{ fontSize: 8, color: colors.gray400 }}>2月</Text>
-            </View>
-            <View style={{ flex: 1, alignItems: 'stretch', gap: 3 }}>
-              <View style={{ width: '100%', height: 28, backgroundColor: '#EF9F27', borderRadius: 2 }} />
-              <Text style={{ fontSize: 8, color: colors.gray400 }}>3月</Text>
-            </View>
-            <View style={{ flex: 1, alignItems: 'stretch', gap: 3 }}>
-              <View style={{ width: '100%', height: 50, backgroundColor: colors.primary, borderRadius: 2 }} />
-              <Text style={{ fontSize: 8, color: colors.gray400 }}>4月</Text>
-            </View>
-            <View style={{ flex: 1, alignItems: 'stretch', gap: 3 }}>
-              <View style={{ width: '100%', height: 35, backgroundColor: '#EF9F27', borderRadius: 2 }} />
-              <Text style={{ fontSize: 8, color: colors.warning, fontWeight: '500' }}>最近</Text>
-            </View>
+            {displayRecords.slice(0, 4).reverse().map((r, i, arr) => {
+              const h = Math.max(8, parseFloat(r.tc) * 70)
+              const color = r.status === '正常' ? colors.primary : r.status === '邊緣' ? '#EF9F27' : colors.danger
+              const isLast = i === arr.length - 1
+              return (
+                <View key={i} style={{ flex: 1, alignItems: 'stretch', gap: 3 }}>
+                  <View style={{ width: '100%', height: h, backgroundColor: color, borderRadius: 2 }} />
+                  <Text style={{ fontSize: 8, color: isLast ? colors.warning : colors.gray400 }}>
+                    {isLast ? '最近' : r.date.slice(5, 7) + '月'}
+                  </Text>
+                </View>
+              )
+            })}
           </View>
           <View style={styles.divider} />
           <View style={styles.row}>
             <Text style={styles.hint}>平均 T/C 比值</Text>
-            <Text style={styles.avgValue}>0.74</Text>
+            <Text style={styles.avgValue}>
+              {(displayRecords.reduce((s, r) => s + parseFloat(r.tc), 0) / displayRecords.length).toFixed(2)}
+            </Text>
           </View>
         </View>
 
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <Text style={styles.hint}>上次檢測</Text>
-            <Text style={styles.statValue}>12天前</Text>
+            <Text style={styles.statValue}>{daysSince}</Text>
           </View>
-          <View style={styles.statCard}>
+          <TouchableOpacity style={styles.statCard} onPress={handleStripsPress}>
             <Text style={styles.hint}>試紙剩餘</Text>
-            <Text style={[styles.statValue, { color: colors.primary }]}>3 片</Text>
-          </View>
+            <Text style={[styles.statValue, { color: strips <= 1 ? colors.danger : colors.primary }]}>{strips} 片</Text>
+          </TouchableOpacity>
         </View>
 
         <Button title="開始新一次檢測" onPress={() => navigation.navigate('PreCheck')} />
@@ -61,38 +133,25 @@ export default function DashboardScreen({ navigation }: any) {
         <View style={styles.divider} />
         <Text style={styles.sectionTitle}>最近紀錄</Text>
 
-        <TouchableOpacity style={styles.historyRow} onPress={() => navigation.navigate('ReportOverview')}>
-          <View>
-            <Text style={styles.historyDate}>2026/04/23</Text>
-            <Text style={styles.hint}>上午 8:15</Text>
-          </View>
-          <View style={styles.historyRight}>
-            <Text style={[styles.tcValue, { color: colors.warning }]}>T/C 0.68</Text>
-            <View style={styles.badgeWarn}>
-              <Text style={styles.badgeWarnText}>邊緣</Text>
+        {displayRecords.map((r, i) => (
+          <TouchableOpacity key={i} style={styles.historyRow} onPress={() => navigation.navigate('ReportOverview', { record: r })}>
+            <View>
+              <Text style={styles.historyDate}>{r.date}</Text>
+              <Text style={styles.hint}>{r.time}</Text>
             </View>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.historyRow} onPress={() => navigation.navigate('ReportOverview')}>
-          <View>
-            <Text style={styles.historyDate}>2026/03/10</Text>
-            <Text style={styles.hint}>上午 9:02</Text>
-          </View>
-          <View style={styles.historyRight}>
-            <Text style={[styles.tcValue, { color: colors.primary }]}>T/C 0.91</Text>
-            <View style={styles.badgeGood}>
-              <Text style={styles.badgeGoodText}>正常</Text>
+            <View style={styles.historyRight}>
+              <Text style={[styles.tcValue, { color: getStatusColor(r.status) }]}>T/C {r.tc}</Text>
+              <View style={[styles.badge, { backgroundColor: getStatusBg(r.status) }]}>
+                <Text style={[styles.badgeText, { color: getStatusColor(r.status) }]}>{r.status}</Text>
+              </View>
             </View>
-          </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
+        ))}
 
       </ScrollView>
 
-      {/* AI FAB 按鈕 */}
       <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('AIChat')}>
-        <Image source={require('../../assets/sprite.png')} style={{ width: 80, height: 80          
-        }} />
+        <Image source={require('../../assets/sprite.png')} style={{ width: 80, height: 80 }} />
       </TouchableOpacity>
 
     </View>
@@ -100,15 +159,15 @@ export default function DashboardScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.white},
+  container: { flex: 1, backgroundColor: colors.white },
   appbar: {
     height: 56, flexDirection: 'row', alignItems: 'center',
     paddingTop: 10,
     paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
   },
   appbarTitle: { flex: 1, fontSize: typography.sizes.lg, fontWeight: typography.weights.medium, color: colors.primary },
-  avatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontSize: typography.sizes.xs, fontWeight: typography.weights.medium, color: colors.primary },
+  avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.primary },
   scroll: { flex: 1, padding: 18 },
   greeting: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900, marginBottom: 10 },
   tealCard: { backgroundColor: colors.primaryLight, borderRadius: 10, padding: 12, marginBottom: 10 },
@@ -128,14 +187,11 @@ const styles = StyleSheet.create({
   historyDate: { fontSize: typography.sizes.md, color: colors.gray500 },
   historyRight: { alignItems: 'flex-end', gap: 3 },
   tcValue: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium },
-  badgeWarn: { backgroundColor: colors.warningLight, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 4 },
-  badgeWarnText: { fontSize: typography.sizes.xs, color: colors.warning, fontWeight: typography.weights.medium },
-  badgeGood: { backgroundColor: colors.successLight, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 4 },
-  badgeGoodText: { fontSize: typography.sizes.xs, color: colors.success, fontWeight: typography.weights.medium },
+  badge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 4 },
+  badgeText: { fontSize: typography.sizes.xs, fontWeight: typography.weights.medium },
   fab: {
     position: 'absolute', bottom: 50, right: 40,
     width: 60, height: 60,
     backgroundColor: 'transparent',
   },
-  fabText: { color: '#fff', fontSize: 23, fontWeight: typography.weights.medium },
 })

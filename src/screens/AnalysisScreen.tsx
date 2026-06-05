@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
 import { colors, typography } from '../theme'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { saveRecord } from '../storage'
+import { getRecords, TestRecord } from '../storage'
 
 export default function AnalysisScreen({ navigation }: any) {
   const [progress, setProgress] = useState(0)
@@ -8,18 +11,17 @@ export default function AnalysisScreen({ navigation }: any) {
   const [done, setDone] = useState(false)
 
   useEffect(() => {
+    let currentProgress = 0
     const timer = setInterval(() => {
-      setProgress(p => {
-        const next = p + 1.5
-        if (next >= 40 && step < 1) setStep(1)
-        if (next >= 70 && step < 2) setStep(2)
-        if (next >= 100) {
-          clearInterval(timer)
-          setDone(true)
-          return 100
-        }
-        return next
-      })
+      currentProgress += 1.5
+      setProgress(currentProgress)
+      if (currentProgress >= 40) setStep(1)
+      if (currentProgress >= 70) setStep(2)
+      if (currentProgress >= 100) {
+        clearInterval(timer)
+        setDone(true)
+        setProgress(100)
+      }
     }, 60)
     return () => clearInterval(timer)
   }, [])
@@ -82,7 +84,18 @@ export default function AnalysisScreen({ navigation }: any) {
         </View>
 
         {done && (
-          <TouchableOpacity style={styles.resultBtn} onPress={() => navigation.navigate('ReportOverview')}>
+          <TouchableOpacity style={styles.resultBtn} onPress={async () => {
+            const now = new Date()
+            const date = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`
+            const time = `${now.getHours() < 12 ? '上午' : '下午'} ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`
+            await saveRecord({ date, time, tc: '0.68', status: '邊緣', lot: 'LOT-2025-A' })
+            await AsyncStorage.setItem('lastTestDate', now.toISOString())
+            const stripsRaw = await AsyncStorage.getItem('strips')
+            const currentStrips = stripsRaw ? parseInt(stripsRaw) : 6
+            const newStrips = Math.max(0, currentStrips - 1)
+            await AsyncStorage.setItem('strips', String(newStrips))
+            navigation.navigate('ReportOverview')
+            }}>
             <Text style={styles.resultBtnText}>查看結果 ›</Text>
           </TouchableOpacity>
         )}

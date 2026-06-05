@@ -1,7 +1,5 @@
 import { useState } from 'react'
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native'
-import { signInWithEmailAndPassword } from 'firebase/auth'
-import { auth } from '../firebase'
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Keyboard, TouchableWithoutFeedback } from 'react-native'
 import { colors, typography } from '../theme'
 import Button from '../components/Button'
 
@@ -10,67 +8,69 @@ export default function LoginScreen({ onLogin, navigation }: any) {
   const [password, setPassword] = useState('')
 
   function handleLogin() {
-  if (!email || !password) {
-    Alert.alert('請填寫', '請輸入信箱和密碼')
-    return
+    if (!email || !password) {
+      Alert.alert('請填寫', '請輸入信箱和密碼')
+      return
+    }
+    if (onLogin) {
+      onLogin()
+    } else {
+      navigation?.navigate('Main')
+    }
   }
-  if (onLogin) {
-    onLogin()
-  } else {
-    navigation?.navigate('Main')
-  }
-}
 
   return (
-    <View style={styles.container}>
-      <View style={styles.logoArea}>
-        <View style={styles.logoBox}>
-          <Text style={styles.logoIcon}>⊞</Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <View style={styles.logoArea}>
+          <View style={styles.logoBox}>
+            <Text style={styles.logoIcon}>⊞</Text>
+          </View>
+          <Text style={styles.appName}>FertiScan</Text>
+          <Text style={styles.subtitle}>生殖功能試紙光學定量</Text>
         </View>
-        <Text style={styles.appName}>FertiScan</Text>
-        <Text style={styles.subtitle}>生殖功能試紙光學定量</Text>
-      </View>
 
-      <View style={styles.form}>
-        <View style={styles.field}>
-          <Text style={styles.label}>電子信箱</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="example@gmail.com"
-            placeholderTextColor={colors.gray400}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
-          />
+        <View style={styles.form}>
+          <View style={styles.field}>
+            <Text style={styles.label}>電子信箱</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="example@gmail.com"
+              placeholderTextColor={colors.gray400}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
+            />
+          </View>
+          <View style={styles.field}>
+            <Text style={styles.label}>密碼</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="••••••••"
+              placeholderTextColor={colors.gray400}
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+          </View>
         </View>
-        <View style={styles.field}>
-          <Text style={styles.label}>密碼</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="••••••••"
-            placeholderTextColor={colors.gray400}
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-        </View>
-      </View>
 
-      <Button title="登入" onPress={handleLogin} />
-      
-      <TouchableOpacity style={styles.forgotBtn} onPress={() => navigation.navigate('ForgotPassword')}>
-        <Text style={styles.forgotText}>忘記密碼？</Text>
+        <Button title="登入" onPress={handleLogin} />
+
+        <TouchableOpacity style={styles.forgotBtn} onPress={() => navigation.navigate('ForgotPassword')}>
+          <Text style={styles.forgotText}>忘記密碼？</Text>
         </TouchableOpacity>
 
-      <View style={styles.dividerRow}>
-        <View style={styles.divider} />
-        <Text style={styles.dividerText}>或</Text>
-        <View style={styles.divider} />
-      </View>
+        <View style={styles.dividerRow}>
+          <View style={styles.divider} />
+          <Text style={styles.dividerText}>或</Text>
+          <View style={styles.divider} />
+        </View>
 
-      <Button title="建立新帳號" onPress={() => navigation.navigate('Register')} variant="secondary" />
-    </View>
+        <Button title="建立新帳號" onPress={() => navigation.navigate('Register')} variant="secondary" />
+      </View>
+    </TouchableWithoutFeedback>
   )
 }
 

@@ -2,24 +2,33 @@ import { useState } from 'react'
 import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native'
 import { colors, typography } from '../theme'
 import Button from '../components/Button'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 export default function RegisterScreen({ navigation }: any) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [agreed, setAgreed] = useState(false)
+  const [birthYear, setBirthYear] = useState('')
+  const [birthMonth, setBirthMonth] = useState('')
+  const [birthDay, setBirthDay] = useState('')
 
-  function handleRegister() {
-  if (!name || !email || !password) {
-    Alert.alert('請填寫', '請填寫所有欄位')
-    return
+  async function handleRegister() {
+    if (!name || !email || !password) {
+      Alert.alert('請填寫', '請填寫所有欄位')
+      return
+    }
+    if (!agreed) {
+      Alert.alert('請同意', '請同意服務條款與隱私政策')
+      return
+    }
+    await AsyncStorage.setItem('userName', name)
+    await AsyncStorage.setItem('userEmail', email)
+    await AsyncStorage.setItem('userBirthYear', birthYear)
+    await AsyncStorage.setItem('userBirthMonth', birthMonth)
+    await AsyncStorage.setItem('userBirthDay', birthDay)
+    navigation.navigate('VerifyEmail', { email })
   }
-  if (!agreed) {
-    Alert.alert('請同意', '請同意服務條款與隱私政策')
-    return
-  }
-  navigation.navigate('VerifyEmail', { email })
-}
 
   const strength = password.length === 0 ? 0 : password.length < 6 ? 1 : password.length < 10 ? 3 : 4
 
@@ -48,9 +57,33 @@ export default function RegisterScreen({ navigation }: any) {
         <View style={styles.field}>
           <Text style={styles.label}>出生年月日</Text>
           <View style={styles.dateRow}>
-            <TextInput style={[styles.input, { flex: 1 }]} placeholder="1992" placeholderTextColor={colors.gray400} keyboardType="number-pad" maxLength={4} />
-            <TextInput style={[styles.input, { flex: 1 }]} placeholder="03" placeholderTextColor={colors.gray400} keyboardType="number-pad" maxLength={2} />
-            <TextInput style={[styles.input, { flex: 1 }]} placeholder="22" placeholderTextColor={colors.gray400} keyboardType="number-pad" maxLength={2} />
+            <TextInput
+              style={[styles.input, { flex: 1 }]}
+              placeholder="1992"
+              placeholderTextColor={colors.gray400}
+              keyboardType="number-pad"
+              maxLength={4}
+              value={birthYear}
+              onChangeText={setBirthYear}
+            />
+            <TextInput
+              style={[styles.input, { flex: 1 }]}
+              placeholder="03"
+              placeholderTextColor={colors.gray400}
+              keyboardType="number-pad"
+              maxLength={2}
+              value={birthMonth}
+              onChangeText={setBirthMonth}
+            />
+            <TextInput
+              style={[styles.input, { flex: 1 }]}
+              placeholder="22"
+              placeholderTextColor={colors.gray400}
+              keyboardType="number-pad"
+              maxLength={2}
+              value={birthDay}
+              onChangeText={setBirthDay}
+            />
           </View>
           <Text style={styles.hint}>年 / 月 / 日</Text>
         </View>
@@ -109,65 +142,32 @@ export default function RegisterScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.gray200,
+    height: 46, flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
   },
   back: { fontSize: 22, color: colors.primary, marginRight: 6 },
-  appbarTitle: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.medium,
-    color: colors.gray900,
-  },
+  appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
   scroll: { flex: 1, padding: 18 },
   field: { marginBottom: 14 },
-  label: {
-    fontSize: typography.sizes.xs,
-    color: colors.gray500,
-    fontWeight: typography.weights.medium,
-    marginBottom: 4,
-  },
+  label: { fontSize: typography.sizes.xs, color: colors.gray500, fontWeight: typography.weights.medium, marginBottom: 4 },
   input: {
-    height: 40,
-    borderWidth: 0.5,
-    borderColor: colors.gray300,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    fontSize: typography.sizes.md,
-    color: colors.gray900,
+    height: 40, borderWidth: 0.5, borderColor: colors.gray300,
+    borderRadius: 8, paddingHorizontal: 12,
+    fontSize: typography.sizes.md, color: colors.gray900,
   },
   dateRow: { flexDirection: 'row', gap: 6 },
   hint: { fontSize: typography.sizes.xs, color: colors.gray400, marginTop: 4 },
   strengthRow: { flexDirection: 'row', gap: 3, marginTop: 6 },
-  strengthBar: {
-    flex: 1, height: 3, borderRadius: 2,
-    backgroundColor: colors.gray200,
-  },
+  strengthBar: { flex: 1, height: 3, borderRadius: 2, backgroundColor: colors.gray200 },
   strengthBarFill: { backgroundColor: colors.primary },
-  agreeRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    marginBottom: 16,
-  },
+  agreeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 16 },
   checkbox: {
-    width: 14,
-    height: 14,
-    borderRadius: 3,
-    borderWidth: 1.5,
-    borderColor: colors.gray300,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 2,
-    flexShrink: 0,
+    width: 14, height: 14, borderRadius: 3,
+    borderWidth: 1.5, borderColor: colors.gray300,
+    alignItems: 'center', justifyContent: 'center',
+    marginTop: 2, flexShrink: 0,
   },
-  checkboxDone: {
-    backgroundColor: colors.primaryLight,
-    borderColor: colors.primary,
-  },
+  checkboxDone: { backgroundColor: colors.primaryLight, borderColor: colors.primary },
   checkmark: { fontSize: 9, color: colors.primary },
   agreeText: { fontSize: typography.sizes.xs, color: colors.gray400, flex: 1, lineHeight: 18 },
   link: { color: colors.primary },

@@ -50,16 +50,17 @@ export default function CalibrationScreen({ navigation }: any) {
         <View style={styles.listCard}>
           <Text style={styles.sectionTitle}>標準曲線（批號 {lotNumber}）</Text>
           <View style={styles.chartArea}>
-            <View style={styles.chartInner}>
+           <View style={styles.chartInner}>
               <View style={styles.yAxis} />
               <View style={styles.xAxis} />
-              <View style={[styles.dot, { bottom: 10, left: 10 }]} />
-              <View style={[styles.dot, { bottom: 18, left: 40 }]} />
-              <View style={[styles.dot, { bottom: 30, left: 70 }]} />
-              <View style={[styles.dot, { bottom: 44, left: 100 }]} />
-              <View style={[styles.dot, { bottom: 56, left: 130 }]} />
-              <View style={[styles.dot, { bottom: 64, left: 160 }]} />
-              <View style={[styles.currentDot, { bottom: 38, left: 80 }]} />
+              <View style={[styles.dot, { bottom: 8, left: '10%' }]} />
+              <View style={[styles.dot, { bottom: 18, left: '22%' }]} />
+              <View style={[styles.dot, { bottom: 28, left: '34%' }]} />
+              <View style={[styles.dot, { bottom: 40, left: '46%' }]} />
+              <View style={[styles.dot, { bottom: 52, left: '60%' }]} />
+              <View style={[styles.dot, { bottom: 62, left: '74%' }]} />
+              <View style={[styles.dot, { bottom: 68, left: '86%' }]} />
+              <View style={[styles.currentDot, { bottom: 36, left: '42%' }]} />
               <View style={styles.refLine} />
               <Text style={styles.refLabel}>0.85</Text>
               <Text style={styles.currentLabel}>0.68</Text>
@@ -127,10 +128,9 @@ const styles = StyleSheet.create({
   xAxis: { position: 'absolute', left: 0, right: 0, bottom: 20, height: 0.5, backgroundColor: colors.gray200 },
   dot: { position: 'absolute', width: 4, height: 4, borderRadius: 2, backgroundColor: colors.primary },
   currentDot: { position: 'absolute', width: 8, height: 8, borderRadius: 4, backgroundColor: colors.warning, borderWidth: 1.5, borderColor: colors.white },
-  refLine: { position: 'absolute', left: 110, top: 0, bottom: 20, width: 0.8, backgroundColor: colors.success },
-  refLabel: { position: 'absolute', left: 112, top: 0, fontSize: 7, color: colors.success },
-  currentLabel: { position: 'absolute', left: 64, bottom: 22, fontSize: 7, color: colors.warning },
-  axisLabels: { flexDirection: 'row', justifyContent: 'space-between' },
+  refLine: { position: 'absolute', left: '58%', top: 0, bottom: 20, width: 0.8, backgroundColor: colors.success },
+  refLabel: { position: 'absolute', left: '59%', top: 0, fontSize: 7, color: colors.success },
+  currentLabel: { position: 'absolute', left: '38%', bottom: 22, fontSize: 7, color: colors.warning },axisLabels: { flexDirection: 'row', justifyContent: 'space-between' },
   axisText: { fontSize: 7, color: colors.gray400 },
   divider: { height: 0.5, backgroundColor: colors.gray200, marginVertical: 8 },
   resultRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

@@ -1,19 +1,40 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert } from 'react-native'
 import { colors, typography } from '../theme'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 export default function ProfileScreen({ navigation }: any) {
-  const [name, setName] = useState('陳小明')
-  const [email] = useState('chen@gmail.com')
-  const [height, setHeight] = useState('175')
-  const [weight, setWeight] = useState('72')
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [height, setHeight] = useState('')
+  const [weight, setWeight] = useState('')
   const [smoke, setSmoke] = useState(false)
   const [drink, setDrink] = useState(0)
+  const [birthYear, setBirthYear] = useState('')
+  const [birthMonth, setBirthMonth] = useState('')
+  const [birthDay, setBirthDay] = useState('')
 
-  function handleSave() {
+  useEffect(() => {
+    AsyncStorage.getItem('userName').then(val => { if (val) setName(val) })
+    AsyncStorage.getItem('userEmail').then(val => { if (val) setEmail(val) })
+    AsyncStorage.getItem('userBirthYear').then(val => { if (val) setBirthYear(val) })
+    AsyncStorage.getItem('userBirthMonth').then(val => { if (val) setBirthMonth(val) })
+    AsyncStorage.getItem('userBirthDay').then(val => { if (val) setBirthDay(val) })
+    AsyncStorage.getItem('userHeight').then(val => { if (val) setHeight(val) })
+    AsyncStorage.getItem('userWeight').then(val => { if (val) setWeight(val) })
+  }, [])
+
+  async function handleSave() {
+    await AsyncStorage.setItem('userName', name)
+    await AsyncStorage.setItem('userHeight', height)
+    await AsyncStorage.setItem('userWeight', weight)
     Alert.alert('已儲存', '個人資料已更新')
     navigation.goBack()
   }
+
+  const birthDisplay = birthYear && birthMonth && birthDay
+    ? `${birthYear}/${birthMonth.padStart(2, '0')}/${birthDay.padStart(2, '0')}`
+    : '未設定'
 
   return (
     <View style={styles.container}>
@@ -29,10 +50,9 @@ export default function ProfileScreen({ navigation }: any) {
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        {/* 頭像 */}
         <View style={styles.avatarArea}>
           <View style={styles.avatarBig}>
-            <Text style={styles.avatarText}>陳</Text>
+            <Text style={styles.avatarText}>{name ? name.slice(0, 1) : '?'}</Text>
           </View>
           <Text style={styles.avatarHint}>點擊更換頭像</Text>
         </View>
@@ -57,7 +77,7 @@ export default function ProfileScreen({ navigation }: any) {
           </View>
           <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
             <Text style={styles.fieldLabel}>出生年月日</Text>
-            <Text style={styles.fieldValue}>1992/03/22</Text>
+            <Text style={styles.fieldValue}>{birthDisplay}</Text>
           </View>
         </View>
 
@@ -72,6 +92,8 @@ export default function ProfileScreen({ navigation }: any) {
                 onChangeText={setHeight}
                 keyboardType="number-pad"
                 textAlign="right"
+                placeholder="—"
+                placeholderTextColor={colors.gray400}
               />
               <Text style={styles.unit}>cm</Text>
             </View>
@@ -85,6 +107,8 @@ export default function ProfileScreen({ navigation }: any) {
                 onChangeText={setWeight}
                 keyboardType="number-pad"
                 textAlign="right"
+                placeholder="—"
+                placeholderTextColor={colors.gray400}
               />
               <Text style={styles.unit}>kg</Text>
             </View>
@@ -132,7 +156,6 @@ export default function ProfileScreen({ navigation }: any) {
         </View>
 
         <View style={{ height: 30 }} />
-
       </ScrollView>
     </View>
   )
@@ -141,20 +164,11 @@ export default function ProfileScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.gray200,
+    height: 46, flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
   },
   back: { fontSize: 22, color: colors.primary, marginRight: 6 },
-  appbarTitle: {
-    flex: 1,
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.medium,
-    color: colors.gray900,
-  },
+  appbarTitle: { flex: 1, fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
   saveBtn: { fontSize: typography.sizes.md, color: colors.primary },
   scroll: { flex: 1, padding: 18 },
   avatarArea: { alignItems: 'center', paddingVertical: 16, gap: 8, marginBottom: 8 },
@@ -165,42 +179,20 @@ const styles = StyleSheet.create({
   },
   avatarText: { fontSize: 24, fontWeight: typography.weights.medium, color: colors.primary },
   avatarHint: { fontSize: typography.sizes.xs, color: colors.gray400 },
-  sectionTitle: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.medium,
-    color: colors.gray500,
-    marginBottom: 8,
-  },
-  listCard: {
-    borderWidth: 0.5,
-    borderColor: colors.gray200,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    marginBottom: 16,
-  },
+  sectionTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray500, marginBottom: 8 },
+  listCard: { borderWidth: 0.5, borderColor: colors.gray200, borderRadius: 10, paddingHorizontal: 14, marginBottom: 16 },
   fieldRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.gray100,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingVertical: 10, borderBottomWidth: 0.5, borderBottomColor: colors.gray100,
   },
   fieldLabel: { fontSize: typography.sizes.md, color: colors.gray900 },
-  fieldInput: {
-    fontSize: typography.sizes.md,
-    color: colors.gray900,
-    minWidth: 80,
-  },
+  fieldInput: { fontSize: typography.sizes.md, color: colors.gray900, minWidth: 80 },
   fieldRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   fieldValue: { fontSize: typography.sizes.md, color: colors.gray500 },
   verifiedBadge: { fontSize: typography.sizes.xs, color: colors.success },
   unit: { fontSize: typography.sizes.sm, color: colors.gray400 },
   optRow: { flexDirection: 'row', gap: 6 },
-  opt: {
-    paddingHorizontal: 10, paddingVertical: 4,
-    borderRadius: 6, borderWidth: 0.5, borderColor: colors.gray200,
-  },
+  opt: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, borderWidth: 0.5, borderColor: colors.gray200 },
   optSelected: { backgroundColor: colors.primaryLight, borderColor: colors.primary },
   optText: { fontSize: typography.sizes.sm, color: colors.gray500 },
   optTextSelected: { color: colors.primary, fontWeight: typography.weights.medium },
