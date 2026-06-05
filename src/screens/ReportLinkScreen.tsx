@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch } from 'react-native'
 import { colors, typography } from '../theme'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch, Share, Linking } from 'react-native'
+import * as Clipboard from 'expo-clipboard'
 
 export default function ReportLinkScreen({ navigation }: any) {
   const [pwEnabled, setPwEnabled] = useState(false)
@@ -46,40 +47,59 @@ export default function ReportLinkScreen({ navigation }: any) {
           <View style={styles.linkUrl}>
             <Text style={styles.linkText}>fertiscan.app/r/FS-4A2C-x8kqp</Text>
           </View>
-          <View style={styles.linkBtns}>
-            <TouchableOpacity
-              style={styles.linkBtn}
-              onPress={() => Alert.alert('已複製', '連結已複製到剪貼簿')}
-            >
-              <Text style={styles.linkBtnText}>複製連結</Text>
-            </TouchableOpacity>
-            <View style={styles.linkBtnDivider} />
-            <TouchableOpacity style={styles.linkBtn} onPress={() => Alert.alert('分享', '開啟分享選單')}>
-              <Text style={styles.linkBtnText}>傳送</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.linkBtn}
+            onPress={async () => {
+              await Clipboard.setStringAsync('fertiscan.app/r/FS-4A2C-x8kqp')
+              Alert.alert('已複製', '連結已複製到剪貼簿')
+            }}
+          >
+            <Text style={styles.linkBtnText}>複製連結</Text>
+          </TouchableOpacity>
         </View>
 
         {/* 快速傳送 */}
-        <Text style={styles.sectionTitle}>快速傳送管道</Text>
+       <Text style={styles.sectionTitle}>快速傳送管道</Text>
         <View style={styles.channelRow}>
-          {[
-            { name: 'LINE', color: '#06C755', icon: 'L' },
-            { name: 'Email', color: colors.primary, icon: '✉' },
-            { name: '訊息', color: '#4B9EFF', icon: '💬' },
-            { name: '更多', color: colors.gray100, icon: '···' },
-          ].map((ch, i) => (
-            <TouchableOpacity
-              key={i}
-              style={styles.channel}
-              onPress={() => Alert.alert(ch.name, `開啟 ${ch.name}`)}
-            >
-              <View style={[styles.channelIcon, { backgroundColor: ch.color }]}>
-                <Text style={[styles.channelIconText, i === 3 && { color: colors.gray500 }]}>{ch.icon}</Text>
-              </View>
-              <Text style={styles.channelName}>{ch.name}</Text>
-            </TouchableOpacity>
-          ))}
+          <TouchableOpacity
+            style={styles.channel}
+            onPress={() => Linking.openURL('https://line.me/R/share?text=fertiscan.app/r/FS-4A2C-x8kqp')}
+          >
+            <View style={[styles.channelIcon, { backgroundColor: '#06C755' }]}>
+              <Text style={styles.channelIconText}>L</Text>
+            </View>
+            <Text style={styles.channelName}>LINE</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.channel}
+            onPress={() => Linking.openURL('mailto:?subject=FertiScan%20檢測報告&body=fertiscan.app/r/FS-4A2C-x8kqp')}
+          >
+            <View style={[styles.channelIcon, { backgroundColor: colors.primary }]}>
+              <Text style={styles.channelIconText}>✉</Text>
+            </View>
+            <Text style={styles.channelName}>Email</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.channel}
+            onPress={() => Linking.openURL('sms:?body=fertiscan.app/r/FS-4A2C-x8kqp')}
+          >
+            <View style={[styles.channelIcon, { backgroundColor: '#4B9EFF' }]}>
+              <Text style={styles.channelIconText}>💬</Text>
+            </View>
+            <Text style={styles.channelName}>訊息</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.channel}
+            onPress={() => Share.share({ message: '我的 FertiScan 檢測報告：fertiscan.app/r/FS-4A2C-x8kqp' })}
+          >
+            <View style={[styles.channelIcon, { backgroundColor: colors.gray100 }]}>
+              <Text style={[styles.channelIconText, { color: colors.gray500 }]}>···</Text>
+            </View>
+            <Text style={styles.channelName}>更多</Text>
+          </TouchableOpacity>
         </View>
 
         {/* 連結設定 */}

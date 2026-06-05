@@ -36,6 +36,7 @@ import AIChatScreen from './screens/AIChatScreen'
 import WhiteCaptureScreen from './screens/WhiteCaptureScreen'
 import ForgotPasswordScreen from './screens/ForgotPasswordScreen'
 import VerifyEmailScreen from './screens/VerifyEmailScreen'
+import LotQRScreen from './screens/LotQRScreen'
 
 const Tab = createBottomTabNavigator()
 const Stack = createNativeStackNavigator()
@@ -113,6 +114,7 @@ export default function Navigation({ onLogout }: any) {
         <Stack.Screen name="WhiteCapture" component={WhiteCaptureScreen} />
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
+        <Stack.Screen name="LotQR" component={LotQRScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   )
