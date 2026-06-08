@@ -1,8 +1,9 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Linking } from 'react-native'
 import { colors, typography } from '../theme'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Notifications from 'expo-notifications'
 import { useState } from 'react'
+
 
 export default function SettingsScreen({ navigation }: any) {
   const [notifyEnabled, setNotifyEnabled] = useState(true)
@@ -106,10 +107,6 @@ export default function SettingsScreen({ navigation }: any) {
 
         <Text style={styles.sectionTitle}>隱私與資料</Text>
         <View style={styles.listCard}>
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>資料本機加密</Text>
-            <Switch value={true} onValueChange={() => {}} trackColor={{ true: colors.primary }} />
-          </View>
           <View style={[styles.row, { borderBottomWidth: 0 }]}>
             <Text style={styles.rowLabel}>資料上傳雲端</Text>
             <Switch value={false} onValueChange={() => {}} trackColor={{ true: colors.primary }} />
@@ -127,17 +124,22 @@ export default function SettingsScreen({ navigation }: any) {
             <Text style={styles.rowLabel}>App 版本</Text>
             <Text style={styles.rowHint}>v1.2.0</Text>
           </View>
-          <View style={styles.row}>
+          <TouchableOpacity style={styles.row} onPress={() => Linking.openURL('https://www.ipreginc.com/')}>
             <Text style={styles.rowLabel}>關於 FertiScan</Text>
             <Text style={styles.rowHint}>›</Text>
-          </View>
-          <TouchableOpacity style={[styles.row, { borderBottomWidth: 0 }]} onPress={async () => {
-            await AsyncStorage.removeItem('isLoggedIn')
-            navigation.navigate('Login')
-            }}>
-              <Text style={[styles.rowLabel, { color: colors.danger }]}>登出帳號</Text>
-              <Text style={styles.rowHint}>›</Text>
-              </TouchableOpacity>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.row, { borderBottomWidth: 0 }]} onPress={() => {
+            Alert.alert('登出帳號', '確定要登出嗎？', [
+              { text: '取消', style: 'cancel' },
+              { text: '登出', style: 'destructive', onPress: async () => {
+                await AsyncStorage.removeItem('isLoggedIn')
+                navigation.navigate('Login')
+              }},
+            ])
+          }}>
+            <Text style={[styles.rowLabel, { color: colors.danger }]}>登出帳號</Text>
+            <Text style={styles.rowHint}>›</Text>
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.disclaimer}>本產品僅供初步參考，不構成醫療診斷</Text>
