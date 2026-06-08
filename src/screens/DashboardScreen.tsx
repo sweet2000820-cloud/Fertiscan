@@ -4,6 +4,8 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } fr
 import { useEffect, useState } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getRecords, TestRecord } from '../storage'
+import { useFocusEffect } from '@react-navigation/native'
+import { useCallback } from 'react'
 
 export default function DashboardScreen({ navigation }: any) {
   const [daysSince, setDaysSince] = useState<string>('12天前')
@@ -11,25 +13,25 @@ export default function DashboardScreen({ navigation }: any) {
   const [strips, setStrips] = useState<number>(6)
   const [userName, setUserName] = useState<string>('陳小明')
 
-  useEffect(() => {
-    AsyncStorage.getItem('userName').then(val => {
-      if (val) setUserName(val)
-    })
-    AsyncStorage.getItem('lastTestDate').then(val => {
-      if (val) {
-        const diff = Math.floor((Date.now() - new Date(val).getTime()) / (1000 * 60 * 60 * 24))
-        setDaysSince(diff === 0 ? '今天' : `${diff} 天前`)
-      }
-    })
-    AsyncStorage.getItem('strips').then(val => {
-      if (val !== null) setStrips(parseInt(val))
-      else {
-        setStrips(6)
-        AsyncStorage.setItem('strips', '6')
-      }
-    })
-    getRecords().then(r => setRecords(r))
-  }, [])
+  useFocusEffect(
+    useCallback(() => {
+      AsyncStorage.getItem('userName').then(val => { if (val) setUserName(val) })
+      AsyncStorage.getItem('lastTestDate').then(val => {
+        if (val) {
+          const diff = Math.floor((Date.now() - new Date(val).getTime()) / (1000 * 60 * 60 * 24))
+          setDaysSince(diff === 0 ? '今天' : `${diff} 天前`)
+        }
+      })
+      AsyncStorage.getItem('strips').then(val => {
+        if (val !== null) setStrips(parseInt(val))
+        else {
+          setStrips(6)
+          AsyncStorage.setItem('strips', '6')
+        }
+      })
+      getRecords().then(r => setRecords(r))
+    }, [])
+  )
 
   const displayRecords = records.length > 0 ? records.slice(0, 3) : [
     { date: '2026/04/23', time: '上午 8:15', tc: '0.68', status: '邊緣', lot: 'LOT-2025-A' },

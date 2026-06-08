@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert } from 'react-native'
 import { colors, typography } from '../theme'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import DatePickerModal from '../components/DatePickerModal'
+import PickerModal from '../components/PickerModal'
 
 export default function ProfileScreen({ navigation }: any) {
   const [name, setName] = useState('')
@@ -13,6 +15,9 @@ export default function ProfileScreen({ navigation }: any) {
   const [birthYear, setBirthYear] = useState('')
   const [birthMonth, setBirthMonth] = useState('')
   const [birthDay, setBirthDay] = useState('')
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [showHeightPicker, setShowHeightPicker] = useState(false)
+  const [showWeightPicker, setShowWeightPicker] = useState(false)
 
   useEffect(() => {
     AsyncStorage.getItem('userName').then(val => { if (val) setName(val) })
@@ -22,12 +27,17 @@ export default function ProfileScreen({ navigation }: any) {
     AsyncStorage.getItem('userBirthDay').then(val => { if (val) setBirthDay(val) })
     AsyncStorage.getItem('userHeight').then(val => { if (val) setHeight(val) })
     AsyncStorage.getItem('userWeight').then(val => { if (val) setWeight(val) })
+    AsyncStorage.getItem('userSmoke').then(val => { if (val !== null) setSmoke(val === '1') })
+    AsyncStorage.getItem('userDrink').then(val => { if (val !== null) setDrink(parseInt(val)) })
+
   }, [])
 
   async function handleSave() {
     await AsyncStorage.setItem('userName', name)
     await AsyncStorage.setItem('userHeight', height)
     await AsyncStorage.setItem('userWeight', weight)
+    await AsyncStorage.setItem('userSmoke', smoke ? '1' : '0')
+    await AsyncStorage.setItem('userDrink', String(drink))
     Alert.alert('已儲存', '個人資料已更新')
     navigation.goBack()
   }
@@ -75,44 +85,28 @@ export default function ProfileScreen({ navigation }: any) {
               <Text style={styles.verifiedBadge}>✓ 已驗證</Text>
             </View>
           </View>
-          <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
+          <TouchableOpacity style={[styles.fieldRow, { borderBottomWidth: 0 }]} onPress={() => setShowDatePicker(true)}>
             <Text style={styles.fieldLabel}>出生年月日</Text>
-            <Text style={styles.fieldValue}>{birthDisplay}</Text>
-          </View>
+            <Text style={[styles.fieldValue, { color: colors.primary }]}>{birthDisplay} ›</Text>
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.sectionTitle}>健康背景</Text>
         <View style={styles.listCard}>
-          <View style={styles.fieldRow}>
+          <TouchableOpacity style={styles.fieldRow} onPress={() => setShowHeightPicker(true)}>
             <Text style={styles.fieldLabel}>身高</Text>
             <View style={styles.fieldRight}>
-              <TextInput
-                style={[styles.fieldInput, { width: 60 }]}
-                value={height}
-                onChangeText={setHeight}
-                keyboardType="number-pad"
-                textAlign="right"
-                placeholder="—"
-                placeholderTextColor={colors.gray400}
-              />
-              <Text style={styles.unit}>cm</Text>
+              <Text style={[styles.fieldValue, { color: colors.primary }]}>{height || '—'}</Text>
+              <Text style={styles.unit}>cm ›</Text>
             </View>
-          </View>
-          <View style={styles.fieldRow}>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.fieldRow} onPress={() => setShowWeightPicker(true)}>
             <Text style={styles.fieldLabel}>體重</Text>
             <View style={styles.fieldRight}>
-              <TextInput
-                style={[styles.fieldInput, { width: 60 }]}
-                value={weight}
-                onChangeText={setWeight}
-                keyboardType="number-pad"
-                textAlign="right"
-                placeholder="—"
-                placeholderTextColor={colors.gray400}
-              />
-              <Text style={styles.unit}>kg</Text>
+              <Text style={[styles.fieldValue, { color: colors.primary }]}>{weight || '—'}</Text>
+              <Text style={styles.unit}>kg ›</Text>
             </View>
-          </View>
+          </TouchableOpacity>
           <View style={styles.fieldRow}>
             <Text style={styles.fieldLabel}>吸菸習慣</Text>
             <View style={styles.optRow}>
@@ -145,17 +139,66 @@ export default function ProfileScreen({ navigation }: any) {
 
         <Text style={styles.sectionTitle}>帳號安全</Text>
         <View style={styles.listCard}>
-          <TouchableOpacity style={styles.fieldRow}>
+          <TouchableOpacity style={styles.fieldRow} onPress={() => {
+            Alert.alert(
+              '更改密碼',
+              '將寄送密碼重設連結至您的信箱\n' + email,
+              [
+                { text: '取消', style: 'cancel' },
+                { text: '寄送', onPress: () => {
+                  Alert.alert('已寄出', `密碼重設連結已寄至 ${email}，請查看信箱。`)
+                }},
+              ]
+            )
+          }}>
             <Text style={styles.fieldLabel}>更改密碼</Text>
             <Text style={styles.arrow}>›</Text>
           </TouchableOpacity>
-          <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
-            <Text style={styles.fieldLabel}>雙重驗證</Text>
-            <Text style={styles.fieldValue}>未開啟</Text>
-          </View>
         </View>
 
         <View style={{ height: 30 }} />
+        <DatePickerModal
+          visible={showDatePicker}
+          year={birthYear}
+          month={birthMonth}
+          day={birthDay}
+          onConfirm={(y, m, d) => {
+            setBirthYear(y)
+            setBirthMonth(m)
+            setBirthDay(d)
+            AsyncStorage.setItem('userBirthYear', y)
+            AsyncStorage.setItem('userBirthMonth', m)
+            AsyncStorage.setItem('userBirthDay', d)
+            setShowDatePicker(false)
+          }}
+          onCancel={() => setShowDatePicker(false)}
+        />
+        <PickerModal
+          visible={showHeightPicker}
+          title="身高"
+          value={height || '170'}
+          items={Array.from({ length: 81 }, (_, i) => String(140 + i))}
+          unit=" cm"
+          onConfirm={(val) => {
+            setHeight(val)
+            AsyncStorage.setItem('userHeight', val)
+            setShowHeightPicker(false)
+          }}
+          onCancel={() => setShowHeightPicker(false)}
+        />
+        <PickerModal
+          visible={showWeightPicker}
+          title="體重"
+          value={weight || '65'}
+          items={Array.from({ length: 101 }, (_, i) => String(30 + i))}
+          unit=" kg"
+          onConfirm={(val) => {
+            setWeight(val)
+            AsyncStorage.setItem('userWeight', val)
+            setShowWeightPicker(false)
+          }}
+          onCancel={() => setShowWeightPicker(false)}
+        />
       </ScrollView>
     </View>
   )

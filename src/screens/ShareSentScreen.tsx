@@ -1,7 +1,9 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { colors, typography } from '../theme'
 
-export default function ShareSentScreen({ navigation }: any) {
+export default function ShareSentScreen({ navigation, route }: any) {
+  const clinicName = route?.params?.clinicName || '診所'
+  const doctor = route?.params?.doctor || ''
   return (
     <View style={styles.container}>
       <View style={styles.content}>
@@ -11,7 +13,7 @@ export default function ShareSentScreen({ navigation }: any) {
         </View>
 
         <Text style={styles.title}>已成功分享！</Text>
-        <Text style={styles.sub}>記錄已傳送至{'\n'}<Text style={styles.highlight}>台北生殖醫學中心 · 李建宏醫師</Text></Text>
+        <Text style={styles.sub}>記錄已傳送至{'\n'}<Text style={styles.highlight}>{clinicName}{doctor ? ` · ${doctor}` : ''}</Text></Text>
 
         <View style={styles.tealCard}>
           <Text style={styles.tealTitle}>後續說明</Text>

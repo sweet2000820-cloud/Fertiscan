@@ -1,9 +1,23 @@
-import { useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
 import { colors, typography } from '../theme'
+import { useState, useEffect } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getRecords } from '../storage'
 
 export default function PlanScreen({ navigation }: any) {
+  const [monthCount, setMonthCount] = useState(0)
   const [selected, setSelected] = useState<'monthly' | 'yearly'>('yearly')
+
+  useEffect(() => {
+    getRecords().then(records => {
+      const now = new Date()
+      const thisMonth = records.filter(r => {
+        const d = new Date(r.date.replace(/\//g, '-'))
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+      })
+      setMonthCount(thisMonth.length)
+    })
+  }, [])
 
   return (
     <View style={styles.container}>
@@ -35,7 +49,7 @@ export default function PlanScreen({ navigation }: any) {
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
               <Text style={styles.statLabel}>本月檢測</Text>
-              <Text style={styles.statValue}>3 次</Text>
+              <Text style={styles.statValue}>{monthCount} 次</Text>
             </View>
             <View style={styles.statBox}>
               <Text style={styles.statLabel}>AI 建議</Text>

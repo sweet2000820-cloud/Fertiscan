@@ -22,7 +22,6 @@ export default function AIChatScreen({ navigation }: any) {
 
   function sendMessage(text: string) {
     if (!text.trim()) return
-    setShowQuick(false)
     setInput('')
     const newMessages: Message[] = [...messages, { role: 'user', text }]
     setMessages(newMessages)
@@ -74,7 +73,7 @@ export default function AIChatScreen({ navigation }: any) {
           <View key={i} style={[styles.msgRow, msg.role === 'user' && styles.msgRowUser]}>
             {msg.role === 'bot' && (
               <View style={styles.botAvatarSmall}>
-                <Image source={require('../../assets/sprite.png')} style={{ width: 22, height: 24 }} />
+                <Image source={require('../../assets/sprite.png')} style={{ width: 36, height: 38 }} />
               </View>
             )}
             <View style={[styles.bubble, msg.role === 'user' ? styles.bubbleUser : styles.bubbleBot]}>
@@ -85,7 +84,7 @@ export default function AIChatScreen({ navigation }: any) {
         {loading && (
           <View style={styles.msgRow}>
             <View style={styles.botAvatarSmall}>
-              <Image source={require('../../assets/sprite.png')} style={{ width: 22, height: 24 }} />
+              <Image source={require('../../assets/sprite.png')} style={{ width: 40, height: 42 }} />
             </View>
             <View style={styles.bubbleBot}>
               <Text style={styles.bubbleText}>思考中...</Text>
@@ -133,37 +132,37 @@ const styles = StyleSheet.create({
     height: 46, flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
   },
-  back: { fontSize: 22, color: colors.primary, marginRight: 6 },
+  back: { fontSize: 28, color: colors.primary, marginRight: 6 },
   appbarCenter: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
   botAvatar: {
-    width: 28, height: 28, borderRadius: 14,
-    backgroundColor: colors.primaryLight,
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: 'transparent',
     alignItems: 'center', justifyContent: 'center',
   },
-  appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
+  botAvatarSmall: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: 'transparent',
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+  appbarTitle: { fontSize: typography.sizes.lg, fontWeight: typography.weights.medium, color: colors.gray900 },
   onlineText: { fontSize: typography.sizes.xs, color: '#4ade80' },
   messages: { flex: 1, padding: 14 },
   msgRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 6, marginBottom: 10 },
   msgRowUser: { justifyContent: 'flex-end' },
-  botAvatarSmall: {
-    width: 22, height: 22, borderRadius: 11,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-  },
   bubble: { maxWidth: '80%', borderRadius: 12, padding: 10 },
   bubbleBot: { backgroundColor: colors.gray100, borderBottomLeftRadius: 2 },
   bubbleUser: { backgroundColor: colors.primary, borderBottomRightRadius: 2 },
-  bubbleText: { fontSize: typography.sizes.sm, color: colors.gray900, lineHeight: 18 },
+  bubbleText: { fontSize: typography.sizes.md, color: colors.gray900, lineHeight: 20 },
   quickArea: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
   quickChip: {
     backgroundColor: colors.primaryLight, borderWidth: 1,
     borderColor: colors.primary, borderRadius: 16,
     paddingHorizontal: 10, paddingVertical: 5,
   },
-  quickChipText: { fontSize: typography.sizes.xs, color: colors.primary },
+  quickChipText: { fontSize: typography.sizes.sm, color: colors.primary },
   inputArea: {
     flexDirection: 'row', alignItems: 'flex-end', gap: 8,
-    padding: 10, borderTopWidth: 0.5, borderTopColor: colors.gray200,
+    padding: 10, paddingBottom: 30, borderTopWidth: 0.5, borderTopColor: colors.gray200,
   },
   input: {
     flex: 1, borderWidth: 0.5, borderColor: colors.gray300,

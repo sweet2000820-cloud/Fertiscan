@@ -1,11 +1,11 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native'
 import { colors, typography } from '../theme'
 import { useState } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 export default function ClinicConfirmScreen({ navigation }: any) {
   const [shareTC, setShareTC] = useState(true)
   const [shareHistory, setShareHistory] = useState(true)
-  const [shareImage, setShareImage] = useState(false)
   const [autoShare, setAutoShare] = useState(false)
 
   return (
@@ -37,7 +37,6 @@ export default function ClinicConfirmScreen({ navigation }: any) {
           {[
             { label: 'T/C 比值與換算濃度', sub: '數值結果（不含影像）', value: shareTC, onChange: setShareTC },
             { label: '歷史趨勢（最近 6 次）', sub: '含日期與批號', value: shareHistory, onChange: setShareHistory },
-            { label: '原始試紙影像', sub: '每次拍攝的影像檔案', value: shareImage, onChange: setShareImage },
             { label: '自動分享（每次新結果）', sub: '關閉則需每次手動確認', value: autoShare, onChange: setAutoShare },
           ].map((item, i) => (
             <View key={i} style={[styles.row, i === 3 && { borderBottomWidth: 0 }]}>
@@ -54,7 +53,19 @@ export default function ClinicConfirmScreen({ navigation }: any) {
           <Text style={styles.tealText}>連結後診所無法主動讀取您的資料。每次分享時您會收到推播通知確認。您可隨時解除連結。</Text>
         </View>
 
-        <TouchableOpacity style={styles.ctaBtn} onPress={() => navigation.navigate('ClinicSuccess')}>
+        <TouchableOpacity style={styles.ctaBtn} onPress={async () => {
+          const raw = await AsyncStorage.getItem('clinics')
+          const existing = raw ? JSON.parse(raw) : []
+          const newClinic = {
+            id: Date.now(),
+            name: '台北生殖醫學中心',
+            doctor: '李建宏 醫師',
+            date: new Date().toLocaleDateString('zh-TW').replace(/\//g, '/'),
+          }
+          const updated = [...existing, newClinic]
+          await AsyncStorage.setItem('clinics', JSON.stringify(updated))
+          navigation.navigate('ClinicSuccess')
+          }}>
           <Text style={styles.ctaBtnText}>確認連結診所</Text>
         </TouchableOpacity>
 

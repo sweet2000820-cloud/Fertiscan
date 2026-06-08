@@ -64,7 +64,7 @@ export default function PreQuestionnaireScreen({ navigation }: any) {
           <Text style={styles.hint}>問題 {step + 1} / {questions.length}</Text>
         </View>
         <View style={styles.progressBg}>
-          <View style={[styles.progressFill, { width: `${progress}%` }]} />
+          <View style={[styles.progressFill, {width:`${progress}%` as any}]} />
         </View>
 
         <Text style={styles.question}>{current.q}</Text>

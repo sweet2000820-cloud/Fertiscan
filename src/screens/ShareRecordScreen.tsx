@@ -1,15 +1,27 @@
-import { useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native'
+import { useState, useEffect } from 'react'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
 import { colors, typography } from '../theme'
-
-const records = [
-  { date: '2026/04/23', tc: '0.68', status: '邊緣', latest: true },
-  { date: '2026/03/10', tc: '0.91', status: '正常', latest: false },
-  { date: '2026/02/14', tc: '0.88', status: '正常', latest: false },
-]
+import { getRecords, TestRecord } from '../storage'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 export default function ShareRecordScreen({ navigation }: any) {
+  const [records, setRecords] = useState<TestRecord[]>([])
   const [selected, setSelected] = useState([0])
+  const [clinics, setClinics] = useState<{id: number, name: string, doctor: string, date: string}[]>([])
+
+  useEffect(() => {
+    AsyncStorage.getItem('clinics').then(val => {
+      if (val) setClinics(JSON.parse(val))
+    })
+    getRecords().then(r => {
+      if (r.length > 0) setRecords(r)
+      else setRecords([
+        { date: '2026/04/23', time: '上午 8:15', tc: '0.68', status: '邊緣', lot: 'LOT-2025-A' },
+        { date: '2026/03/10', time: '上午 9:02', tc: '0.91', status: '正常', lot: 'LOT-2025-A' },
+        { date: '2026/02/14', time: '上午 8:40', tc: '0.88', status: '正常', lot: 'LOT-2024-B' },
+      ])
+    })
+  }, [])
 
   function toggleRecord(i: number) {
     if (selected.includes(i)) {
@@ -30,23 +42,27 @@ export default function ShareRecordScreen({ navigation }: any) {
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        {/* 診所資訊 */}
-        <View style={styles.clinicRow}>
-          <View style={styles.clinicIcon}>
-            <Text style={styles.clinicIconText}>台生</Text>
+        {clinics.length === 0 ? (
+          <View style={styles.clinicRow}>
+            <Text style={{ color: colors.gray400, fontSize: typography.sizes.sm }}>尚未連結任何診所</Text>
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.clinicName}>台北生殖醫學中心</Text>
-            <Text style={styles.clinicSub}>李建宏 醫師</Text>
+        ) : clinics.map(clinic => (
+          <View key={clinic.id} style={styles.clinicRow}>
+            <View style={styles.clinicIcon}>
+              <Text style={styles.clinicIconText}>{clinic.name.slice(0, 2)}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.clinicName}>{clinic.name}</Text>
+              <Text style={styles.clinicSub}>{clinic.doctor}</Text>
+            </View>
+            <View style={styles.connectedBadge}>
+              <Text style={styles.connectedText}>已連結</Text>
+            </View>
           </View>
-          <View style={styles.connectedBadge}>
-            <Text style={styles.connectedText}>已連結</Text>
-          </View>
-        </View>
+        ))}
 
         <View style={styles.divider} />
 
-        {/* 選擇記錄 */}
         <Text style={styles.sectionTitle}>選擇要分享的記錄</Text>
         {records.map((r, i) => (
           <TouchableOpacity
@@ -63,7 +79,7 @@ export default function ShareRecordScreen({ navigation }: any) {
               </Text>
               <Text style={styles.recordSub}>{r.status}</Text>
             </View>
-            {r.latest && (
+            {i === 0 && (
               <View style={styles.latestBadge}>
                 <Text style={styles.latestText}>最新</Text>
               </View>
@@ -71,13 +87,11 @@ export default function ShareRecordScreen({ navigation }: any) {
           </TouchableOpacity>
         ))}
 
-        {/* 分享內容 */}
         <Text style={styles.sectionTitle}>分享內容</Text>
         <View style={styles.card}>
           {[
             { label: 'T/C 比值 · 換算濃度', ok: true },
             { label: 'QC 影像品質資訊', ok: true },
-            { label: '原始試紙影像', ok: false },
             { label: '個人識別資訊', ok: false },
           ].map((item, i) => (
             <View key={i} style={styles.infoRow}>
@@ -89,10 +103,15 @@ export default function ShareRecordScreen({ navigation }: any) {
           ))}
         </View>
 
-        {/* 按鈕 */}
         <TouchableOpacity
           style={[styles.btnPrimary, selected.length === 0 && { opacity: 0.4 }]}
-          onPress={() => selected.length > 0 && navigation.navigate('ShareSent')}
+          onPress={() => {
+            if (selected.length > 0) {
+              const clinicName = clinics.length > 0 ? clinics[0].name : '診所'
+              const doctor = clinics.length > 0 ? clinics[0].doctor : ''
+              navigation.navigate('ShareSent', { clinicName, doctor })
+            }
+          }}
           disabled={selected.length === 0}
         >
           <Text style={styles.btnPrimaryText}>傳送至診所系統</Text>
@@ -125,8 +144,7 @@ const styles = StyleSheet.create({
   clinicRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },
   clinicIcon: {
     width: 38, height: 38, borderRadius: 9,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center',
   },
   clinicIconText: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.primary },
   clinicName: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },

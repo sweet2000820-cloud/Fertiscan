@@ -1,7 +1,11 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { colors, typography } from '../theme'
 
-export default function ClinicSuccessScreen({ navigation }: any) {
+import AsyncStorage from '@react-native-async-storage/async-storage'
+
+export default function ClinicSuccessScreen({ navigation, route }: any) {
+  const clinicName = route?.params?.clinicName || '台北生殖醫學中心'
+  const doctor = route?.params?.doctor || '李建宏 醫師'
   return (
     <View style={styles.container}>
       <View style={styles.content}>
