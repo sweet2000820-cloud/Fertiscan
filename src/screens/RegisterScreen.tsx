@@ -41,7 +41,7 @@ export default function RegisterScreen({ navigation }: any) {
         <Text style={styles.appbarTitle}>建立帳號</Text>
       </View>
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
         <View style={styles.field}>
           <Text style={styles.label}>姓名</Text>

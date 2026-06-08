@@ -1,8 +1,39 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native'
 import { colors, typography } from '../theme'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as Notifications from 'expo-notifications'
+import { useState } from 'react'
 
 export default function SettingsScreen({ navigation }: any) {
+  const [notifyEnabled, setNotifyEnabled] = useState(true)
+  const [reminderWeeks, setReminderWeeks] = useState(4)
+
+  async function handleNotifyToggle(val: boolean) {
+    if (val) {
+      const { status } = await Notifications.requestPermissionsAsync()
+      if (status === 'granted') {
+        setNotifyEnabled(true)
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: 'FertiScan 提醒',
+            body: '距離上次檢測已超過 4 週，建議進行一次新的檢測。',
+          },
+          trigger: {
+            seconds: 60 * 60 * 24 * 7 * reminderWeeks,
+            repeats: true,
+          },
+        })
+        Alert.alert('已開啟', '將於每 4 週提醒您進行檢測')
+      } else {
+        Alert.alert('無法開啟', '請在 iPhone 設定中允許 FertiScan 傳送通知')
+      }
+    } else {
+      setNotifyEnabled(false)
+      await Notifications.cancelAllScheduledNotificationsAsync()
+      Alert.alert('已關閉', '通知提醒已關閉')
+    }
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.appbar}>
@@ -53,12 +84,20 @@ export default function SettingsScreen({ navigation }: any) {
         <View style={styles.listCard}>
           <View style={styles.row}>
             <Text style={styles.rowLabel}>通知提醒</Text>
-            <Switch value={true} onValueChange={() => {}} trackColor={{ true: colors.primary }} />
+            <Switch value={notifyEnabled} onValueChange={handleNotifyToggle} trackColor={{ true: colors.primary }} />
           </View>
-          <View style={styles.row}>
+          <TouchableOpacity style={styles.row} onPress={() => {
+            Alert.alert('複測提醒週期', '選擇提醒間隔', [
+              { text: '每 1 週', onPress: async () => { setReminderWeeks(1); if (notifyEnabled) { await Notifications.cancelAllScheduledNotificationsAsync(); await Notifications.scheduleNotificationAsync({ content: { title: 'FertiScan 提醒', body: '建議進行一次新的檢測。' }, trigger: { seconds: 60 * 60 * 24 * 7 * 1, repeats: true } }) } } },
+              { text: '每 2 週', onPress: async () => { setReminderWeeks(2); if (notifyEnabled) { await Notifications.cancelAllScheduledNotificationsAsync(); await Notifications.scheduleNotificationAsync({ content: { title: 'FertiScan 提醒', body: '建議進行一次新的檢測。' }, trigger: { seconds: 60 * 60 * 24 * 7 * 2, repeats: true } }) } } },
+              { text: '每 3 週', onPress: async () => { setReminderWeeks(3); if (notifyEnabled) { await Notifications.cancelAllScheduledNotificationsAsync(); await Notifications.scheduleNotificationAsync({ content: { title: 'FertiScan 提醒', body: '建議進行一次新的檢測。' }, trigger: { seconds: 60 * 60 * 24 * 7 * 3, repeats: true } }) } } },
+              { text: '每 4 週', onPress: async () => { setReminderWeeks(4); if (notifyEnabled) { await Notifications.cancelAllScheduledNotificationsAsync(); await Notifications.scheduleNotificationAsync({ content: { title: 'FertiScan 提醒', body: '建議進行一次新的檢測。' }, trigger: { seconds: 60 * 60 * 24 * 7 * 4, repeats: true } }) } } },
+              { text: '取消', style: 'cancel' },
+            ])
+          }}>
             <Text style={styles.rowLabel}>複測提醒週期</Text>
-            <Text style={styles.rowValue}>每 4 週</Text>
-          </View>
+            <Text style={styles.rowValue}>每 {reminderWeeks} 週 ›</Text>
+          </TouchableOpacity>
           <View style={[styles.row, { borderBottomWidth: 0 }]}>
             <Text style={styles.rowLabel}>結果顯示單位</Text>
             <Text style={styles.rowValue}>T/C 比值 + 濃度</Text>
