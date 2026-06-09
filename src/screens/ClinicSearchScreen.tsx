@@ -1,19 +1,7 @@
+import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Linking, Alert } from 'react-native'
-import { useState } from 'react'
 import { colors, typography } from '../theme'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { useEffect } from 'react'
-
-const [linkedNames, setLinkedNames] = useState<string[]>([])
-
-  useEffect(() => {
-    AsyncStorage.getItem('clinics').then(val => {
-      if (val) {
-        const saved = JSON.parse(val)
-        setLinkedNames(saved.map((c: any) => c.name))
-      }
-    })
-  }, [])
 
 const clinics = [
   { id: 1, name: '艾微芙人工生殖中心', doctor: '陳明哲 醫師', area: '台北市大安區', verified: true, url: 'https://www.taiwanivfgroup.com/' },
@@ -26,6 +14,16 @@ const clinics = [
 export default function ClinicSearchScreen({ navigation }: any) {
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<number | null>(null)
+  const [linkedNames, setLinkedNames] = useState<string[]>([])
+
+  useEffect(() => {
+    AsyncStorage.getItem('clinics').then(val => {
+      if (val) {
+        const saved = JSON.parse(val)
+        setLinkedNames(saved.map((c: any) => c.name))
+      }
+    })
+  }, [])
 
   const filtered = clinics.filter(c =>
     c.name.includes(query) || c.doctor.includes(query) || c.area.includes(query)
@@ -40,7 +38,6 @@ export default function ClinicSearchScreen({ navigation }: any) {
         <Text style={styles.appbarTitle}>搜尋合作診所</Text>
       </View>
 
-      {/* 搜尋框 */}
       <View style={styles.searchArea}>
         <View style={styles.searchBox}>
           <Text style={styles.searchIcon}>🔍</Text>
@@ -81,6 +78,7 @@ export default function ClinicSearchScreen({ navigation }: any) {
                 styles.clinicRow,
                 i === filtered.length - 1 && { borderBottomWidth: 0 },
                 selected === clinic.id && styles.clinicRowSelected,
+                linkedNames.includes(clinic.name) && { opacity: 0.5 },
               ]}
               onPress={() => setSelected(clinic.id)}
             >
@@ -97,13 +95,18 @@ export default function ClinicSearchScreen({ navigation }: any) {
                       <Text style={styles.verifiedText}>✓ 認證</Text>
                     </View>
                   )}
+                  {linkedNames.includes(clinic.name) && (
+                    <View style={[styles.verifiedBadge, { backgroundColor: colors.primaryLight }]}>
+                      <Text style={[styles.verifiedText, { color: colors.primary }]}>已連結</Text>
+                    </View>
+                  )}
                 </View>
                 <View style={styles.clinicSubRow}>
-                <Text style={styles.clinicSub}>{clinic.doctor} · {clinic.area}</Text>
-                <TouchableOpacity onPress={() => Linking.openURL(clinic.url)}>
-                  <Text style={styles.detailBtn}>詳情 ›</Text>
-                </TouchableOpacity>
-              </View>
+                  <Text style={styles.clinicSub}>{clinic.doctor} · {clinic.area}</Text>
+                  <TouchableOpacity onPress={() => Linking.openURL(clinic.url)}>
+                    <Text style={styles.detailBtn}>詳情 ›</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
               {selected === clinic.id && (
                 <Text style={{ color: colors.primary, fontSize: 18 }}>✓</Text>
@@ -115,7 +118,6 @@ export default function ClinicSearchScreen({ navigation }: any) {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* 確認按鈕 */}
       {selected !== null && (
         <View style={styles.footer}>
           <TouchableOpacity
@@ -169,8 +171,7 @@ const styles = StyleSheet.create({
   clinicRowSelected: { backgroundColor: colors.primaryLight },
   clinicIcon: {
     width: 40, height: 40, borderRadius: 10,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center',
   },
   clinicIconText: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.primary },
   clinicNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
