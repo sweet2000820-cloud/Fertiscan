@@ -133,7 +133,7 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.btnGray} onPress={() => navigation.navigate('ReportLink')}>
+        <TouchableOpacity style={styles.btnGray} onPress={() => navigation.navigate('ReportLink', { records: [record] })}>
           <Text style={styles.btnGrayText}>複製分享連結</Text>
         </TouchableOpacity>
 

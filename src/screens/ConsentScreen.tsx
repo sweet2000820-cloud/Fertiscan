@@ -1,11 +1,12 @@
-import { useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
 import { colors, typography } from '../theme'
+import { useState } from 'react'
 
-export default function ConsentScreen({ navigation }: any) {
+export default function ConsentScreen({ navigation, route }: any) {
+  const clinicName = route?.params?.clinicName || '台北生殖醫學中心'
+  const doctor = route?.params?.doctor || '李建宏 醫師'
   const [scrolled, setScrolled] = useState(false)
   const [checked, setChecked] = useState([false, false, false])
-
   const allChecked = checked.every(c => c)
 
   function toggleCheck(i: number) {
@@ -29,11 +30,11 @@ export default function ConsentScreen({ navigation }: any) {
         {/* 診所資訊 */}
         <View style={styles.clinicRow}>
           <View style={styles.clinicIcon}>
-            <Text style={styles.clinicIconText}>台生</Text>
+            <Text style={styles.clinicIconText}>{clinicName.slice(0, 2)}</Text>
           </View>
           <View>
-            <Text style={styles.clinicName}>台北生殖醫學中心</Text>
-            <Text style={styles.clinicSub}>李建宏 醫師 · FertiScan 合作診所</Text>
+            <Text style={styles.clinicName}>{clinicName}</Text>
+            <Text style={styles.clinicSub}>{doctor} · FertiScan 合作診所</Text>
           </View>
         </View>
 
@@ -61,7 +62,7 @@ export default function ConsentScreen({ navigation }: any) {
         {/* 勾選項 */}
         {[
           { title: '我已閱讀並了解同意書全部內容', sub: '包含去識別化方式與我的資料權利' },
-          { title: '我同意將去識別化資料分享給', sub: '台北生殖醫學中心 · 李建宏 醫師' },
+          { title: '我同意將去識別化資料分享給', sub: `${clinicName} · ${doctor}` },
           { title: '我了解可隨時在設定中撤回此授權', sub: '撤回後診所將無法再接收新資料' },
         ].map((item, i) => (
           <TouchableOpacity
@@ -82,7 +83,7 @@ export default function ConsentScreen({ navigation }: any) {
 
         <TouchableOpacity
           style={[styles.ctaBtn, !allChecked && { opacity: 0.4 }]}
-          onPress={() => allChecked && navigation.navigate('ClinicConfirm')}
+          onPress={() => allChecked && navigation.navigate('ClinicConfirm', { clinicName, doctor })}
           disabled={!allChecked}
         >
           <Text style={styles.ctaBtnText}>同意並繼續設定授權範圍 ›</Text>

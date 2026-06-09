@@ -2,7 +2,12 @@ import { useState } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native'
 import { colors, typography } from '../theme'
 
-const validCodes = ['123456', '654321', '111111', '999999']
+const validCodes: Record<string, { clinicName: string, doctor: string }> = {
+  '123456': { clinicName: '艾微芙人工生殖中心', doctor: '陳明哲 醫師' },
+  '654321': { clinicName: '華育生殖醫學中心', doctor: '蔡鋒博 醫師' },
+  '111111': { clinicName: '王家瑋婦產科診所', doctor: '王家瑋 醫師' },
+  '999999': { clinicName: '茂盛醫院生殖醫學中心', doctor: '李茂盛 醫師' },
+}
 
 export default function ClinicCodeScreen({ navigation }: any) {
   const [code, setCode] = useState('')
@@ -16,8 +21,11 @@ export default function ClinicCodeScreen({ navigation }: any) {
     setLoading(true)
     setTimeout(() => {
       setLoading(false)
-      if (validCodes.includes(code)) {
-        navigation.navigate('Consent')
+      if (validCodes[code]) {
+        navigation.navigate('Consent', {
+          clinicName: validCodes[code].clinicName,
+          doctor: validCodes[code].doctor,
+        })
       } else {
         Alert.alert('邀請碼無效', '請確認邀請碼是否正確，或向診所重新索取')
       }

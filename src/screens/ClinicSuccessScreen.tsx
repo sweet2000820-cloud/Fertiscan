@@ -16,7 +16,7 @@ export default function ClinicSuccessScreen({ navigation, route }: any) {
         </View>
 
         <Text style={styles.title}>診所連結成功！</Text>
-        <Text style={styles.sub}>台北生殖醫學中心{'\n'}李建宏 醫師</Text>
+        <Text style={styles.sub}>{clinicName}{'\n'}{doctor}</Text>
 
         {/* 授權摘要 */}
         <View style={styles.summaryCard}>

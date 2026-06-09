@@ -3,7 +3,9 @@ import { colors, typography } from '../theme'
 import { useState } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-export default function ClinicConfirmScreen({ navigation }: any) {
+export default function ClinicConfirmScreen({ navigation, route }: any) {
+  const clinicName = route?.params?.clinicName || '台北生殖醫學中心'
+  const doctor = route?.params?.doctor || '李建宏 醫師'
   const [shareTC, setShareTC] = useState(true)
   const [shareHistory, setShareHistory] = useState(true)
   const [autoShare, setAutoShare] = useState(false)
@@ -22,10 +24,10 @@ export default function ClinicConfirmScreen({ navigation }: any) {
         {/* 診所資訊 */}
         <View style={styles.clinicArea}>
           <View style={styles.clinicIcon}>
-            <Text style={styles.clinicIconText}>台生</Text>
+            <Text style={styles.clinicIconText}>{clinicName.slice(0, 2)}</Text>
           </View>
-          <Text style={styles.clinicName}>台北生殖醫學中心</Text>
-          <Text style={styles.clinicSub}>台北市中正區 · 李建宏 醫師</Text>
+          <Text style={styles.clinicName}>{clinicName}</Text>
+          <Text style={styles.clinicSub}>{doctor}</Text>
           <View style={styles.badge}>
             <Text style={styles.badgeText}>FertiScan 合作診所</Text>
           </View>
@@ -56,15 +58,18 @@ export default function ClinicConfirmScreen({ navigation }: any) {
         <TouchableOpacity style={styles.ctaBtn} onPress={async () => {
           const raw = await AsyncStorage.getItem('clinics')
           const existing = raw ? JSON.parse(raw) : []
-          const newClinic = {
-            id: Date.now(),
-            name: '台北生殖醫學中心',
-            doctor: '李建宏 醫師',
-            date: new Date().toLocaleDateString('zh-TW').replace(/\//g, '/'),
+          const alreadyLinked = existing.some((c: any) => c.name === clinicName)
+          if (!alreadyLinked) {
+            const newClinic = {
+              id: Date.now(),
+              name: clinicName,
+              doctor: doctor,
+              date: new Date().toLocaleDateString('zh-TW').replace(/\//g, '/'),
+            }
+            const updated = [...existing, newClinic]
+            await AsyncStorage.setItem('clinics', JSON.stringify(updated))
           }
-          const updated = [...existing, newClinic]
-          await AsyncStorage.setItem('clinics', JSON.stringify(updated))
-          navigation.navigate('ClinicSuccess')
+          navigation.navigate('ClinicSuccess', { clinicName, doctor })
           }}>
           <Text style={styles.ctaBtnText}>確認連結診所</Text>
         </TouchableOpacity>

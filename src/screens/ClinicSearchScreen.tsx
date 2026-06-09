@@ -1,7 +1,19 @@
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Linking, Alert } from 'react-native'
 import { useState } from 'react'
 import { colors, typography } from '../theme'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Linking } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useEffect } from 'react'
 
+const [linkedNames, setLinkedNames] = useState<string[]>([])
+
+  useEffect(() => {
+    AsyncStorage.getItem('clinics').then(val => {
+      if (val) {
+        const saved = JSON.parse(val)
+        setLinkedNames(saved.map((c: any) => c.name))
+      }
+    })
+  }, [])
 
 const clinics = [
   { id: 1, name: '艾微芙人工生殖中心', doctor: '陳明哲 醫師', area: '台北市大安區', verified: true, url: 'https://www.taiwanivfgroup.com/' },
@@ -108,7 +120,15 @@ export default function ClinicSearchScreen({ navigation }: any) {
         <View style={styles.footer}>
           <TouchableOpacity
             style={styles.confirmBtn}
-            onPress={() => navigation.navigate('Consent')}
+            onPress={() => {
+              const clinic = clinics.find(c => c.id === selected)
+              if (!clinic) return
+              if (linkedNames.includes(clinic.name)) {
+                Alert.alert('已連結', `您已經連結了${clinic.name}，無法重複連結。`)
+                return
+              }
+              navigation.navigate('Consent', { clinicName: clinic.name, doctor: clinic.doctor })
+            }}
           >
             <Text style={styles.confirmBtnText}>
               選擇「{clinics.find(c => c.id === selected)?.name}」繼續 ›
