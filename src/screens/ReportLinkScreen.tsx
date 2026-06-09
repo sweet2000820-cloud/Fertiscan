@@ -3,10 +3,12 @@ import { colors, typography } from '../theme'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch, Share, Linking } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
 
-export default function ReportLinkScreen({ navigation }: any) {
+export default function ReportLinkScreen({ navigation, route }: any) {
   const [pwEnabled, setPwEnabled] = useState(false)
   const [expiry, setExpiry] = useState('7 天')
-
+  const records = route?.params?.records || []
+  const firstRecord = records[0] || { tc: '0.68', status: '邊緣值' }
+  
   return (
     <View style={styles.container}>
       <View style={styles.appbar}>
@@ -20,25 +22,25 @@ export default function ReportLinkScreen({ navigation }: any) {
 
         {/* 報告預覽 */}
         <View style={styles.listCard}>
-          <View style={styles.reportHeader}>
-            <View>
-              <Text style={styles.reportTitle}>FertiScan 檢測報告</Text>
-              <Text style={styles.hint}>2026/04/23 · 匿名 ID: FS-4A2C</Text>
+          <Text style={styles.reportTitle}>FertiScan 檢測報告</Text>
+          <Text style={[styles.hint, { marginBottom: 8 }]}>共 {records.length} 筆紀錄 · 匿名 ID: FS-4A2C</Text>
+          {records.map((r: any, i: number) => (
+            <View key={i} style={[styles.recordRow, i < records.length - 1 && { marginBottom: 8 }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.recordDate}>{r.date} · T/C {r.tc}</Text>
+                <Text style={styles.hint}>{r.time}</Text>
+              </View>
+              <View style={[styles.badge, {
+                backgroundColor: r.status === '正常' ? colors.successLight :
+                r.status === '邊緣' ? colors.warningLight : colors.dangerLight
+              }]}>
+                <Text style={[styles.badgeText, {
+                  color: r.status === '正常' ? colors.success :
+                  r.status === '邊緣' ? colors.warning : colors.danger
+                }]}>{r.status}</Text>
+              </View>
             </View>
-            <View style={styles.badgeWarn}>
-              <Text style={styles.badgeWarnText}>邊緣值</Text>
-            </View>
-          </View>
-          <View style={styles.statsRow}>
-            <View style={styles.statBox}>
-              <Text style={styles.statLabel}>T/C 比值</Text>
-              <Text style={[styles.statValue, { color: colors.warning }]}>0.68</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statLabel}>換算濃度</Text>
-              <Text style={[styles.statValue, { color: colors.warning }]}>22 mIU/mL</Text>
-            </View>
-          </View>
+          ))}
         </View>
 
         {/* 連結框 */}
@@ -191,4 +193,8 @@ const styles = StyleSheet.create({
   btnGrayText: { fontSize: typography.sizes.sm, color: colors.gray500 },
   btnPrimary: { flex: 1, height: 36, borderRadius: 9, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   btnPrimaryText: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: '#fff' },
+  recordRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  recordDate: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray900 },
+  badge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 4 },
+  badgeText: { fontSize: typography.sizes.xs, fontWeight: typography.weights.medium },
 })

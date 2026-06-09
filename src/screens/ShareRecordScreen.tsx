@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native'
 import { colors, typography } from '../theme'
 import { getRecords, TestRecord } from '../storage'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+
 
 export default function ShareRecordScreen({ navigation }: any) {
   const [records, setRecords] = useState<TestRecord[]>([])
   const [selected, setSelected] = useState([0])
   const [clinics, setClinics] = useState<{id: number, name: string, doctor: string, date: string}[]>([])
+ 
 
   useEffect(() => {
     AsyncStorage.getItem('clinics').then(val => {
@@ -104,11 +106,20 @@ export default function ShareRecordScreen({ navigation }: any) {
         </View>
 
         <TouchableOpacity
-          style={[styles.btnPrimary, selected.length === 0 && { opacity: 0.4 }]}
+          style={[styles.btnPrimary, (selected.length === 0 || clinics.length === 0) && { opacity: 0.4 }]}
           onPress={() => {
+            if (clinics.length === 0) {
+              Alert.alert('尚未連結診所', '請先至設定頁面連結診所，才能傳送記錄。', [
+                { text: '取消', style: 'cancel' },
+                { text: '前往設定', onPress: () => {
+                  navigation.navigate('Main', { screen: '設定' })
+                }},
+              ])
+              return
+            }
             if (selected.length > 0) {
-              const clinicName = clinics.length > 0 ? clinics[0].name : '診所'
-              const doctor = clinics.length > 0 ? clinics[0].doctor : ''
+              const clinicName = clinics[0].name
+              const doctor = clinics[0].doctor
               navigation.navigate('ShareSent', { clinicName, doctor })
             }
           }}
@@ -117,7 +128,10 @@ export default function ShareRecordScreen({ navigation }: any) {
           <Text style={styles.btnPrimaryText}>傳送至診所系統</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.btnSecondary} onPress={() => navigation.navigate('ReportLink')}>
+        <TouchableOpacity style={styles.btnSecondary} onPress={() => {
+          const selectedRecords = selected.map(i => records[i])
+          navigation.navigate('ReportLink', { records: selectedRecords })
+        }}>
           <Text style={styles.btnSecondaryText}>產生分享連結</Text>
         </TouchableOpacity>
 
