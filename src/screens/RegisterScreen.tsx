@@ -3,43 +3,9 @@ import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, Alert 
 import { colors, typography } from '../theme'
 import Button from '../components/Button'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import DatePickerModal from '../components/DatePickerModal'
 
-const lotData: Record<string, {
-  points: { tc: number, conc: number }[],
-  expiry: string,
-  r2: string,
-}> = {
-  'LOT-2025-A': {
-    points: [
-      { tc: 0.10, conc: 2 }, { tc: 0.22, conc: 5 }, { tc: 0.35, conc: 9 },
-      { tc: 0.48, conc: 14 }, { tc: 0.61, conc: 18 }, { tc: 0.68, conc: 22 },
-      { tc: 0.75, conc: 26 }, { tc: 0.85, conc: 32 }, { tc: 0.92, conc: 38 },
-      { tc: 1.00, conc: 45 }, { tc: 1.08, conc: 52 }, { tc: 1.15, conc: 60 },
-    ],
-    expiry: '2026/08/31',
-    r2: '0.994',
-  },
-  'LOT-2025-B': {
-    points: [
-      { tc: 0.12, conc: 2 }, { tc: 0.24, conc: 5 }, { tc: 0.38, conc: 9 },
-      { tc: 0.50, conc: 14 }, { tc: 0.63, conc: 18 }, { tc: 0.70, conc: 22 },
-      { tc: 0.78, conc: 26 }, { tc: 0.87, conc: 32 }, { tc: 0.94, conc: 38 },
-      { tc: 1.02, conc: 45 }, { tc: 1.10, conc: 52 }, { tc: 1.18, conc: 60 },
-    ],
-    expiry: '2026/12/31',
-    r2: '0.997',
-  },
-  'LOT-2024-B': {
-    points: [
-      { tc: 0.09, conc: 2 }, { tc: 0.20, conc: 5 }, { tc: 0.32, conc: 9 },
-      { tc: 0.45, conc: 14 }, { tc: 0.58, conc: 18 }, { tc: 0.65, conc: 22 },
-      { tc: 0.72, conc: 26 }, { tc: 0.82, conc: 32 }, { tc: 0.90, conc: 38 },
-      { tc: 0.98, conc: 45 }, { tc: 1.05, conc: 52 }, { tc: 1.12, conc: 60 },
-    ],
-    expiry: '2025/12/31',
-    r2: '0.991',
-  },
-}
+
 
 export default function RegisterScreen({ navigation }: any) {
   const [name, setName] = useState('')
@@ -49,10 +15,7 @@ export default function RegisterScreen({ navigation }: any) {
   const [birthYear, setBirthYear] = useState('')
   const [birthMonth, setBirthMonth] = useState('')
   const [birthDay, setBirthDay] = useState('')
-  const currentLot = lotNumber ? lotData[lotNumber] : null
-  const expiry = currentLot?.expiry || '—'
-  const r2 = currentLot?.r2 || '—'
-  const points = currentLot?.points || []
+  const [showDatePicker, setShowDatePicker] = useState(false)
 
   async function handleRegister() {
     if (!name || !email || !password) {
@@ -66,7 +29,7 @@ export default function RegisterScreen({ navigation }: any) {
     await AsyncStorage.multiRemove([
       'userName', 'userEmail', 'userBirthYear', 'userBirthMonth', 'userBirthDay',
       'userHeight', 'userWeight', 'userSmoke', 'userDrink',
-      'strips', 'lastTestDate', 'testRecords', 'clinics', 'reminderWeeks', 'lotNumber'
+      'strips', 'lastTestDate', 'testRecords', 'clinics', 'reminderWeeks', 'lotNumber', 'onboardingShown'
     ])
     await AsyncStorage.setItem('userName', name)
     await AsyncStorage.setItem('userEmail', email)
@@ -102,36 +65,11 @@ export default function RegisterScreen({ navigation }: any) {
 
         <View style={styles.field}>
           <Text style={styles.label}>出生年月日</Text>
-          <View style={styles.dateRow}>
-            <TextInput
-              style={[styles.input, { flex: 1 }]}
-              placeholder="1992"
-              placeholderTextColor={colors.gray400}
-              keyboardType="number-pad"
-              maxLength={4}
-              value={birthYear}
-              onChangeText={setBirthYear}
-            />
-            <TextInput
-              style={[styles.input, { flex: 1 }]}
-              placeholder="03"
-              placeholderTextColor={colors.gray400}
-              keyboardType="number-pad"
-              maxLength={2}
-              value={birthMonth}
-              onChangeText={setBirthMonth}
-            />
-            <TextInput
-              style={[styles.input, { flex: 1 }]}
-              placeholder="22"
-              placeholderTextColor={colors.gray400}
-              keyboardType="number-pad"
-              maxLength={2}
-              value={birthDay}
-              onChangeText={setBirthDay}
-            />
-          </View>
-          <Text style={styles.hint}>年 / 月 / 日</Text>
+          <TouchableOpacity style={styles.input} onPress={() => setShowDatePicker(true)}>
+            <Text style={{ color: birthYear ? colors.gray900 : colors.gray400, fontSize: typography.sizes.md, lineHeight: 38 }}>
+              {birthYear && birthMonth && birthDay ? `${birthYear}/${birthMonth.padStart(2,'0')}/${birthDay.padStart(2,'0')}` : '請選擇出生年月日'}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.field}>
@@ -179,6 +117,19 @@ export default function RegisterScreen({ navigation }: any) {
         <Button title="建立帳號" onPress={handleRegister} />
 
         <View style={{ height: 30 }} />
+        <DatePickerModal
+          visible={showDatePicker}
+          year={birthYear || '1992'}
+          month={birthMonth || '01'}
+          day={birthDay || '01'}
+          onConfirm={(y, m, d) => {
+            setBirthYear(y)
+            setBirthMonth(m)
+            setBirthDay(d)
+            setShowDatePicker(false)
+          }}
+          onCancel={() => setShowDatePicker(false)}
+        />
 
       </ScrollView>
     </View>

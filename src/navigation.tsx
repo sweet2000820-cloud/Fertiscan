@@ -88,11 +88,13 @@ function TabNavigator() {
   )
 }
 
-export default function Navigation({ onLogout }: any) {
+export default function Navigation({ onLogin, loggedIn }: any) {
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { paddingTop: 50 } }}>
-        <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { paddingTop: 50 } }} initialRouteName={loggedIn ? 'Main' : 'Login'}>
+        <Stack.Screen name="Login">
+          {(props) => <LoginScreen {...props} onLogin={onLogin} />}
+        </Stack.Screen>
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Main" component={TabNavigator} />
         <Stack.Screen name="Profile" component={ProfileScreen} />

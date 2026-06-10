@@ -9,11 +9,6 @@ export default function ClinicListScreen({ navigation }: any) {
   useEffect(() => {
     AsyncStorage.getItem('clinics').then(val => {
       if (val) setClinics(JSON.parse(val))
-      else {
-        const defaultClinics = [{ id: 1, name: '台北生殖醫學中心', doctor: '李建宏 醫師', date: '2026/01/10' }]
-        setClinics(defaultClinics)
-        AsyncStorage.setItem('clinics', JSON.stringify(defaultClinics))
-      }
     })
   }, [])
   
@@ -120,7 +115,7 @@ const styles = StyleSheet.create({
     height: 46, flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
   },
-  back: { fontSize: 22, color: colors.primary, marginRight: 6 },
+  back: { fontSize: 50, color: colors.primary, marginRight: 6 },
   appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
   scroll: { flex: 1, padding: 18 },
   sectionTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray500, marginBottom: 8 },

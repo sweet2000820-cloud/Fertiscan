@@ -31,6 +31,23 @@ export default function DashboardScreen({ navigation }: any) {
         }
       })
       getRecords().then(r => setRecords(r))
+      ;(async () => {
+        const val = await AsyncStorage.getItem('lotNumber')
+        if (!val) {
+          const shown = await AsyncStorage.getItem('onboardingShown')
+          if (!shown) {
+            await AsyncStorage.setItem('onboardingShown', '1')
+            Alert.alert(
+              '歡迎使用 FertiScan 👋',
+              '開始檢測前，請先前往「校準」頁面設定試紙批號，確保結果準確。',
+              [
+                { text: '稍後再說', style: 'cancel' },
+                { text: '前往設定批號', onPress: () => navigation.navigate('Main', { screen: '校準' }) },
+              ]
+            )
+          }
+        }
+      })()
     }, [])
   )
 

@@ -12,10 +12,7 @@ export default function ShopScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.appbar}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.back}>‹</Text>
-        </TouchableOpacity>
+        <View style={styles.appbar}>
         <Text style={styles.appbarTitle}>購買試紙</Text>
       </View>
 

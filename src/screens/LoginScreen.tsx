@@ -58,7 +58,7 @@ export default function LoginScreen({ onLogin, navigation }: any) {
 
         <Button title="登入" onPress={handleLogin} />
 
-        <TouchableOpacity style={styles.forgotBtn} onPress={() => navigation.navigate('ForgotPassword')}>
+        <TouchableOpacity style={styles.forgotBtn} onPress={() => navigation?.navigate('ForgotPassword')}>
           <Text style={styles.forgotText}>忘記密碼？</Text>
         </TouchableOpacity>
 
@@ -68,7 +68,7 @@ export default function LoginScreen({ onLogin, navigation }: any) {
           <View style={styles.divider} />
         </View>
 
-        <Button title="建立新帳號" onPress={() => navigation.navigate('Register')} variant="secondary" />
+        <Button title="建立新帳號" onPress={() => navigation?.navigate('Register')} variant="secondary" />
       </View>
     </TouchableWithoutFeedback>
   )
