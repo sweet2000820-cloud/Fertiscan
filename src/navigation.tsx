@@ -5,6 +5,7 @@ import { NavigationContainer } from '@react-navigation/native'
 import { Text } from 'react-native'
 import { colors, typography } from './theme'
 
+
 import DashboardScreen from './screens/DashboardScreen'
 import HistoryScreen from './screens/HistoryScreen'
 import CalibrationScreen from './screens/CalibrationScreen'
@@ -37,6 +38,8 @@ import WhiteCaptureScreen from './screens/WhiteCaptureScreen'
 import ForgotPasswordScreen from './screens/ForgotPasswordScreen'
 import VerifyEmailScreen from './screens/VerifyEmailScreen'
 import LotQRScreen from './screens/LotQRScreen'
+import ShopScreen from './screens/ShopScreen'
+
 
 const Tab = createBottomTabNavigator()
 const Stack = createNativeStackNavigator()
@@ -46,8 +49,10 @@ function TabIcon({ label, focused }: { label: string; focused: boolean }) {
     '首頁': '⊞',
     '紀錄': '☰',
     '校準': '◎',
+    '商店': '🛒',
     '設定': '⚙',
   }
+  
   return (
     <Text style={{ fontSize: 25, color: focused ? colors.primary : colors.gray400 }}>
       {icons[label]}
@@ -77,6 +82,7 @@ function TabNavigator() {
       <Tab.Screen name="首頁" component={DashboardScreen} />
       <Tab.Screen name="紀錄" component={HistoryScreen} />
       <Tab.Screen name="校準" component={CalibrationScreen} />
+      <Tab.Screen name="商店" component={ShopScreen} />
       <Tab.Screen name="設定" component={SettingsScreen} />
     </Tab.Navigator>
   )
@@ -115,6 +121,7 @@ export default function Navigation({ onLogout }: any) {
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
         <Stack.Screen name="LotQR" component={LotQRScreen} />
+        <Stack.Screen name="Shop" component={ShopScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   )

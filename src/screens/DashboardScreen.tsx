@@ -8,7 +8,7 @@ import { useFocusEffect } from '@react-navigation/native'
 import { useCallback } from 'react'
 
 export default function DashboardScreen({ navigation }: any) {
-  const [daysSince, setDaysSince] = useState<string>('12天前')
+  const [daysSince, setDaysSince] = useState<string>('尚未檢測')
   const [records, setRecords] = useState<TestRecord[]>([])
   const [strips, setStrips] = useState<number>(6)
   const [userName, setUserName] = useState<string>('陳小明')
@@ -31,12 +31,10 @@ export default function DashboardScreen({ navigation }: any) {
         }
       })
       getRecords().then(r => setRecords(r))
-    }, []))
+    }, [])
+  )
 
-  const displayRecords = records.length > 0 ? records.slice(0, 3) : [
-    { date: '2026/04/23', time: '上午 8:15', tc: '0.68', status: '邊緣', lot: 'LOT-2025-A' },
-    { date: '2026/03/10', time: '上午 9:02', tc: '0.91', status: '正常', lot: 'LOT-2025-A' },
-  ]
+  const displayRecords = records.slice(0, 3)
 
   function getStatusColor(status: string) {
     switch (status) {
@@ -97,7 +95,7 @@ export default function DashboardScreen({ navigation }: any) {
           <Text style={styles.cardTitle}>近 {Math.min(displayRecords.length, 4)} 次 T/C 比值趨勢</Text>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 60, gap: 6, marginBottom: 4 }}>
             {displayRecords.slice(0, 4).reverse().map((r, i, arr) => {
-              const h = Math.max(8, parseFloat(r.tc) * 70)
+              const h = Math.max(8, parseFloat(r.tc) * 50)
               const color = r.status === '正常' ? colors.primary : r.status === '邊緣' ? '#EF9F27' : colors.danger
               const isLast = i === arr.length - 1
               return (

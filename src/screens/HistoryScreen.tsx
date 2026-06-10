@@ -3,13 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { colors, typography } from '../theme'
 import { getRecords, TestRecord } from '../storage'
 
-const defaultRecords: TestRecord[] = [
-  { date: '2026/04/23', time: '上午 8:15', tc: '0.68', status: '邊緣', lot: 'LOT-2025-A' },
-  { date: '2026/03/10', time: '上午 9:02', tc: '0.91', status: '正常', lot: 'LOT-2025-A' },
-  { date: '2026/02/14', time: '上午 8:40', tc: '0.88', status: '正常', lot: 'LOT-2024-B' },
-  { date: '2026/01/20', time: '上午 10:15', tc: '0.61', status: '偏低', lot: 'LOT-2024-B' },
-  { date: '2025/12/05', time: '上午 8:55', tc: '0.85', status: '正常', lot: 'LOT-2024-A' },
-]
+const defaultRecords: TestRecord[] = []
 
 function getStatusColor(status: string) {
   switch (status) {
@@ -80,6 +74,12 @@ export default function HistoryScreen({ navigation }: any) {
         </View>
 
         <Text style={styles.sectionTitle}>所有紀錄</Text>
+        {records.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyText}>尚無檢測紀錄</Text>
+            <Text style={styles.emptyHint}>完成第一次檢測後將顯示於此</Text>
+          </View>
+        ) : (
         <View style={styles.listCard}>
           {records.map((r, i) => (
             <TouchableOpacity
@@ -100,6 +100,7 @@ export default function HistoryScreen({ navigation }: any) {
             </TouchableOpacity>
           ))}
         </View>
+        )}
 
       </ScrollView>
     </View>
@@ -131,4 +132,7 @@ const styles = StyleSheet.create({
   tc: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium },
   badge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 4 },
   badgeText: { fontSize: typography.sizes.xs, fontWeight: typography.weights.medium },
+  emptyCard: { alignItems: 'center', paddingVertical: 40, gap: 6 },
+  emptyText: { fontSize: typography.sizes.md, color: colors.gray500 },
+  emptyHint: { fontSize: typography.sizes.sm, color: colors.gray400 },
 })

@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     height: 46, flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
   },
-  back: { fontSize: 22, color: colors.primary, marginRight: 6 },
+  back: { fontSize: 50, color: colors.primary, marginRight: 6 },
   appbarTitle: { flex: 1, fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
   proBadge: { backgroundColor: colors.primaryLight, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
   proBadgeText: { fontSize: typography.sizes.xs, color: colors.primary, fontWeight: typography.weights.medium },

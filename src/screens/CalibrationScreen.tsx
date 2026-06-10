@@ -1,9 +1,77 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native'
 import { colors, typography } from '../theme'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+
+const lotData: Record<string, {
+  points: { tc: number, conc: number }[],
+  expiry: string,
+  r2: string,
+}> = {
+  'LOT-2025-A': {
+    points: [
+      { tc: 0.10, conc: 2 }, { tc: 0.22, conc: 5 }, { tc: 0.35, conc: 9 },
+      { tc: 0.48, conc: 14 }, { tc: 0.61, conc: 18 }, { tc: 0.68, conc: 22 },
+      { tc: 0.75, conc: 26 }, { tc: 0.85, conc: 32 }, { tc: 0.92, conc: 38 },
+      { tc: 1.00, conc: 45 }, { tc: 1.08, conc: 52 }, { tc: 1.15, conc: 60 },
+    ],
+    expiry: '2026/08/31',
+    r2: '0.994',
+  },
+  'LOT-2025-B': {
+    points: [
+      { tc: 0.12, conc: 2 }, { tc: 0.24, conc: 5 }, { tc: 0.38, conc: 9 },
+      { tc: 0.50, conc: 14 }, { tc: 0.63, conc: 18 }, { tc: 0.70, conc: 22 },
+      { tc: 0.78, conc: 26 }, { tc: 0.87, conc: 32 }, { tc: 0.94, conc: 38 },
+      { tc: 1.02, conc: 45 }, { tc: 1.10, conc: 52 }, { tc: 1.18, conc: 60 },
+    ],
+    expiry: '2026/12/31',
+    r2: '0.997',
+  },
+  'LOT-2024-B': {
+    points: [
+      { tc: 0.09, conc: 2 }, { tc: 0.20, conc: 5 }, { tc: 0.32, conc: 9 },
+      { tc: 0.45, conc: 14 }, { tc: 0.58, conc: 18 }, { tc: 0.65, conc: 22 },
+      { tc: 0.72, conc: 26 }, { tc: 0.82, conc: 32 }, { tc: 0.90, conc: 38 },
+      { tc: 0.98, conc: 45 }, { tc: 1.05, conc: 52 }, { tc: 1.12, conc: 60 },
+    ],
+    expiry: '2025/12/31',
+    r2: '0.991',
+  },
+}
 
 export default function CalibrationScreen({ navigation }: any) {
-  const [lotNumber, setLotNumber] = useState('LOT-2025-A')
+  const [lotNumber, setLotNumber] = useState('')
+
+  useEffect(() => {
+    AsyncStorage.getItem('lotNumber').then(val => {
+      if (val) setLotNumber(val)
+    })
+  }, [])
+
+  const currentLot = lotNumber ? lotData[lotNumber] : null
+  const expiry = currentLot?.expiry || '—'
+  const r2 = currentLot?.r2 || '—'
+  const points = currentLot?.points || []
+
+  function handleManualInput() {
+    Alert.prompt(
+      '手動輸入批號',
+      '請輸入試紙包裝上的批號（例如：LOT-2025-A）',
+      [
+        { text: '取消', style: 'cancel' },
+        { text: '確認', onPress: (value: string | undefined) => {
+          if (value) {
+            setLotNumber(value)
+            AsyncStorage.setItem('lotNumber', value)
+            Alert.alert('已更新', `批號已更新為 ${value}`)
+          }
+        }},
+      ],
+      'plain-text',
+      lotNumber || 'LOT-2025-A'
+    )
+  }
 
   return (
     <View style={styles.container}>
@@ -17,30 +85,14 @@ export default function CalibrationScreen({ navigation }: any) {
           <View style={styles.lotRow}>
             <Text style={styles.rowLabel}>目前試紙批號</Text>
             <View style={styles.lotBadge}>
-              <Text style={styles.lotBadgeText}>{lotNumber}</Text>
+              <Text style={styles.lotBadgeText}>{lotNumber || '尚未設定'}</Text>
             </View>
           </View>
           <View style={styles.btnRow}>
             <TouchableOpacity style={styles.btnSecondary} onPress={() => navigation.getParent()?.navigate('LotQR')}>
               <Text style={styles.btnSecondaryText}>掃描 QR Code</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.btnGray} onPress={() => {
-              Alert.prompt(
-                '手動輸入批號',
-                '請輸入試紙包裝上的批號（例如：LOT-2025-A）',
-                [
-                  { text: '取消', style: 'cancel' },
-                  { text: '確認', onPress: (value: string | undefined) => {
-                    if (value) {
-                      setLotNumber(value)
-                      Alert.alert('已更新', `批號已更新為 ${value}`)
-                    }
-                  }},
-                ],
-                'plain-text',
-                'LOT-2025-A'
-              )
-            }}>
+            <TouchableOpacity style={styles.btnGray} onPress={handleManualInput}>
               <Text style={styles.btnGrayText}>手動輸入</Text>
             </TouchableOpacity>
           </View>
@@ -48,43 +100,45 @@ export default function CalibrationScreen({ navigation }: any) {
         </View>
 
         <View style={styles.listCard}>
-          <Text style={styles.sectionTitle}>標準曲線（批號 {lotNumber}）</Text>
+          <Text style={styles.sectionTitle}>標準曲線（批號 {lotNumber || '尚未設定'}）</Text>
           <View style={styles.chartArea}>
-           <View style={styles.chartInner}>
+            <View style={styles.chartInner}>
               <View style={styles.yAxis} />
               <View style={styles.xAxis} />
-              <View style={[styles.dot, { bottom: 8, left: '10%' }]} />
-              <View style={[styles.dot, { bottom: 18, left: '22%' }]} />
-              <View style={[styles.dot, { bottom: 28, left: '34%' }]} />
-              <View style={[styles.dot, { bottom: 40, left: '46%' }]} />
-              <View style={[styles.dot, { bottom: 52, left: '60%' }]} />
-              <View style={[styles.dot, { bottom: 62, left: '74%' }]} />
-              <View style={[styles.dot, { bottom: 68, left: '86%' }]} />
-              <View style={[styles.currentDot, { bottom: 36, left: '42%' }]} />
-              <View style={styles.refLine} />
-              <Text style={styles.refLabel}>0.85</Text>
-              <Text style={styles.currentLabel}>0.68</Text>
+              {points.length === 0 ? (
+                <Text style={styles.emptyChart}>請先設定批號</Text>
+              ) : points.map((p, i) => {
+                const leftPct = `${(p.tc / 1.2) * 90}%`
+                const bottomPx = Math.max(4, (p.conc / 60) * 70)
+                return <View key={i} style={[styles.dot, { bottom: bottomPx, left: leftPct as any }]} />
+              })}
+              {points.length > 0 && <View style={styles.refLine} />}
+              {points.length > 0 && <Text style={styles.refLabel}>0.85</Text>}
             </View>
             <View style={styles.axisLabels}>
               <Text style={styles.axisText}>0</Text>
               <Text style={styles.axisText}>T/C →</Text>
             </View>
           </View>
-          <View style={styles.divider} />
-          <View style={styles.resultRow}>
-            <Text style={styles.hint}>目前讀值 T/C = 0.68</Text>
-            <Text style={styles.resultValue}>→ ≈ 22 mIU/mL</Text>
-          </View>
+          {points.length > 0 && (
+            <>
+              <View style={styles.divider} />
+              <View style={styles.resultRow}>
+                <Text style={styles.hint}>目前讀值 T/C = 0.68</Text>
+                <Text style={styles.resultValue}>→ ≈ 22 mIU/mL</Text>
+              </View>
+            </>
+          )}
         </View>
 
         <View style={styles.listCard}>
           <Text style={styles.sectionTitle}>批號資訊</Text>
           {[
-            { label: '批號', value: lotNumber },
-            { label: '有效期限', value: '2026/08/31' },
-            { label: '校準點數量', value: 'n = 12' },
+            { label: '批號', value: lotNumber || '尚未設定' },
+            { label: '有效期限', value: expiry },
+            { label: '校準點數量', value: points.length > 0 ? `n = ${points.length}` : '—' },
             { label: '正常參考值', value: 'T/C ≥ 0.85', valueColor: colors.success },
-            { label: 'R² 擬合度', value: '0.994' },
+            { label: 'R² 擬合度', value: r2 },
           ].map((item, i) => (
             <View key={i} style={[styles.infoRow, i === 4 && { borderBottomWidth: 0 }]}>
               <Text style={styles.hint}>{item.label}</Text>
@@ -124,13 +178,15 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: typography.sizes.sm, color: colors.gray500, marginBottom: 10 },
   chartArea: { height: 100, marginBottom: 8 },
   chartInner: { flex: 1, position: 'relative', marginBottom: 4 },
+  emptyChart: { position: 'absolute', top: 30, left: 0, right: 0, textAlign: 'center', fontSize: typography.sizes.xs, color: colors.gray400 },
   yAxis: { position: 'absolute', left: 0, top: 0, bottom: 20, width: 0.5, backgroundColor: colors.gray200 },
   xAxis: { position: 'absolute', left: 0, right: 0, bottom: 20, height: 0.5, backgroundColor: colors.gray200 },
   dot: { position: 'absolute', width: 4, height: 4, borderRadius: 2, backgroundColor: colors.primary },
   currentDot: { position: 'absolute', width: 8, height: 8, borderRadius: 4, backgroundColor: colors.warning, borderWidth: 1.5, borderColor: colors.white },
   refLine: { position: 'absolute', left: '58%', top: 0, bottom: 20, width: 0.8, backgroundColor: colors.success },
   refLabel: { position: 'absolute', left: '59%', top: 0, fontSize: 7, color: colors.success },
-  currentLabel: { position: 'absolute', left: '38%', bottom: 22, fontSize: 7, color: colors.warning },axisLabels: { flexDirection: 'row', justifyContent: 'space-between' },
+  currentLabel: { position: 'absolute', left: '38%', bottom: 22, fontSize: 7, color: colors.warning },
+  axisLabels: { flexDirection: 'row', justifyContent: 'space-between' },
   axisText: { fontSize: 7, color: colors.gray400 },
   divider: { height: 0.5, backgroundColor: colors.gray200, marginVertical: 8 },
   resultRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

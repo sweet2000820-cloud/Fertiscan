@@ -22,6 +22,7 @@ export default function SettingsScreen({ navigation }: any) {
       })
       AsyncStorage.getItem('userName').then(val => { if (val) setUserName(val) })
       AsyncStorage.getItem('userEmail').then(val => { if (val) setUserEmail(val) })
+      AsyncStorage.getItem('reminderWeeks').then(val => { if (val) setReminderWeeks(parseInt(val)) })
     }, [])
   )
 
@@ -106,10 +107,10 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
           <TouchableOpacity style={styles.row} onPress={() => {
             Alert.alert('複測提醒週期', '選擇提醒間隔', [
-              { text: '每 1 週', onPress: async () => { setReminderWeeks(1); if (notifyEnabled) { await Notifications.cancelAllScheduledNotificationsAsync(); await Notifications.scheduleNotificationAsync({ content: { title: 'FertiScan 提醒', body: '建議進行一次新的檢測。' }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 60 * 60 * 24 * 7 * 1, repeats: true } }) } } },
-              { text: '每 2 週', onPress: async () => { setReminderWeeks(2); if (notifyEnabled) { await Notifications.cancelAllScheduledNotificationsAsync(); await Notifications.scheduleNotificationAsync({ content: { title: 'FertiScan 提醒', body: '建議進行一次新的檢測。' }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 60 * 60 * 24 * 7 * 2, repeats: true } }) } } },
-              { text: '每 3 週', onPress: async () => { setReminderWeeks(3); if (notifyEnabled) { await Notifications.cancelAllScheduledNotificationsAsync(); await Notifications.scheduleNotificationAsync({ content: { title: 'FertiScan 提醒', body: '建議進行一次新的檢測。' }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 60 * 60 * 24 * 7 * 3, repeats: true } }) } } },
-              { text: '每 4 週', onPress: async () => { setReminderWeeks(4); if (notifyEnabled) { await Notifications.cancelAllScheduledNotificationsAsync(); await Notifications.scheduleNotificationAsync({ content: { title: 'FertiScan 提醒', body: '建議進行一次新的檢測。' }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 60 * 60 * 24 * 7 * 4, repeats: true } }) } } },
+              { text: '每 1 週', onPress: async () => { setReminderWeeks(1);AsyncStorage.setItem('reminderWeeks', '1'); if (notifyEnabled) { await Notifications.cancelAllScheduledNotificationsAsync(); await Notifications.scheduleNotificationAsync({ content: { title: 'FertiScan 提醒', body: '建議進行一次新的檢測。' }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 60 * 60 * 24 * 7 * 1, repeats: true } }) } } },
+              { text: '每 2 週', onPress: async () => { setReminderWeeks(2);AsyncStorage.setItem('reminderWeeks', '2'); if (notifyEnabled) { await Notifications.cancelAllScheduledNotificationsAsync(); await Notifications.scheduleNotificationAsync({ content: { title: 'FertiScan 提醒', body: '建議進行一次新的檢測。' }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 60 * 60 * 24 * 7 * 2, repeats: true } }) } } },
+              { text: '每 3 週', onPress: async () => { setReminderWeeks(3);AsyncStorage.setItem('reminderWeeks', '3'); if (notifyEnabled) { await Notifications.cancelAllScheduledNotificationsAsync(); await Notifications.scheduleNotificationAsync({ content: { title: 'FertiScan 提醒', body: '建議進行一次新的檢測。' }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 60 * 60 * 24 * 7 * 3, repeats: true } }) } } },
+              { text: '每 4 週', onPress: async () => { setReminderWeeks(4);AsyncStorage.setItem('reminderWeeks', '4'); if (notifyEnabled) { await Notifications.cancelAllScheduledNotificationsAsync(); await Notifications.scheduleNotificationAsync({ content: { title: 'FertiScan 提醒', body: '建議進行一次新的檢測。' }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 60 * 60 * 24 * 7 * 4, repeats: true } }) } } },
               { text: '取消', style: 'cancel' },
             ])
           }}>
