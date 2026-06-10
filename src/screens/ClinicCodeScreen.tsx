@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native'
 import { colors, typography } from '../theme'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const validCodes: Record<string, { clinicName: string, doctor: string }> = {
   '123456': { clinicName: '艾微芙人工生殖中心', doctor: '陳明哲 醫師' },
@@ -13,15 +14,23 @@ export default function ClinicCodeScreen({ navigation }: any) {
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
 
-  function handleVerify() {
+  async function handleVerify() {
     if (code.length !== 6) {
       Alert.alert('格式錯誤', '請輸入 6 位數字邀請碼')
       return
     }
     setLoading(true)
-    setTimeout(() => {
+    setTimeout(async () => {
       setLoading(false)
       if (validCodes[code]) {
+        const raw = await AsyncStorage.getItem('clinics')
+        const existing = raw ? JSON.parse(raw) : []
+        const alreadyLinked = existing.some((c: any) => c.name === validCodes[code].clinicName)
+        if (alreadyLinked) {
+          Alert.alert('已連結', `您已經連結了${validCodes[code].clinicName}，無法重複連結。`)
+          setLoading(false)
+          return
+        }
         navigation.navigate('Consent', {
           clinicName: validCodes[code].clinicName,
           doctor: validCodes[code].doctor,
