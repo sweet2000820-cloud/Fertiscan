@@ -25,12 +25,7 @@ export default function ShareRecordScreen({ navigation }: any) {
       })
     })
     getRecords().then(r => {
-      if (r.length > 0) setRecords(r)
-      else setRecords([
-        { date: '2026/04/23', time: '上午 8:15', tc: '0.68', status: '邊緣', lot: 'LOT-2025-A' },
-        { date: '2026/03/10', time: '上午 9:02', tc: '0.91', status: '正常', lot: 'LOT-2025-A' },
-        { date: '2026/02/14', time: '上午 8:40', tc: '0.88', status: '正常', lot: 'LOT-2024-B' },
-      ])
+      setRecords(r)
     })
   }, [])
 

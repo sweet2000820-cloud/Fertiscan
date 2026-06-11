@@ -64,7 +64,8 @@ export default function CalibrationScreen({ navigation }: any) {
           if (value) {
             setLotNumber(value)
             AsyncStorage.setItem('lotNumber', value)
-            Alert.alert('已更新', `批號已更新為 ${value}`)
+            AsyncStorage.setItem('strips', '6')
+            Alert.alert('已更新', `批號已更新為 ${value}，試紙數量已重設為 6 片`)
           }
         }},
       ],

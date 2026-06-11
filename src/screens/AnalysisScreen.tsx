@@ -9,6 +9,9 @@ export default function AnalysisScreen({ navigation }: any) {
   const [progress, setProgress] = useState(0)
   const [step, setStep] = useState(0)
   const [done, setDone] = useState(false)
+  const tcValues = ['0.45', '0.62', '0.78', '0.85', '0.91', '0.95', '1.02']
+  const [tc] = useState(tcValues[Math.floor(Math.random() * tcValues.length)])
+  const status = parseFloat(tc) >= 0.85 ? '正常' : parseFloat(tc) >= 0.5 ? '邊緣' : '偏低'
 
   useEffect(() => {
     let currentProgress = 0
@@ -71,15 +74,15 @@ export default function AnalysisScreen({ navigation }: any) {
         {/* 數值卡片 */}
         <View style={styles.listCard}>
           <Text style={styles.sectionTitle}>T/C 預估值</Text>
-          <Text style={styles.tcValue}>{done ? '0.68' : '—'}</Text>
+          <Text style={styles.tcValue}>{done ? tc : '—'}</Text>
           <View style={styles.divider} />
-          <View style={styles.dataRow}>
+         <View style={styles.dataRow}>
             <Text style={styles.hint}>C line AUC</Text>
-            <Text style={styles.dataValue}>2,847</Text>
+            <Text style={styles.dataValue}>{Math.round(2847 / 0.68 * parseFloat(tc))}</Text>
           </View>
           <View style={styles.dataRow}>
             <Text style={styles.hint}>T line AUC</Text>
-            <Text style={styles.dataValue}>1,936</Text>
+            <Text style={styles.dataValue}>{Math.round(1936 / 0.68 * parseFloat(tc))}</Text>
           </View>
         </View>
 
@@ -88,13 +91,13 @@ export default function AnalysisScreen({ navigation }: any) {
             const now = new Date()
             const date = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`
             const time = `${now.getHours() < 12 ? '上午' : '下午'} ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`
-            await saveRecord({ date, time, tc: '0.68', status: '邊緣', lot: 'LOT-2025-A' })
+            await saveRecord({ date, time, tc, status, lot: 'LOT-2025-A' })
             await AsyncStorage.setItem('lastTestDate', now.toISOString())
             const stripsRaw = await AsyncStorage.getItem('strips')
             const currentStrips = stripsRaw ? parseInt(stripsRaw) : 6
             const newStrips = Math.max(0, currentStrips - 1)
             await AsyncStorage.setItem('strips', String(newStrips))
-            navigation.navigate('ReportOverview')
+            navigation.navigate('ReportOverview', { record: { date, time, tc, status, lot: 'LOT-2025-A' } })
             }}>
             <Text style={styles.resultBtnText}>查看結果 ›</Text>
           </TouchableOpacity>

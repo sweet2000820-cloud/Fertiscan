@@ -44,7 +44,7 @@ export default function HistoryScreen({ navigation }: any) {
 
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>T/C 比值趨勢（近 {Math.min(records.length, 5)} 次）</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 60, gap: 6, marginBottom: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 100, gap: 6, marginBottom: 4 }}>
             {records.slice(0, 5).reverse().map((r, i) => {
               const h = Math.max(8, parseFloat(r.tc) * 70)
               const color = r.status === '正常' ? colors.primary : r.status === '邊緣' ? '#EF9F27' : colors.danger

@@ -148,6 +148,7 @@ export default function SettingsScreen({ navigation }: any) {
           </TouchableOpacity>
           <TouchableOpacity style={styles.row} onPress={async () => {
             await AsyncStorage.setItem('clinics', JSON.stringify([]))
+            await AsyncStorage.removeItem('sharedHistory')
             setClinicCount(0)
             Alert.alert('已清除', '診所資料已清除')
           }}>

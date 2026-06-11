@@ -24,8 +24,16 @@ export default function DashboardScreen({ navigation }: any) {
         }
       })
       AsyncStorage.getItem('strips').then(val => {
-        if (val !== null) setStrips(parseInt(val))
-        else {
+        if (val !== null) {
+          const n = parseInt(val)
+          setStrips(n)
+          if (n === 0) {
+            Alert.alert('試紙用完了', '您的試紙剩餘數量為 0，請前往商店購買。', [
+              { text: '稍後再說', style: 'cancel' },
+              { text: '前往商店', onPress: () => navigation.navigate('Main', { screen: '商店' }) },
+            ])
+          }
+        } else {
           setStrips(6)
           AsyncStorage.setItem('strips', '6')
         }
