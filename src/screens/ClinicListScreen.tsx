@@ -2,13 +2,24 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } f
 import { colors, typography } from '../theme'
 import { useState, useEffect } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getRecords } from '../storage'
 
 export default function ClinicListScreen({ navigation }: any) {
   const [clinics, setClinics] = useState<{id: number, name: string, doctor: string, date: string}[]>([])
+  const [sharedHistory, setSharedHistory] = useState<{date: string, clinic: string}[]>([])
 
   useEffect(() => {
     AsyncStorage.getItem('clinics').then(val => {
       if (val) setClinics(JSON.parse(val))
+    })
+  getRecords().then(records => {
+      if (records.length > 0 && clinics.length > 0) {
+        const history = records.slice(0, 5).map(r => ({
+          date: `${r.date} 結果`,
+          clinic: `${clinics[0]?.name || '—'} · ${clinics[0]?.doctor || '—'}`
+        }))
+        setSharedHistory(history)
+      }
     })
   }, [])
   
@@ -89,11 +100,13 @@ export default function ClinicListScreen({ navigation }: any) {
         </View>
 
         <Text style={styles.sectionTitle}>分享歷程</Text>
+        {sharedHistory.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyText}>尚無分享歷程</Text>
+          </View>
+        ) : (
         <View style={styles.listCard}>
-          {[
-            { date: '2026/04/23 結果', clinic: '台北生殖醫學中心 · 李建宏醫師' },
-            { date: '2026/03/10 結果', clinic: '台北生殖醫學中心 · 李建宏醫師' },
-          ].map((item, i) => (
+          {sharedHistory.map((item, i) => (
             <View key={i} style={[styles.historyRow, i === 1 && { borderBottomWidth: 0 }]}>
               <View>
                 <Text style={styles.historyDate}>{item.date}</Text>
@@ -103,6 +116,7 @@ export default function ClinicListScreen({ navigation }: any) {
             </View>
           ))}
         </View>
+        )}
 
       </ScrollView>
     </View>
