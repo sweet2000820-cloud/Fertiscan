@@ -118,16 +118,16 @@ export default function DashboardScreen({ navigation }: any) {
 
         <View style={styles.tealCard}>
           <Text style={styles.cardTitle}>近 {Math.min(displayRecords.length, 4)} 次 T/C 比值趨勢</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 60, gap: 6, marginBottom: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 80, gap: 6, marginBottom: 4 }}>
             {displayRecords.slice(0, 4).reverse().map((r, i, arr) => {
-              const h = Math.max(8, parseFloat(r.tc) * 50)
+              const h = Math.max(8, parseFloat(r.tc) * 50) // 將 T/C 比值轉換為柱狀圖高度
               const color = r.status === '正常' ? colors.primary : r.status === '邊緣' ? '#EF9F27' : colors.danger
               const isLast = i === arr.length - 1
               return (
                 <View key={i} style={{ flex: 1, alignItems: 'stretch', gap: 3 }}>
                   <View style={{ width: '100%', height: h, backgroundColor: color, borderRadius: 2 }} />
                   <Text style={{ fontSize: 8, color: isLast ? colors.warning : colors.gray400 }}>
-                    {isLast ? '最近' : r.date.slice(5, 7) + '月'}
+                    {isLast ? '最近' : r.date.slice(5, 7) + '/' + r.date.slice(8, 10)}
                   </Text>
                 </View>
               )

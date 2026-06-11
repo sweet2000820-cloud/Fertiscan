@@ -51,7 +51,7 @@ export default function HistoryScreen({ navigation }: any) {
               return (
                 <View key={i} style={{ flex: 1, alignItems: 'stretch', gap: 3 }}>
                   <View style={{ width: '100%', height: h, backgroundColor: color, borderRadius: 2 }} />
-                  <Text style={{ fontSize: 8, color: colors.gray400, textAlign: 'center' }}>{r.date.slice(5, 7)}月</Text>
+                  <Text style={{ fontSize: 8, color: colors.gray400, textAlign: 'center' }}>{r.date.slice(5, 7) + '/' + r.date.slice(8, 10)}</Text>
                 </View>
               )
             })}

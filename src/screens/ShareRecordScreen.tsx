@@ -7,19 +7,21 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 export default function ShareRecordScreen({ navigation }: any) {
   const [records, setRecords] = useState<TestRecord[]>([])
   const [selected, setSelected] = useState<number[]>([])
-  const [clinics, setClinics] = useState<{id: number, name: string, doctor: string, date: string}[]>([])
+  const [clinics, setClinics] = useState<any[]>([])
+  const [selectedClinic, setSelectedClinic] = useState<any>(null)
   const [sharedDates, setSharedDates] = useState<string[]>([])
 
   useEffect(() => {
     AsyncStorage.getItem('clinics').then(val => {
       const parsed = val ? JSON.parse(val) : []
       setClinics(parsed)
+      if (parsed.length > 0) setSelectedClinic(parsed[0])
       AsyncStorage.getItem('sharedHistory').then(hval => {
         if (hval && parsed.length > 0) {
           const history = JSON.parse(hval)
           const dates = history
             .filter((h: any) => h.clinicName === parsed[0]?.name)
-            .map((h: any) => h.date)
+            .map((h: any) => `${h.date}_${h.time}_${h.tc}`)
           setSharedDates(dates)
         }
       })
@@ -54,25 +56,47 @@ export default function ShareRecordScreen({ navigation }: any) {
             <Text style={{ color: colors.gray400, fontSize: typography.sizes.sm }}>尚未連結任何診所</Text>
           </View>
         ) : clinics.map(clinic => (
-          <View key={clinic.id} style={styles.clinicRow}>
+          <TouchableOpacity
+            key={clinic.id}
+            style={[styles.clinicRow, selectedClinic?.id === clinic.id && { backgroundColor: colors.primaryLight, borderRadius: 8, padding: 6 }]}
+            onPress={async () => {
+              setSelectedClinic(clinic)
+              setSelected([])
+              const hval = await AsyncStorage.getItem('sharedHistory')
+              if (hval) {
+                const history = JSON.parse(hval)
+                const dates = history
+                  .filter((h: any) => h.clinicName === clinic.name)
+                  .map((h: any) => `${h.date}_${h.time}_${h.tc}`)
+                setSharedDates(dates)
+              } else {
+                setSharedDates([])
+              }
+            }}
+          >
             <View style={styles.clinicIcon}>
               <Text style={styles.clinicIconText}>{clinic.name.slice(0, 2)}</Text>
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.clinicName}>{clinic.name}</Text>
-              <Text style={styles.clinicSub}>{clinic.doctor}</Text>
             </View>
-            <View style={styles.connectedBadge}>
-              <Text style={styles.connectedText}>已連結</Text>
-            </View>
-          </View>
+            {selectedClinic?.id === clinic.id ? (
+              <View style={styles.connectedBadge}>
+                <Text style={styles.connectedText}>傳送對象</Text>
+              </View>
+            ) : (
+              <View style={[styles.connectedBadge, { backgroundColor: colors.gray100 }]}>
+                <Text style={[styles.connectedText, { color: colors.gray400 }]}>點擊選擇</Text>
+              </View>
+            )}
+          </TouchableOpacity>
         ))}
 
         <View style={styles.divider} />
 
         <Text style={styles.sectionTitle}>選擇要分享的記錄</Text>
         {records.map((r, i) => {
-          const alreadyShared = sharedDates.includes(r.date)
+          const alreadyShared = sharedDates.includes(`${r.date}_${r.time}_${r.tc}`)
           return (
             <TouchableOpacity
               key={i}
@@ -139,10 +163,8 @@ export default function ShareRecordScreen({ navigation }: any) {
               return
             }
             if (selected.length > 0) {
-              const clinicName = clinics[0].name
-              const doctor = clinics[0].doctor
               const selectedRecords = selected.map(i => records[i])
-              navigation.navigate('ShareSent', { clinicName, doctor, records: selectedRecords })
+              navigation.navigate('ShareSent', { clinics: selectedClinic ? [selectedClinic] : clinics, records: selectedRecords })
             }
           }}
           disabled={selected.length === 0}
@@ -150,10 +172,18 @@ export default function ShareRecordScreen({ navigation }: any) {
           <Text style={styles.btnPrimaryText}>傳送至診所系統</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.btnSecondary} onPress={() => {
-          const selectedRecords = selected.map(i => records[i])
-          navigation.navigate('ReportLink', { records: selectedRecords })
-        }}>
+        <TouchableOpacity 
+          style={[styles.btnSecondary, selected.length === 0 && { opacity: 0.4 }]}
+          onPress={() => {
+            if (selected.length === 0) {
+              Alert.alert('請選擇紀錄', '請先選擇要分享的檢測紀錄')
+              return
+            }
+            const selectedRecords = selected.map(i => records[i])
+            navigation.navigate('ReportLink', { records: selectedRecords })
+          }}
+          disabled={selected.length === 0}
+        >
           <Text style={styles.btnSecondaryText}>產生分享連結</Text>
         </TouchableOpacity>
 
@@ -173,7 +203,7 @@ const styles = StyleSheet.create({
     height: 46, flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
   },
-  back: { fontSize: 50, color: colors.primary, marginRight: 6 },
+  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
   appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
   scroll: { flex: 1, padding: 18 },
   clinicRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },

@@ -14,6 +14,7 @@ export default function LoginScreen({ onLogin, navigation }: any) {
     }
     if (onLogin) {
       onLogin()
+      navigation?.navigate('Main')
     } else {
       navigation?.navigate('Main')
     }

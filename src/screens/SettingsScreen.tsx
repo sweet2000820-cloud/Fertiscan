@@ -154,6 +154,12 @@ export default function SettingsScreen({ navigation }: any) {
           }}>
             <Text style={[styles.rowLabel, { color: colors.danger }]}>清除診所資料（測試用）</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.row} onPress={async () => {
+            const val = await AsyncStorage.getItem('sharedHistory')
+            Alert.alert('sharedHistory', val || '空的')
+          }}>
+            <Text style={styles.rowLabel}>查看分享歷程（測試用）</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={[styles.row, { borderBottomWidth: 0 }]} onPress={() => {
             Alert.alert('登出帳號', '確定要登出嗎？', [
               { text: '取消', style: 'cancel' },

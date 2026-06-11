@@ -4,7 +4,6 @@ import { useState } from 'react'
 
 export default function ConsentScreen({ navigation, route }: any) {
   const clinicName = route?.params?.clinicName || '台北生殖醫學中心'
-  const doctor = route?.params?.doctor || '李建宏 醫師'
   const [scrolled, setScrolled] = useState(false)
   const [checked, setChecked] = useState([false, false, false])
   const allChecked = checked.every(c => c)
@@ -34,7 +33,7 @@ export default function ConsentScreen({ navigation, route }: any) {
           </View>
           <View>
             <Text style={styles.clinicName}>{clinicName}</Text>
-            <Text style={styles.clinicSub}>{doctor} · FertiScan 合作診所</Text>
+            <Text style={styles.clinicSub}>FertiScan 合作診所</Text>
           </View>
         </View>
 
@@ -62,7 +61,7 @@ export default function ConsentScreen({ navigation, route }: any) {
         {/* 勾選項 */}
         {[
           { title: '我已閱讀並了解同意書全部內容', sub: '包含去識別化方式與我的資料權利' },
-          { title: '我同意將去識別化資料分享給', sub: `${clinicName} · ${doctor}` },
+          { title: '我同意將去識別化資料分享給', sub: `${clinicName} ` },
           { title: '我了解可隨時在設定中撤回此授權', sub: '撤回後診所將無法再接收新資料' },
         ].map((item, i) => (
           <TouchableOpacity
@@ -83,7 +82,7 @@ export default function ConsentScreen({ navigation, route }: any) {
 
         <TouchableOpacity
           style={[styles.ctaBtn, !allChecked && { opacity: 0.4 }]}
-          onPress={() => allChecked && navigation.navigate('ClinicConfirm', { clinicName, doctor })}
+          onPress={() => allChecked && navigation.navigate('ClinicConfirm', { clinicName })}
           disabled={!allChecked}
         >
           <Text style={styles.ctaBtnText}>同意並繼續設定授權範圍 ›</Text>
@@ -106,7 +105,7 @@ const styles = StyleSheet.create({
     height: 46, flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
   },
-  back: { fontSize: 22, color: colors.primary, marginRight: 6 },
+  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
   appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
   scroll: { flex: 1, padding: 18 },
   clinicRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, marginBottom: 10 },

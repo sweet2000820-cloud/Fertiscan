@@ -91,13 +91,30 @@ export default function AnalysisScreen({ navigation }: any) {
             const now = new Date()
             const date = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`
             const time = `${now.getHours() < 12 ? '上午' : '下午'} ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`
-            await saveRecord({ date, time, tc, status, lot: 'LOT-2025-A' })
+            const lotNumber = await AsyncStorage.getItem('lotNumber') || '未知批號'
+            await saveRecord({ date, time, tc, status, lot: lotNumber })
             await AsyncStorage.setItem('lastTestDate', now.toISOString())
+            // 自動分享
+            const clinicsRaw = await AsyncStorage.getItem('clinics')
+            const clinics = clinicsRaw ? JSON.parse(clinicsRaw) : []
+            for (const clinic of clinics) {
+              if (clinic.autoShare) {
+                const histRaw = await AsyncStorage.getItem('sharedHistory')
+                const histExisting = histRaw ? JSON.parse(histRaw) : []
+                const newEntry = {
+                  date, time, tc,
+                  clinicName: clinic.name,
+                  doctor: clinic.doctor,
+                  sharedAt: new Date().toISOString(),
+                }
+                await AsyncStorage.setItem('sharedHistory', JSON.stringify([newEntry, ...histExisting]))
+              }
+            }
             const stripsRaw = await AsyncStorage.getItem('strips')
             const currentStrips = stripsRaw ? parseInt(stripsRaw) : 6
             const newStrips = Math.max(0, currentStrips - 1)
             await AsyncStorage.setItem('strips', String(newStrips))
-            navigation.navigate('ReportOverview', { record: { date, time, tc, status, lot: 'LOT-2025-A' } })
+            navigation.navigate('ReportOverview', { record: { date, time, tc, status, lot: lotNumber } })
             }}>
             <Text style={styles.resultBtnText}>查看結果 ›</Text>
           </TouchableOpacity>

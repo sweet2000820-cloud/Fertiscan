@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 
 export default function ClinicSuccessScreen({ navigation, route }: any) {
   const clinicName = route?.params?.clinicName || '台北生殖醫學中心'
-  const doctor = route?.params?.doctor || '李建宏 醫師'
+  console.log('ClinicSuccess rendering, clinicName:', clinicName)
   return (
     <View style={styles.container}>
       <View style={styles.content}>
@@ -16,7 +16,7 @@ export default function ClinicSuccessScreen({ navigation, route }: any) {
         </View>
 
         <Text style={styles.title}>診所連結成功！</Text>
-        <Text style={styles.sub}>{clinicName}{'\n'}{doctor}</Text>
+        <Text style={styles.sub}>{clinicName}{'\n'}</Text>
 
         {/* 授權摘要 */}
         <View style={styles.summaryCard}>

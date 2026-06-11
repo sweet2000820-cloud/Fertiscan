@@ -4,24 +4,29 @@ import { colors, typography } from '../theme'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 export default function ShareSentScreen({ navigation, route }: any) {
-  const clinicName = route?.params?.clinicName || '診所'
-  const doctor = route?.params?.doctor || ''
+  const clinics = route?.params?.clinics || []
   const records = route?.params?.records || []
+  const clinicNames = clinics.map((c: any) => c.name).join('、')
 
   useEffect(() => {
     async function saveSharedHistory() {
       const raw = await AsyncStorage.getItem('sharedHistory')
       const existing = raw ? JSON.parse(raw) : []
-      const newEntries = records.map((r: any) => ({
-        date: r.date,
-        tc: r.tc,
-        clinicName,
-        doctor,
-        sharedAt: new Date().toISOString(),
-      }))
+      const newEntries: any[] = []
+      for (const clinic of clinics) {
+        for (const r of records) {
+          newEntries.push({
+            date: r.date,
+            time: r.time,
+            tc: r.tc,
+            clinicName: clinic.name,
+            sharedAt: new Date().toISOString(),
+          })
+        }
+      }
       await AsyncStorage.setItem('sharedHistory', JSON.stringify([...newEntries, ...existing]))
     }
-    if (records.length > 0) saveSharedHistory()
+    if (records.length > 0 && clinics.length > 0) saveSharedHistory()
   }, [])
 
   return (
@@ -33,7 +38,7 @@ export default function ShareSentScreen({ navigation, route }: any) {
         </View>
 
         <Text style={styles.title}>已成功分享！</Text>
-        <Text style={styles.sub}>記錄已傳送至{'\n'}<Text style={styles.highlight}>{clinicName}{doctor ? ` · ${doctor}` : ''}</Text></Text>
+        <Text style={styles.sub}>記錄已傳送至{'\n'}<Text style={styles.highlight}>{clinicNames}</Text></Text>
 
         <View style={styles.tealCard}>
           <Text style={styles.tealTitle}>後續說明</Text>

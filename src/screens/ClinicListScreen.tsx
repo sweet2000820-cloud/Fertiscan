@@ -5,22 +5,23 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getRecords } from '../storage'
 
 export default function ClinicListScreen({ navigation }: any) {
-  const [clinics, setClinics] = useState<{id: number, name: string, doctor: string, date: string}[]>([])
+  const [clinics, setClinics] = useState<any[]>([])
   const [sharedHistory, setSharedHistory] = useState<{date: string, clinic: string}[]>([])
 
  useEffect(() => {
     AsyncStorage.getItem('clinics').then(val => {
       const parsed = val ? JSON.parse(val) : []
       setClinics(parsed)
-      getRecords().then(records => {
-        if (records.length > 0 && parsed.length > 0) {
-          const history = records.slice(0, 5).map(r => ({
-            date: `${r.date} 結果`,
-            clinic: `${parsed[0]?.name || '—'} · ${parsed[0]?.doctor || '—'}`
-          }))
-          setSharedHistory(history)
-        }
-      })
+      AsyncStorage.getItem('sharedHistory').then(hval => {
+      if (hval) {
+        const history = JSON.parse(hval)
+        const mapped = history.slice(0, 10).map((h: any) => ({
+          date: `${h.date} · T/C ${h.tc}`,
+          clinic: `${h.clinicName} `
+        }))
+        setSharedHistory(mapped)
+      }
+    })
     })
   }, [])
   
@@ -62,7 +63,6 @@ export default function ClinicListScreen({ navigation }: any) {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.clinicName}>{clinic.name}</Text>
-                <Text style={styles.clinicSub}>{clinic.doctor} · 連結於 {clinic.date}</Text>
               </View>
               <View style={styles.connectedBadge}>
                 <Text style={styles.connectedBadgeText}>已連結</Text>
@@ -76,7 +76,15 @@ export default function ClinicListScreen({ navigation }: any) {
               </View>
               <View style={{ alignItems: 'flex-end' }}>
                 <Text style={styles.shareLabel}>自動分享</Text>
-                <Switch value={false} onValueChange={() => {}} trackColor={{ true: colors.primary }} />
+                <Switch
+                  value={clinic.autoShare || false}
+                  onValueChange={async (val) => {
+                    const updated = clinics.map(c => c.id === clinic.id ? { ...c, autoShare: val } : c)
+                    setClinics(updated)
+                    await AsyncStorage.setItem('clinics', JSON.stringify(updated))
+                  }}
+                  trackColor={{ true: colors.primary }}
+                />
               </View>
             </View>
             <View style={styles.btnRow}>
@@ -130,7 +138,7 @@ const styles = StyleSheet.create({
     height: 46, flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
   },
-  back: { fontSize: 50, color: colors.primary, marginRight: 6 },
+  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
   appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
   scroll: { flex: 1, padding: 18 },
   sectionTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray500, marginBottom: 8 },

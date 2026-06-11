@@ -5,7 +5,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 
 export default function ClinicConfirmScreen({ navigation, route }: any) {
   const clinicName = route?.params?.clinicName || '台北生殖醫學中心'
-  const doctor = route?.params?.doctor || '李建宏 醫師'
+  console.log('ClinicSuccess params:', JSON.stringify(route?.params))
+  console.log('route params:', JSON.stringify(route?.params))
   const [shareTC, setShareTC] = useState(true)
   const [shareHistory, setShareHistory] = useState(true)
   const [autoShare, setAutoShare] = useState(false)
@@ -27,7 +28,6 @@ export default function ClinicConfirmScreen({ navigation, route }: any) {
             <Text style={styles.clinicIconText}>{clinicName.slice(0, 2)}</Text>
           </View>
           <Text style={styles.clinicName}>{clinicName}</Text>
-          <Text style={styles.clinicSub}>{doctor}</Text>
           <View style={styles.badge}>
             <Text style={styles.badgeText}>FertiScan 合作診所</Text>
           </View>
@@ -63,14 +63,35 @@ export default function ClinicConfirmScreen({ navigation, route }: any) {
             const newClinic = {
               id: Date.now(),
               name: clinicName,
-              doctor: doctor,
               date: new Date().toLocaleDateString('zh-TW').replace(/\//g, '/'),
+              autoShare,
             }
             const updated = [...existing, newClinic]
             await AsyncStorage.setItem('clinics', JSON.stringify(updated))
           }
-          navigation.navigate('ClinicSuccess', { clinicName, doctor })
-          }}>
+
+          // 歷史趨勢分享
+          if (shareHistory) {
+            const { getRecords } = require('../storage')
+            const records = await getRecords()
+            const recent = records.slice(0, 6)
+            if (recent.length > 0) {
+              const histRaw = await AsyncStorage.getItem('sharedHistory')
+              const histExisting = histRaw ? JSON.parse(histRaw) : []
+              const newEntries = recent.map((r: any) => ({
+                date: r.date,
+                time: r.time,
+                tc: r.tc,
+                clinicName,
+                sharedAt: new Date().toISOString(),
+              }))
+              await AsyncStorage.setItem('sharedHistory', JSON.stringify([...newEntries, ...histExisting]))
+            }
+          }
+
+          navigation.navigate('ClinicSuccess', { clinicName})
+        }}>
+
           <Text style={styles.ctaBtnText}>確認連結診所</Text>
         </TouchableOpacity>
 
@@ -91,7 +112,7 @@ const styles = StyleSheet.create({
     height: 46, flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
   },
-  back: { fontSize: 22, color: colors.primary, marginRight: 6 },
+  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
   appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
   scroll: { flex: 1, padding: 18 },
   clinicArea: { alignItems: 'center', paddingVertical: 16, gap: 6, marginBottom: 10 },

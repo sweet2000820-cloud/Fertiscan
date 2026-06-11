@@ -4,11 +4,11 @@ import { colors, typography } from '../theme'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const clinics = [
-  { id: 1, name: '艾微芙人工生殖中心', doctor: '陳明哲 醫師', area: '台北市大安區', verified: true, url: 'https://www.taiwanivfgroup.com/' },
-  { id: 2, name: '華育生殖醫學中心', doctor: '蔡鋒博 醫師', area: '台北市信義區', verified: true, url: 'https://huayuivf.com/' },
-  { id: 3, name: '王家瑋婦產科診所', doctor: '王家瑋 醫師', area: '台中市西區', verified: true, url: 'https://www.bestivf.com.tw/TW/home/Default.asp' },
-  { id: 4, name: '茂盛醫院生殖醫學中心', doctor: '李茂盛 醫師', area: '台中市北區', verified: true, url: 'https://www.ivftaiwan.tw/' },
-  { id: 5, name: '送子鳥生殖中心', doctor: '李明昭 醫師', area: '台北市中山區', verified: true, url: 'https://www.e-stork.com.tw/' },
+  { id: 1, name: '艾微芙人工生殖中心', area: '台北市大安區', verified: true, url: 'https://www.taiwanivfgroup.com/' },
+  { id: 2, name: '華育生殖醫學中心', area: '台北市信義區', verified: true, url: 'https://huayuivf.com/' },
+  { id: 3, name: '王家瑋婦產科診所', area: '台中市西區', verified: true, url: 'https://www.bestivf.com.tw/TW/home/Default.asp' },
+  { id: 4, name: '茂盛醫院生殖醫學中心', area: '台中市北區', verified: true, url: 'https://www.ivftaiwan.tw/' },
+  { id: 5, name: '送子鳥生殖中心', area: '台北市中山區', verified: true, url: 'https://www.e-stork.com.tw/' },
 ]
 
 export default function ClinicSearchScreen({ navigation }: any) {
@@ -26,7 +26,7 @@ export default function ClinicSearchScreen({ navigation }: any) {
   }, [])
 
   const filtered = clinics.filter(c =>
-    c.name.includes(query) || c.doctor.includes(query) || c.area.includes(query)
+    c.name.includes(query) || c.area.includes(query)
   )
 
   return (
@@ -102,7 +102,7 @@ export default function ClinicSearchScreen({ navigation }: any) {
                   )}
                 </View>
                 <View style={styles.clinicSubRow}>
-                  <Text style={styles.clinicSub}>{clinic.doctor} · {clinic.area}</Text>
+                  <Text style={styles.clinicSub}>{clinic.area}</Text>
                   <TouchableOpacity onPress={() => Linking.openURL(clinic.url)}>
                     <Text style={styles.detailBtn}>詳情 ›</Text>
                   </TouchableOpacity>
@@ -129,7 +129,7 @@ export default function ClinicSearchScreen({ navigation }: any) {
                 Alert.alert('已連結', `您已經連結了${clinic.name}，無法重複連結。`)
                 return
               }
-              navigation.navigate('Consent', { clinicName: clinic.name, doctor: clinic.doctor })
+              navigation.navigate('Consent', { clinicName: clinic.name})
             }}
           >
             <Text style={styles.confirmBtnText}>
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
     height: 46, flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
   },
-  back: { fontSize: 22, color: colors.primary, marginRight: 6 },
+  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
   appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
   searchArea: { padding: 14, borderBottomWidth: 0.5, borderBottomColor: colors.gray200 },
   searchBox: {
