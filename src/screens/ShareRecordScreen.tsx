@@ -4,16 +4,25 @@ import { colors, typography } from '../theme'
 import { getRecords, TestRecord } from '../storage'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-
 export default function ShareRecordScreen({ navigation }: any) {
   const [records, setRecords] = useState<TestRecord[]>([])
-  const [selected, setSelected] = useState([0])
+  const [selected, setSelected] = useState<number[]>([])
   const [clinics, setClinics] = useState<{id: number, name: string, doctor: string, date: string}[]>([])
- 
+  const [sharedDates, setSharedDates] = useState<string[]>([])
 
   useEffect(() => {
     AsyncStorage.getItem('clinics').then(val => {
-      if (val) setClinics(JSON.parse(val))
+      const parsed = val ? JSON.parse(val) : []
+      setClinics(parsed)
+      AsyncStorage.getItem('sharedHistory').then(hval => {
+        if (hval && parsed.length > 0) {
+          const history = JSON.parse(hval)
+          const dates = history
+            .filter((h: any) => h.clinicName === parsed[0]?.name)
+            .map((h: any) => h.date)
+          setSharedDates(dates)
+        }
+      })
     })
     getRecords().then(r => {
       if (r.length > 0) setRecords(r)
@@ -26,6 +35,7 @@ export default function ShareRecordScreen({ navigation }: any) {
   }, [])
 
   function toggleRecord(i: number) {
+    if (sharedDates.includes(records[i]?.date)) return
     if (selected.includes(i)) {
       setSelected(selected.filter(s => s !== i))
     } else {
@@ -66,28 +76,46 @@ export default function ShareRecordScreen({ navigation }: any) {
         <View style={styles.divider} />
 
         <Text style={styles.sectionTitle}>選擇要分享的記錄</Text>
-        {records.map((r, i) => (
-          <TouchableOpacity
-            key={i}
-            style={[styles.recordRow, selected.includes(i) && styles.recordRowSelected]}
-            onPress={() => toggleRecord(i)}
-          >
-            <View style={[styles.checkbox, selected.includes(i) && styles.checkboxDone]}>
-              {selected.includes(i) && <Text style={styles.checkmark}>✓</Text>}
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.recordDate, selected.includes(i) && { color: colors.primary }]}>
-                {r.date} · T/C {r.tc}
-              </Text>
-              <Text style={styles.recordSub}>{r.status}</Text>
-            </View>
-            {i === 0 && (
-              <View style={styles.latestBadge}>
-                <Text style={styles.latestText}>最新</Text>
+        {records.map((r, i) => {
+          const alreadyShared = sharedDates.includes(r.date)
+          return (
+            <TouchableOpacity
+              key={i}
+              style={[
+                styles.recordRow,
+                selected.includes(i) && styles.recordRowSelected,
+                alreadyShared && { opacity: 0.5 },
+              ]}
+              onPress={() => {
+                if (alreadyShared) {
+                  Alert.alert('已傳送', '此筆紀錄已傳送給此診所，無法重複傳送。')
+                  return
+                }
+                toggleRecord(i)
+              }}
+            >
+              <View style={[styles.checkbox, selected.includes(i) && styles.checkboxDone]}>
+                {selected.includes(i) && <Text style={styles.checkmark}>✓</Text>}
               </View>
-            )}
-          </TouchableOpacity>
-        ))}
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.recordDate, selected.includes(i) && { color: colors.primary }]}>
+                  {r.date} · T/C {r.tc}
+                </Text>
+                <Text style={styles.recordSub}>{r.status}</Text>
+              </View>
+              {i === 0 && !alreadyShared && (
+                <View style={styles.latestBadge}>
+                  <Text style={styles.latestText}>最新</Text>
+                </View>
+              )}
+              {alreadyShared && (
+                <View style={[styles.latestBadge, { backgroundColor: colors.successLight }]}>
+                  <Text style={[styles.latestText, { color: colors.success }]}>已傳送</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          )
+        })}
 
         <Text style={styles.sectionTitle}>分享內容</Text>
         <View style={styles.card}>
@@ -111,16 +139,15 @@ export default function ShareRecordScreen({ navigation }: any) {
             if (clinics.length === 0) {
               Alert.alert('尚未連結診所', '請先至設定頁面連結診所，才能傳送記錄。', [
                 { text: '取消', style: 'cancel' },
-                { text: '前往設定', onPress: () => {
-                  navigation.navigate('Main', { screen: '設定' })
-                }},
+                { text: '前往設定', onPress: () => navigation.navigate('Main', { screen: '設定' }) },
               ])
               return
             }
             if (selected.length > 0) {
               const clinicName = clinics[0].name
               const doctor = clinics[0].doctor
-              navigation.navigate('ShareSent', { clinicName, doctor })
+              const selectedRecords = selected.map(i => records[i])
+              navigation.navigate('ShareSent', { clinicName, doctor, records: selectedRecords })
             }
           }}
           disabled={selected.length === 0}
@@ -140,7 +167,6 @@ export default function ShareRecordScreen({ navigation }: any) {
         </TouchableOpacity>
 
         <View style={{ height: 20 }} />
-
       </ScrollView>
     </View>
   )
@@ -152,7 +178,7 @@ const styles = StyleSheet.create({
     height: 46, flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
   },
-  back: { fontSize: 22, color: colors.primary, marginRight: 6 },
+  back: { fontSize: 50, color: colors.primary, marginRight: 6 },
   appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
   scroll: { flex: 1, padding: 18 },
   clinicRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },

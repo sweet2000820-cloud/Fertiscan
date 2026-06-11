@@ -8,18 +8,19 @@ export default function ClinicListScreen({ navigation }: any) {
   const [clinics, setClinics] = useState<{id: number, name: string, doctor: string, date: string}[]>([])
   const [sharedHistory, setSharedHistory] = useState<{date: string, clinic: string}[]>([])
 
-  useEffect(() => {
+ useEffect(() => {
     AsyncStorage.getItem('clinics').then(val => {
-      if (val) setClinics(JSON.parse(val))
-    })
-  getRecords().then(records => {
-      if (records.length > 0 && clinics.length > 0) {
-        const history = records.slice(0, 5).map(r => ({
-          date: `${r.date} 結果`,
-          clinic: `${clinics[0]?.name || '—'} · ${clinics[0]?.doctor || '—'}`
-        }))
-        setSharedHistory(history)
-      }
+      const parsed = val ? JSON.parse(val) : []
+      setClinics(parsed)
+      getRecords().then(records => {
+        if (records.length > 0 && parsed.length > 0) {
+          const history = records.slice(0, 5).map(r => ({
+            date: `${r.date} 結果`,
+            clinic: `${parsed[0]?.name || '—'} · ${parsed[0]?.doctor || '—'}`
+          }))
+          setSharedHistory(history)
+        }
+      })
     })
   }, [])
   

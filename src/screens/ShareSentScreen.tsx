@@ -1,9 +1,29 @@
+import { useEffect } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { colors, typography } from '../theme'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 export default function ShareSentScreen({ navigation, route }: any) {
   const clinicName = route?.params?.clinicName || '診所'
   const doctor = route?.params?.doctor || ''
+  const records = route?.params?.records || []
+
+  useEffect(() => {
+    async function saveSharedHistory() {
+      const raw = await AsyncStorage.getItem('sharedHistory')
+      const existing = raw ? JSON.parse(raw) : []
+      const newEntries = records.map((r: any) => ({
+        date: r.date,
+        tc: r.tc,
+        clinicName,
+        doctor,
+        sharedAt: new Date().toISOString(),
+      }))
+      await AsyncStorage.setItem('sharedHistory', JSON.stringify([...newEntries, ...existing]))
+    }
+    if (records.length > 0) saveSharedHistory()
+  }, [])
+
   return (
     <View style={styles.container}>
       <View style={styles.content}>
@@ -35,9 +55,7 @@ export default function ShareSentScreen({ navigation, route }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
-  content: {
-    flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24,
-  },
+  content: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   successIcon: {
     width: 68, height: 68, borderRadius: 34,
     backgroundColor: colors.successLight,
