@@ -26,13 +26,28 @@ export default function ClinicListScreen({ navigation }: any) {
   }, [])
   
 
-  function handleDisconnect(id: number, name: string) {
-    Alert.alert('解除連結', `確定要解除與${name}的連結嗎？\n\n解除後診所將無法再接收您的資料。`, [
+  async function handleDisconnect(id: number, name: string) {
+    Alert.alert('解除連結', `確定要解除與${name}的連結嗎？\n\n解除後系統將不再傳送資料給此診所。`, [
       { text: '取消', style: 'cancel' },
-      { text: '解除連結', style: 'destructive', onPress: () => {
+      { text: '解除連結', style: 'destructive', onPress: async () => {
         const updated = clinics.filter(c => c.id !== id)
         setClinics(updated)
-        AsyncStorage.setItem('clinics', JSON.stringify(updated))
+        await AsyncStorage.setItem('clinics', JSON.stringify(updated))
+
+        // 清除此診所的分享歷程
+        const hval = await AsyncStorage.getItem('sharedHistory')
+        if (hval) {
+          const history = JSON.parse(hval)
+          const filtered = history.filter((h: any) => h.clinicName !== name)
+          await AsyncStorage.setItem('sharedHistory', JSON.stringify(filtered))
+          const mapped = filtered.slice(0, 10).map((h: any) => ({
+            date: `${h.date} · T/C ${h.tc}`,
+            clinic: h.clinicName,
+          }))
+          setSharedHistory(mapped)
+        }
+
+        Alert.alert('已解除連結', `您已解除與${name}的連結。\n\n系統將不再傳送任何資料給此診所。`)
       }},
     ])
   }

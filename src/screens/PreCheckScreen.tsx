@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
 import { colors, typography } from '../theme'
 import Button from '../components/Button'
+import { Ionicons } from '@expo/vector-icons'
 
 const checkItems = [
   '試紙包裝完整、未過期',
@@ -42,7 +43,7 @@ export default function PreCheckScreen({ navigation }: any) {
 
         <View style={styles.iconArea}>
           <View style={styles.iconBox}>
-            <Text style={{ fontSize: 70 }}>⊞</Text>
+            <Ionicons name="flask-outline" size={46} color={colors.primary} />
           </View>
           <Text style={styles.iconTitle}>準備試紙與夾具</Text>
           <Text style={styles.iconSub}>確認試紙效期、安裝光學夾具至手機前鏡頭</Text>
@@ -84,7 +85,7 @@ const styles = StyleSheet.create({
     height: 46, flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
   },
-  back: { fontSize: 22, color: colors.primary, marginRight: 6 },
+  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
   appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
   scroll: { flex: 1, padding: 18 },
   progressRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },

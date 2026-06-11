@@ -56,7 +56,7 @@ export default function RegisterScreen({ navigation }: any) {
           <Text style={styles.label}>姓名</Text>
           <TextInput
             style={styles.input}
-            placeholder="陳小明"
+            placeholder="請輸入真實姓名"
             placeholderTextColor={colors.gray400}
             value={name}
             onChangeText={setName}
@@ -142,18 +142,18 @@ const styles = StyleSheet.create({
     height: 46, flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
   },
-  back: { fontSize: 50, color: colors.primary, marginRight: 6 },
+  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
   appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
   scroll: { flex: 1, padding: 18 },
   field: { marginBottom: 14 },
-  label: { fontSize: typography.sizes.xs, color: colors.gray500, fontWeight: typography.weights.medium, marginBottom: 4 },
+  label: { fontSize: typography.sizes.md, color: colors.gray500, fontWeight: typography.weights.medium, marginBottom: 4 },
   input: {
     height: 40, borderWidth: 0.5, borderColor: colors.gray300,
     borderRadius: 8, paddingHorizontal: 12,
     fontSize: typography.sizes.md, color: colors.gray900,
   },
   dateRow: { flexDirection: 'row', gap: 6 },
-  hint: { fontSize: typography.sizes.xs, color: colors.gray400, marginTop: 4 },
+  hint: { fontSize: typography.sizes.sm, color: colors.gray400, marginTop: 4 },
   strengthRow: { flexDirection: 'row', gap: 3, marginTop: 6 },
   strengthBar: { flex: 1, height: 3, borderRadius: 2, backgroundColor: colors.gray200 },
   strengthBarFill: { backgroundColor: colors.primary },
@@ -166,6 +166,6 @@ const styles = StyleSheet.create({
   },
   checkboxDone: { backgroundColor: colors.primaryLight, borderColor: colors.primary },
   checkmark: { fontSize: 9, color: colors.primary },
-  agreeText: { fontSize: typography.sizes.xs, color: colors.gray400, flex: 1, lineHeight: 18 },
+  agreeText: { fontSize: typography.sizes.sm, color: colors.gray400, flex: 1, lineHeight: 18 },
   link: { color: colors.primary },
 })

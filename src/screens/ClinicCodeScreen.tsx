@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native'
 import { colors, typography } from '../theme'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { Ionicons } from '@expo/vector-icons'
 
-const validCodes: Record<string, { clinicName: string, doctor: string }> = {
-  '123456': { clinicName: '艾微芙人工生殖中心', doctor: '陳明哲 醫師' },
-  '654321': { clinicName: '華育生殖醫學中心', doctor: '蔡鋒博 醫師' },
-  '111111': { clinicName: '王家瑋婦產科診所', doctor: '王家瑋 醫師' },
-  '999999': { clinicName: '茂盛醫院生殖醫學中心', doctor: '李茂盛 醫師' },
+const validCodes: Record<string, { clinicName: string}> = {
+  '123456': { clinicName: '艾微芙人工生殖中心'},
+  '654321': { clinicName: '華育生殖醫學中心'},
+  '111111': { clinicName: '王家瑋婦產科診所'},
+  '999999': { clinicName: '茂盛醫院生殖醫學中心'},
 }
 
 export default function ClinicCodeScreen({ navigation }: any) {
@@ -33,7 +34,6 @@ export default function ClinicCodeScreen({ navigation }: any) {
         }
         navigation.navigate('Consent', {
           clinicName: validCodes[code].clinicName,
-          doctor: validCodes[code].doctor,
         })
       } else {
         Alert.alert('邀請碼無效', '請確認邀請碼是否正確，或向診所重新索取')
@@ -54,8 +54,8 @@ export default function ClinicCodeScreen({ navigation }: any) {
 
         <View style={styles.iconArea}>
           <View style={styles.iconBox}>
-            <Text style={styles.iconText}>▤</Text>
-          </View>
+          <Ionicons name="keypad-outline" size={36} color={colors.primary} />
+        </View>
           <Text style={styles.title}>輸入 6 位數邀請碼</Text>
           <Text style={styles.sub}>由診所提供的邀請碼，輸入後即可建立連結</Text>
         </View>
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     height: 46, flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
   },
-  back: { fontSize: 22, color: colors.primary, marginRight: 6 },
+  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
   appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
   content: { flex: 1, padding: 24 },
   iconArea: { alignItems: 'center', paddingVertical: 20, gap: 8, marginBottom: 20 },

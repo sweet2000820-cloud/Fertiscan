@@ -35,8 +35,8 @@ export default function AIChatScreen({ navigation }: any) {
         reply = '睡眠不足會導致皮質醇偏高，影響荷爾蒙平衡，建議每晚保持 7-8 小時睡眠。'
       } else if (text.includes('壓力')) {
         reply = '長期壓力確實會影響生殖健康，建議透過運動、冥想等方式減壓。'
-      } else if (text.includes('多久檢測') || text.includes('幾次')) {
-        reply = '一般建議每 4-8 週檢測一次，可以追蹤趨勢變化。如有異常建議諮詢醫師。'
+      } else if (text.includes('檢測') || text.includes('幾次')) {
+        reply = '一般建議每 2-4 週檢測一次，可以追蹤趨勢變化。如有異常建議諮詢醫師。'
       } else if (text.includes('運動')) {
         reply = '規律運動有助於改善睡眠品質、降低壓力荷爾蒙，建議每週至少 3 次有氧運動。'
       }

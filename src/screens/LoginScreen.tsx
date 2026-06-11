@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: typography.sizes.sm, color: colors.gray400, marginTop: 4 },
   form: { gap: 12, marginBottom: 16 },
   field: { gap: 4 },
-  label: { fontSize: typography.sizes.xs, color: colors.gray500, fontWeight: typography.weights.medium },
+  label: { fontSize: typography.sizes.md, color: colors.gray500, fontWeight: typography.weights.medium },
   input: {
     height: 40, borderWidth: 0.5, borderColor: colors.gray300,
     borderRadius: 8, paddingHorizontal: 12,

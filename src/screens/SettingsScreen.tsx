@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { useEffect } from 'react'
 import { useFocusEffect } from '@react-navigation/native'
 import { useCallback } from 'react'
+import { Ionicons } from '@expo/vector-icons'
 
 
 export default function SettingsScreen({ navigation }: any) {
@@ -90,10 +91,10 @@ export default function SettingsScreen({ navigation }: any) {
 
         <TouchableOpacity style={styles.clinicBanner} onPress={() => navigation.navigate('ClinicList')}>
           <View style={styles.clinicBannerIcon}>
-            <Text style={{ fontSize: 18, color: '#fff' }}>＋</Text>
+            <Ionicons name="business-outline" size={22} color="#fff" />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.clinicBannerTitle}>連結診所 / 醫師</Text>
+            <Text style={styles.clinicBannerTitle}>連結診所</Text>
             <Text style={styles.clinicBannerSub}>{clinicCount > 0 ? `已連結 ${clinicCount} 間診所 · 點擊管理` : '尚未連結診所 · 點擊新增'}</Text>
           </View>
           <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>›</Text>

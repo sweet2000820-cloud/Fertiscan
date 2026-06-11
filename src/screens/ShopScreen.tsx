@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } fr
 import { colors, typography } from '../theme'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import Svg, { Rect, Line, Text as SvgText, G } from 'react-native-svg'
+import { House, ClockCounterClockwise, Crosshair, ShoppingBag, GearSix } from 'phosphor-react-native'
 
 export default function ShopScreen({ navigation }: any) {
   const [qty, setQty] = useState(1)
@@ -120,11 +121,7 @@ export default function ShopScreen({ navigation }: any) {
         </View>
         <TouchableOpacity
           style={styles.checkoutBtn}
-          onPress={() => {
-            Alert.alert('即將開放', '線上購買功能即將上線，敬請期待！', [
-              { text: '確定' }
-            ])
-          }}
+          onPress={() => navigation.navigate('OrderConfirm', { qty })}
         >
           <Text style={styles.checkoutBtnText}>立即購買</Text>
         </TouchableOpacity>

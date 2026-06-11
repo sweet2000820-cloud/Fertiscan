@@ -6,6 +6,7 @@ import { Text } from 'react-native'
 import { colors, typography } from './theme'
 import { useState, useEffect } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { Ionicons } from '@expo/vector-icons'
 
 
 import DashboardScreen from './screens/DashboardScreen'
@@ -41,26 +42,27 @@ import ForgotPasswordScreen from './screens/ForgotPasswordScreen'
 import VerifyEmailScreen from './screens/VerifyEmailScreen'
 import LotQRScreen from './screens/LotQRScreen'
 import ShopScreen from './screens/ShopScreen'
+import OrderConfirmScreen from './screens/OrderConfirmScreen'
+
 
 
 const Tab = createBottomTabNavigator()
 const Stack = createNativeStackNavigator()
 
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
-  const icons: Record<string, string> = {
-    '首頁': '⊞',
-    '紀錄': '☰',
-    '校準': '◎',
-    '商店': '🛒',
-    '設定': '⚙',
+  const color = focused ? colors.primary : colors.gray400
+  const size = 26
+
+  switch (label) {
+    case '首頁': return <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
+    case '紀錄': return <Ionicons name={focused ? 'time' : 'time-outline'} size={size} color={color} />
+    case '校準': return <Ionicons name={focused ? 'scan-circle' : 'scan-circle-outline'} size={size} color={color} />
+    case '商店': return <Ionicons name={focused ? 'bag' : 'bag-outline'} size={size} color={color} />
+    case '設定': return <Ionicons name={focused ? 'settings' : 'settings-outline'} size={size} color={color} />
+    default: return null
   }
-  
-  return (
-    <Text style={{ fontSize: 25, color: focused ? colors.primary : colors.gray400 }}>
-      {icons[label]}
-    </Text>
-  )
 }
+
 
 function TabNavigator() {
   return (
@@ -77,7 +79,8 @@ function TabNavigator() {
           borderTopWidth: 0.5,
           borderTopColor: colors.gray200,
           height: 80,
-          paddingBottom: 5,
+          paddingBottom: 8,
+          paddingTop: 6,
         },
       })}
     >
@@ -93,12 +96,6 @@ function TabNavigator() {
 export default function Navigation({ onLogin }: any) {
   const [initialRoute, setInitialRoute] = useState<string | null>(null)
 
-  useEffect(() => {
-    AsyncStorage.getItem('isLoggedIn').then(val => {
-      console.log('isLoggedIn:', val)
-      setInitialRoute(val === 'true' ? 'Main' : 'Login')
-    })
-  }, [])
   useEffect(() => {
     AsyncStorage.getItem('isLoggedIn').then(val => {
       setInitialRoute(val === 'true' ? 'Main' : 'Login')
@@ -142,6 +139,7 @@ export default function Navigation({ onLogin }: any) {
         <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
         <Stack.Screen name="LotQR" component={LotQRScreen} />
         <Stack.Screen name="Shop" component={ShopScreen} />
+        <Stack.Screen name="OrderConfirm" component={OrderConfirmScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   )
