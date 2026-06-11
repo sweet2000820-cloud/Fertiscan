@@ -4,6 +4,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { NavigationContainer } from '@react-navigation/native'
 import { Text } from 'react-native'
 import { colors, typography } from './theme'
+import { useState, useEffect } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 
 import DashboardScreen from './screens/DashboardScreen'
@@ -88,10 +90,26 @@ function TabNavigator() {
   )
 }
 
-export default function Navigation({ onLogin, loggedIn }: any) {
+export default function Navigation({ onLogin }: any) {
+  const [initialRoute, setInitialRoute] = useState<string | null>(null)
+
+  useEffect(() => {
+    AsyncStorage.getItem('isLoggedIn').then(val => {
+      console.log('isLoggedIn:', val)
+      setInitialRoute(val === 'true' ? 'Main' : 'Login')
+    })
+  }, [])
+  useEffect(() => {
+    AsyncStorage.getItem('isLoggedIn').then(val => {
+      setInitialRoute(val === 'true' ? 'Main' : 'Login')
+    })
+  }, [])
+
+  if (!initialRoute) return null
+
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { paddingTop: 50 } }} initialRouteName={loggedIn ? 'Main' : 'Login'}>
+      <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { paddingTop: 50 } }} initialRouteName={initialRoute}>
         <Stack.Screen name="Login">
           {(props) => <LoginScreen {...props} onLogin={onLogin} />}
         </Stack.Screen>
