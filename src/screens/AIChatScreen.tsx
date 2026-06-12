@@ -54,7 +54,7 @@ export default function AIChatScreen({ navigation }: any) {
         </TouchableOpacity>
         <View style={styles.appbarCenter}>
           <View style={styles.botAvatar}>
-            <Image source={require('../../assets/sprite.png')} style={{ width: 28, height: 30 }} />
+            <Image source={require('../../assets/robot.png')} style={{ width: 28, height: 30 }} />
             </View>
           <View>
             <Text style={styles.appbarTitle}>AI 生育小幫手</Text>
@@ -73,7 +73,7 @@ export default function AIChatScreen({ navigation }: any) {
           <View key={i} style={[styles.msgRow, msg.role === 'user' && styles.msgRowUser]}>
             {msg.role === 'bot' && (
               <View style={styles.botAvatarSmall}>
-                <Image source={require('../../assets/sprite.png')} style={{ width: 36, height: 38 }} />
+                <Image source={require('../../assets/robot.png')} style={{ width: 36, height: 38 }} />
               </View>
             )}
             <View style={[styles.bubble, msg.role === 'user' ? styles.bubbleUser : styles.bubbleBot]}>
@@ -84,7 +84,7 @@ export default function AIChatScreen({ navigation }: any) {
         {loading && (
           <View style={styles.msgRow}>
             <View style={styles.botAvatarSmall}>
-              <Image source={require('../../assets/sprite.png')} style={{ width: 40, height: 42 }} />
+              <Image source={require('../../assets/robot.png')} style={{ width: 40, height: 42 }} />
             </View>
             <View style={styles.bubbleBot}>
               <Text style={styles.bubbleText}>思考中...</Text>

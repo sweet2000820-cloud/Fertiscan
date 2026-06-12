@@ -153,7 +153,17 @@ export default function DashboardScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        <Button title="開始新一次檢測" onPress={() => navigation.navigate('PreCheck')} />
+        <Button title="開始新一次檢測" onPress={async () => {
+          const lot = await AsyncStorage.getItem('lotNumber')
+          if (!lot) {
+            Alert.alert('尚未設定批號', '請先前往「校準」頁面設定試紙批號，才能開始檢測。', [
+              { text: '稍後再說', style: 'cancel' },
+              { text: '前往設定批號', onPress: () => navigation.navigate('Main', { screen: '校準' }) },
+            ])
+            return
+          }
+          navigation.navigate('PreCheck')
+        }} />
 
         <View style={styles.divider} />
         <Text style={styles.sectionTitle}>最近紀錄</Text>
@@ -176,7 +186,11 @@ export default function DashboardScreen({ navigation }: any) {
       </ScrollView>
 
       <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('AIChat')}>
-        <Image source={require('../../assets/sprite.png')} style={{ width: 80, height: 80 }} />
+        <View style={styles.speechBubble}>
+          <Text style={styles.speechText}>有問題嗎？來問我！</Text>
+          <View style={styles.speechTail} />
+        </View>
+        <Image source={require('../../assets/robot.png')} style={{ width: 80, height: 80 }} />
       </TouchableOpacity>
 
     </View>
@@ -218,5 +232,35 @@ const styles = StyleSheet.create({
     position: 'absolute', bottom: 50, right: 40,
     width: 60, height: 60,
     backgroundColor: 'transparent',
+  },
+  speechBubble: {
+    position: 'absolute',
+    bottom: 75,
+    right: 0,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    width: 130,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+  },
+  speechText: {
+    fontSize: typography.sizes.xs,
+    color: colors.primary,
+    textAlign: 'center',
+  },
+  speechTail: {
+    position: 'absolute',
+    bottom: -9,
+    right: 20,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 8,
+    borderRightWidth: 8,
+    borderTopWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: colors.primary,
   },
 })
