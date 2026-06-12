@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native'
 import { colors, typography } from '../theme'
 import { useState, useEffect } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -7,8 +7,12 @@ import { getRecords } from '../storage'
 export default function PlanScreen({ navigation }: any) {
   const [monthCount, setMonthCount] = useState(0)
   const [selected, setSelected] = useState<'monthly' | 'yearly'>('yearly')
+  const [currentPlan, setCurrentPlan] = useState<string>('free')
 
   useEffect(() => {
+    AsyncStorage.getItem('userPlan').then(val => {
+      if (val) setCurrentPlan(val)
+    })
     getRecords().then(records => {
       const now = new Date()
       const thisMonth = records.filter(r => {
@@ -38,7 +42,7 @@ export default function PlanScreen({ navigation }: any) {
             </View>
             <View style={{ flex: 1 }}>
               <View style={styles.planRow}>
-                <Text style={styles.planTitle}>免費版</Text>
+                <Text style={styles.planTitle}>{currentPlan === 'pro' ? 'Pro 版' : '免費版'}</Text>
                 <View style={styles.freeBadge}>
                   <Text style={styles.freeBadgeText}>免費</Text>
                 </View>
@@ -53,7 +57,9 @@ export default function PlanScreen({ navigation }: any) {
             </View>
             <View style={styles.statBox}>
               <Text style={styles.statLabel}>AI 建議</Text>
-              <Text style={[styles.statValue, { color: 'rgba(255,255,255,0.35)', fontSize: 14 }]}>未解鎖</Text>
+              <Text style={[styles.statValue, { color: currentPlan === 'pro' ? '#4ade80' : 'rgba(255,255,255,0.35)', fontSize: 14 }]}>
+                {currentPlan === 'pro' ? '已解鎖' : '未解鎖'}
+              </Text>
             </View>
           </View>
         </View>
@@ -117,9 +123,32 @@ export default function PlanScreen({ navigation }: any) {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.ctaBtn}>
-          <Text style={styles.ctaBtnText}>免費試用 7 天 · 立即解鎖</Text>
-        </TouchableOpacity>
+       {currentPlan !== 'pro' && (
+          <TouchableOpacity style={styles.ctaBtn} onPress={() => {
+            navigation.navigate('Payment', { planType: selected })
+          }}>
+            <Text style={styles.ctaBtnText}>免費試用 7 天 · 立即解鎖</Text>
+          </TouchableOpacity>
+        )}
+        {currentPlan === 'pro' && (
+          <>
+            <View style={[styles.ctaBtn, { backgroundColor: colors.success }]}>
+              <Text style={styles.ctaBtnText}>✓ 目前為 Pro 版</Text>
+            </View>
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => {
+              Alert.alert('取消訂閱', '確定要取消 Pro 訂閱嗎？\n\n取消後將在目前計費週期結束時降回免費版。', [
+                { text: '保留訂閱', style: 'cancel' },
+                { text: '確認取消', style: 'destructive', onPress: async () => {
+                  await AsyncStorage.setItem('userPlan', 'free')
+                  setCurrentPlan('free')
+                  Alert.alert('已取消訂閱', '您的訂閱已取消，將在計費週期結束後降回免費版。')
+                }},
+              ])
+            }}>
+              <Text style={styles.cancelBtnText}>取消訂閱</Text>
+            </TouchableOpacity>
+          </>
+        )}
         <Text style={styles.ctaHint}>7 天免費，到期前取消不收費 · Apple / Google Pay</Text>
 
         <View style={{ height: 30 }} />
@@ -139,7 +168,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: colors.gray200,
   },
-  back: { fontSize: 22, color: colors.primary, marginRight: 6 },
+  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
   appbarTitle: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.medium,
@@ -215,4 +244,9 @@ const styles = StyleSheet.create({
   },
   ctaBtnText: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: '#fff' },
   ctaHint: { fontSize: typography.sizes.xs, color: colors.gray400, textAlign: 'center', marginBottom: 8 },
+  cancelBtn: {
+    height: 36, borderRadius: 9,
+    alignItems: 'center', justifyContent: 'center', marginTop: 8,
+  },
+  cancelBtnText: { fontSize: typography.sizes.sm, color: colors.danger },
 })

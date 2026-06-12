@@ -1,5 +1,9 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native'
 import { colors, typography } from '../theme'
+import { Ionicons } from '@expo/vector-icons'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as Print from 'expo-print'
+import * as Sharing from 'expo-sharing'
 
 function getTCColor(status: string) {
   switch (status) {
@@ -35,6 +39,74 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
   const cLine = Math.round(tcVal * 142 / 0.68)
   const tLine = Math.round(97 * tcVal / 0.68)
   const conc = Math.round(22 * tcVal / 0.68)
+
+  async function exportPDF() {
+    const html = `
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: sans-serif; padding: 40px; color: #333; }
+          h1 { color: #0A5C6B; font-size: 24px; margin-bottom: 4px; }
+          .subtitle { color: #888; font-size: 14px; margin-bottom: 30px; }
+          .section { margin-bottom: 24px; }
+          .section-title { color: #0A5C6B; font-size: 16px; font-weight: bold; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+          .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+          .label { color: #888; font-size: 13px; }
+          .value { font-size: 13px; font-weight: bold; }
+          .tc-value { font-size: 48px; font-weight: bold; color: ${tcColor}; text-align: center; margin: 20px 0; }
+          .footer { margin-top: 40px; font-size: 11px; color: #aaa; text-align: center; border-top: 1px solid #eee; padding-top: 16px; }
+        </style>
+      </head>
+      <body>
+        <h1>FertiScan 檢測報告</h1>
+        <p class="subtitle">${record.date} · ${record.time}</p>
+        <div class="section">
+          <div class="section-title">T/C 比值結果</div>
+          <div class="tc-value">${record.tc}</div>
+          <div class="row"><span class="label">狀態</span><span class="value">${badgeStyle.label}</span></div>
+          <div class="row"><span class="label">換算濃度</span><span class="value">≈ ${conc} mIU/mL</span></div>
+          <div class="row"><span class="label">參考下限</span><span class="value">25 mIU/mL</span></div>
+          <div class="row"><span class="label">試紙批號</span><span class="value">${record.lot}</span></div>
+        </div>
+        <div class="section">
+          <div class="section-title">條線訊號詳情</div>
+          <div class="row"><span class="label">Control line (C)</span><span class="value">灰階 ${cLine}</span></div>
+          <div class="row"><span class="label">Test line (T)</span><span class="value">灰階 ${tLine}</span></div>
+        </div>
+        <div class="section">
+          <div class="section-title">影像品質確認</div>
+          <div class="row"><span class="label">C line 訊號</span><span class="value" style="color:green">✓ 通過</span></div>
+          <div class="row"><span class="label">T line 偵測</span><span class="value" style="color:green">✓ 通過</span></div>
+          <div class="row"><span class="label">影像穩定度</span><span class="value" style="color:green">✓ 通過</span></div>
+          <div class="row"><span class="label">螢幕亮度</span><span class="value" style="color:green">✓ 通過</span></div>
+          <div class="row"><span class="label">批號匹配</span><span class="value" style="color:green">✓ 通過</span></div>
+        </div>
+        <div class="section">
+          <div class="section-title">初步建議</div>
+          <p style="font-size:13px; color:#555; line-height:1.6;">
+            ${record.status === '正常'
+              ? `此次 T/C 比值（${record.tc}）在正常範圍內（≥0.85）。建議維持目前生活習慣，定期複測追蹤趨勢。`
+              : record.status === '邊緣'
+              ? `此次 T/C 比值（${record.tc}）低於正常參考值（≥0.85）。建議 2 週後複測，或諮詢生殖科醫師進行完整評估。`
+              : `此次 T/C 比值（${record.tc}）明顯偏低。建議儘速諮詢生殖科醫師進行進一步檢查。`
+            }
+          </p>
+        </div>
+        <div class="footer">
+          本報告由 FertiScan App 自動生成，僅供初步參考，不構成醫療診斷。<br/>
+          如有疑慮請諮詢生殖科醫師。
+        </div>
+      </body>
+      </html>
+    `
+    try {
+      const { uri } = await Print.printToFileAsync({ html })
+      await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: '分享 FertiScan 報告' })
+    } catch (e) {
+      Alert.alert('匯出失敗', '請再試一次')
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -129,16 +201,36 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
             <Text style={styles.btnSecondaryText}>存入紀錄</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.btnPrimary} onPress={() => navigation.navigate('ShareRecord')}>
-            <Text style={styles.btnPrimaryText}>分享醫師</Text>
+            <Text style={styles.btnPrimaryText}>分享診所</Text>
           </TouchableOpacity>
         </View>
+
+        <TouchableOpacity
+          style={styles.aiBtn}
+          onPress={async () => {
+            const plan = await AsyncStorage.getItem('userPlan')
+            if (plan === 'pro') {
+              navigation.navigate('AIAdvice', { record })
+            } else {
+              Alert.alert('Pro 功能', 'AI 趨勢解讀為 Pro 版專屬功能，升級後即可使用。', [
+                { text: '稍後再說', style: 'cancel' },
+                { text: '升級 Pro', onPress: () => navigation.navigate('Plan') },
+              ])
+            }
+          }}
+        >
+          <Ionicons name="sparkles-outline" size={16} color={colors.primary} />
+          <Text style={styles.aiBtnText}>AI 趨勢解讀</Text>
+          <View style={styles.proBadge}>
+            <Text style={styles.proBadgeText}>PRO</Text>
+          </View>
+        </TouchableOpacity>
 
         <TouchableOpacity style={styles.btnGray} onPress={() => navigation.navigate('ReportLink', { records: [record] })}>
           <Text style={styles.btnGrayText}>複製分享連結</Text>
         </TouchableOpacity>
 
         <View style={{ height: 20 }} />
-
       </ScrollView>
     </View>
   )
@@ -150,7 +242,7 @@ const styles = StyleSheet.create({
     height: 46, flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
   },
-  back: { fontSize: 22, color: colors.primary, marginRight: 6 },
+  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
   appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
   scroll: { flex: 1, padding: 18 },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 },
@@ -185,6 +277,15 @@ const styles = StyleSheet.create({
   btnSecondaryText: { fontSize: typography.sizes.sm, color: colors.primary },
   btnPrimary: { flex: 1, height: 36, borderRadius: 9, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   btnPrimaryText: { fontSize: typography.sizes.sm, color: colors.white, fontWeight: typography.weights.medium },
-  btnGray: { height: 36, borderRadius: 9, backgroundColor: colors.gray100, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+  btnGray: { height: 36, borderRadius: 9, backgroundColor: colors.gray100, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   btnGrayText: { fontSize: typography.sizes.sm, color: colors.gray500 },
+  aiBtn: {
+    height: 42, borderRadius: 9,
+    borderWidth: 1.5, borderColor: colors.primary,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, marginBottom: 8,
+  },
+  aiBtnText: { fontSize: typography.sizes.md, color: colors.primary, fontWeight: typography.weights.medium },
+  proBadge: { backgroundColor: colors.primary, paddingHorizontal: 5, paddingVertical: 1, borderRadius: 3 },
+  proBadgeText: { fontSize: 9, color: '#fff', fontWeight: typography.weights.medium },
 })

@@ -39,11 +39,20 @@ export default function PreQuestionnaireScreen({ navigation }: any) {
     setAnswers(newAnswers)
   }
 
-  function next() {
+  async function next() {
     if (selected === undefined) return
     if (step < questions.length - 1) {
       setStep(step + 1)
     } else {
+      const questionnaireData = {
+        sleepHours: questions[0].opts[answers[0]],
+        exerciseDays: questions[1].opts[answers[1]],
+        sitting: questions[2].opts[answers[2]],
+        alcohol: questions[3].opts[answers[3]],
+        stress: questions[4].opts[answers[4]],
+      }
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default
+      await AsyncStorage.setItem('lastQuestionnaire', JSON.stringify(questionnaireData))
       navigation.navigate('BrightnessCalib')
     }
   }
@@ -110,7 +119,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: colors.gray200,
   },
-  back: { fontSize: 22, color: colors.primary, marginRight: 6 },
+  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
   appbarTitle: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.medium,
