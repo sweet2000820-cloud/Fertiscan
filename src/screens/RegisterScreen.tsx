@@ -26,32 +26,17 @@ export default function RegisterScreen({ navigation }: any) {
       Alert.alert('請同意', '請同意服務條款與隱私政策')
       return
     }
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-      await sendEmailVerification(userCredential.user)
-      await AsyncStorage.multiRemove([
-        'userName', 'userEmail', 'userBirthYear', 'userBirthMonth', 'userBirthDay',
-        'userHeight', 'userWeight', 'userSmoke', 'userDrink',
-        'strips', 'lastTestDate', 'testRecords', 'clinics', 'reminderWeeks', 'lotNumber', 'onboardingShown'
-      ])
-      await AsyncStorage.setItem('userName', name)
-      await AsyncStorage.setItem('userEmail', email)
-      await AsyncStorage.setItem('userBirthYear', birthYear)
-      await AsyncStorage.setItem('userBirthMonth', birthMonth)
-      await AsyncStorage.setItem('userBirthDay', birthDay)
-      navigation.navigate('VerifyEmail', { email })
-    } catch (e: any) {
-      const code = e?.code
-      if (code === 'auth/email-already-in-use') {
-        Alert.alert('註冊失敗', '此信箱已被註冊，請直接登入或使用其他信箱')
-      } else if (code === 'auth/weak-password') {
-        Alert.alert('密碼太弱', '請使用至少 6 個字元的密碼')
-      } else if (code === 'auth/invalid-email') {
-        Alert.alert('格式錯誤', '請輸入正確的電子信箱格式')
-      } else {
-        Alert.alert('註冊失敗', e?.message || '請稍後再試')
-      }
-    }
+    await AsyncStorage.multiRemove([
+      'userName', 'userEmail', 'userBirthYear', 'userBirthMonth', 'userBirthDay',
+      'userHeight', 'userWeight', 'userSmoke', 'userDrink',
+      'strips', 'lastTestDate', 'testRecords', 'clinics', 'reminderWeeks', 'lotNumber', 'onboardingShown'
+    ])
+    await AsyncStorage.setItem('userName', name)
+    await AsyncStorage.setItem('userEmail', email)
+    await AsyncStorage.setItem('userBirthYear', birthYear)
+    await AsyncStorage.setItem('userBirthMonth', birthMonth)
+    await AsyncStorage.setItem('userBirthDay', birthDay)
+    navigation.navigate('VerifyEmail', { email })
   }
 
   const strength = password.length === 0 ? 0 : password.length < 6 ? 1 : password.length < 10 ? 3 : 4

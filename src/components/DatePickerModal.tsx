@@ -32,7 +32,7 @@ export default function DatePickerModal({ visible, year, month, day, onConfirm, 
             </TouchableOpacity>
             <Text style={styles.title}>出生年月日</Text>
             <TouchableOpacity onPress={() => onConfirm(selYear, selMonth, selDay)}>
-              <Text style={styles.confirmBtn}>儲存</Text>
+              <Text style={styles.confirmBtn}>確認</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.pickerRow}>

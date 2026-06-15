@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, Image } from 'react-native'
 import { colors, typography } from '../theme'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import DatePickerModal from '../components/DatePickerModal'
 import PickerModal from '../components/PickerModal'
+import * as ImagePicker from 'expo-image-picker'
 
 export default function ProfileScreen({ navigation }: any) {
   const [name, setName] = useState('')
@@ -18,6 +19,7 @@ export default function ProfileScreen({ navigation }: any) {
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [showHeightPicker, setShowHeightPicker] = useState(false)
   const [showWeightPicker, setShowWeightPicker] = useState(false)
+  const [avatar, setAvatar] = useState<string | null>(null)
 
   useEffect(() => {
     AsyncStorage.getItem('userName').then(val => { if (val) setName(val) })
@@ -29,7 +31,7 @@ export default function ProfileScreen({ navigation }: any) {
     AsyncStorage.getItem('userWeight').then(val => { if (val) setWeight(val) })
     AsyncStorage.getItem('userSmoke').then(val => { if (val !== null) setSmoke(val === '1') })
     AsyncStorage.getItem('userDrink').then(val => { if (val !== null) setDrink(parseInt(val)) })
-
+    AsyncStorage.getItem('userAvatar').then(val => { if (val) setAvatar(val) })
   }, [])
 
   async function handleSave() {
@@ -38,8 +40,51 @@ export default function ProfileScreen({ navigation }: any) {
     await AsyncStorage.setItem('userWeight', weight)
     await AsyncStorage.setItem('userSmoke', smoke ? '1' : '0')
     await AsyncStorage.setItem('userDrink', String(drink))
+    await AsyncStorage.setItem('userBirthYear', birthYear)
+    await AsyncStorage.setItem('userBirthMonth', birthMonth)
+    await AsyncStorage.setItem('userBirthDay', birthDay)
+    if (avatar) {
+      await AsyncStorage.setItem('userAvatar', avatar)
+    } else {
+      await AsyncStorage.removeItem('userAvatar')
+    }
     Alert.alert('已儲存', '個人資料已更新')
     navigation.goBack()
+  }
+
+  async function handlePickAvatar() {
+    Alert.alert('更換頭像', '選擇頭像來源', [
+      { text: '取消', style: 'cancel' },
+      { text: '刪除頭像', style: 'destructive', onPress: async () => {
+        setAvatar(null)
+      }},
+      { text: '從相簿選取', onPress: async () => {
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+        })
+        if (!result.canceled) {
+          setAvatar(result.assets[0].uri)
+        }
+      }},
+      { text: '拍照', onPress: async () => {
+        const permission = await ImagePicker.requestCameraPermissionsAsync()
+        if (!permission.granted) {
+          Alert.alert('需要相機權限', '請在設定中允許存取相機')
+          return
+        }
+        const result = await ImagePicker.launchCameraAsync({
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+        })
+        if (!result.canceled) {
+          setAvatar(result.assets[0].uri)
+        }
+      }},
+    ])
   }
 
   const birthDisplay = birthYear && birthMonth && birthDay
@@ -60,12 +105,16 @@ export default function ProfileScreen({ navigation }: any) {
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        <View style={styles.avatarArea}>
+        <TouchableOpacity style={styles.avatarArea} onPress={handlePickAvatar}>
           <View style={styles.avatarBig}>
-            <Text style={styles.avatarText}>{name ? name.slice(0, 1) : '?'}</Text>
+            {avatar ? (
+              <Image source={{ uri: avatar }} style={{ width: 68, height: 68, borderRadius: 34 }} />
+            ) : (
+              <Text style={styles.avatarText}>{name ? name.slice(0, 1) : '?'}</Text>
+            )}
           </View>
           <Text style={styles.avatarHint}>點擊更換頭像</Text>
-        </View>
+        </TouchableOpacity>
 
         <Text style={styles.sectionTitle}>基本資料</Text>
         <View style={styles.listCard}>
@@ -139,17 +188,13 @@ export default function ProfileScreen({ navigation }: any) {
 
         <Text style={styles.sectionTitle}>帳號安全</Text>
         <View style={styles.listCard}>
-          <TouchableOpacity style={styles.fieldRow} onPress={() => {
-            Alert.alert(
-              '更改密碼',
-              '將寄送密碼重設連結至您的信箱\n' + email,
-              [
-                { text: '取消', style: 'cancel' },
-                { text: '寄送', onPress: () => {
-                  Alert.alert('已寄出', `密碼重設連結已寄至 ${email}，請查看信箱。`)
-                }},
-              ]
-            )
+          <TouchableOpacity style={[styles.fieldRow, { borderBottomWidth: 0 }]} onPress={() => {
+            Alert.alert('更改密碼', '將寄送密碼重設連結至您的信箱\n' + email, [
+              { text: '取消', style: 'cancel' },
+              { text: '寄送', onPress: () => {
+                Alert.alert('已寄出', `密碼重設連結已寄至 ${email}，請查看信箱。`)
+              }},
+            ])
           }}>
             <Text style={styles.fieldLabel}>更改密碼</Text>
             <Text style={styles.arrow}>›</Text>
@@ -166,9 +211,6 @@ export default function ProfileScreen({ navigation }: any) {
             setBirthYear(y)
             setBirthMonth(m)
             setBirthDay(d)
-            AsyncStorage.setItem('userBirthYear', y)
-            AsyncStorage.setItem('userBirthMonth', m)
-            AsyncStorage.setItem('userBirthDay', d)
             setShowDatePicker(false)
           }}
           onCancel={() => setShowDatePicker(false)}
@@ -181,7 +223,6 @@ export default function ProfileScreen({ navigation }: any) {
           unit=" cm"
           onConfirm={(val) => {
             setHeight(val)
-            AsyncStorage.setItem('userHeight', val)
             setShowHeightPicker(false)
           }}
           onCancel={() => setShowHeightPicker(false)}
@@ -194,7 +235,6 @@ export default function ProfileScreen({ navigation }: any) {
           unit=" kg"
           onConfirm={(val) => {
             setWeight(val)
-            AsyncStorage.setItem('userWeight', val)
             setShowWeightPicker(false)
           }}
           onCancel={() => setShowWeightPicker(false)}
@@ -210,7 +250,7 @@ const styles = StyleSheet.create({
     height: 46, flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
   },
-  back: { fontSize: 22, color: colors.primary, marginRight: 6 },
+  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
   appbarTitle: { flex: 1, fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
   saveBtn: { fontSize: typography.sizes.md, color: colors.primary },
   scroll: { flex: 1, padding: 18 },
@@ -219,6 +259,7 @@ const styles = StyleSheet.create({
     width: 68, height: 68, borderRadius: 34,
     backgroundColor: colors.primaryLight,
     alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden',
   },
   avatarText: { fontSize: 24, fontWeight: typography.weights.medium, color: colors.primary },
   avatarHint: { fontSize: typography.sizes.xs, color: colors.gray400 },

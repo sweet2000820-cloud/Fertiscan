@@ -8,7 +8,7 @@ export default function ClinicConfirmScreen({ navigation, route }: any) {
   console.log('ClinicSuccess params:', JSON.stringify(route?.params))
   console.log('route params:', JSON.stringify(route?.params))
   const [shareTC, setShareTC] = useState(true)
-  const [shareHistory, setShareHistory] = useState(true)
+  const [shareHistory, setShareHistory] = useState(false)
   const [autoShare, setAutoShare] = useState(false)
 
   return (

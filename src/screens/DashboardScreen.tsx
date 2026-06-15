@@ -7,15 +7,18 @@ import { getRecords, TestRecord } from '../storage'
 import { useFocusEffect } from '@react-navigation/native'
 import { useCallback } from 'react'
 
+
 export default function DashboardScreen({ navigation }: any) {
   const [daysSince, setDaysSince] = useState<string>('尚未檢測')
   const [records, setRecords] = useState<TestRecord[]>([])
   const [strips, setStrips] = useState<number>(6)
   const [userName, setUserName] = useState<string>('陳小明')
+  const [avatar, setAvatar] = useState<string | null>(null)
 
   useFocusEffect(
     useCallback(() => {
       AsyncStorage.getItem('userName').then(val => { if (val) setUserName(val) })
+      AsyncStorage.getItem('userAvatar').then(val => { setAvatar(val) })
       AsyncStorage.getItem('lastTestDate').then(val => {
         
         if (val) {
@@ -101,7 +104,11 @@ export default function DashboardScreen({ navigation }: any) {
       <View style={styles.appbar}>
         <Text style={styles.appbarTitle}>FertiScan</Text>
         <TouchableOpacity style={styles.avatar} onPress={() => navigation.navigate('Profile')}>
-          <Text style={styles.avatarText}>{userName.slice(0, 1)}</Text>
+          {avatar ? (
+            <Image source={{ uri: avatar }} style={{ width: 40, height: 40, borderRadius: 20 }} />
+          ) : (
+            <Text style={styles.avatarText}>{userName.slice(0, 1)}</Text>
+          )}
         </TouchableOpacity>
       </View>
 

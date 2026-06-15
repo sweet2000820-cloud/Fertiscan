@@ -7,6 +7,7 @@ import { useEffect } from 'react'
 import { useFocusEffect } from '@react-navigation/native'
 import { useCallback } from 'react'
 import { Ionicons } from '@expo/vector-icons'
+import { Image } from 'react-native'
 
 
 export default function SettingsScreen({ navigation }: any) {
@@ -15,6 +16,7 @@ export default function SettingsScreen({ navigation }: any) {
   const [clinicCount, setClinicCount] = useState(0)
   const [userName, setUserName] = useState('陳小明')
   const [userEmail, setUserEmail] = useState('chen@gmail.com')
+  const [avatar, setAvatar] = useState<string | null>(null)
 
   useFocusEffect(
     useCallback(() => {
@@ -22,6 +24,7 @@ export default function SettingsScreen({ navigation }: any) {
         if (val) setClinicCount(JSON.parse(val).length)
       })
       AsyncStorage.getItem('userName').then(val => { if (val) setUserName(val) })
+      AsyncStorage.getItem('userAvatar').then(val => { setAvatar(val) })
       AsyncStorage.getItem('userEmail').then(val => { if (val) setUserEmail(val) })
       AsyncStorage.getItem('reminderWeeks').then(val => { if (val) setReminderWeeks(parseInt(val)) })
     }, [])
@@ -64,7 +67,11 @@ export default function SettingsScreen({ navigation }: any) {
 
         <TouchableOpacity style={styles.profileCard} onPress={() => navigation.navigate('Profile')}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{userName.slice(0, 1)}</Text>
+            {avatar ? (
+              <Image source={{ uri: avatar }} style={{ width: 46, height: 46, borderRadius: 23 }} />
+            ) : (
+              <Text style={styles.avatarText}>{userName.slice(0, 1)}</Text>
+            )}
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{userName}</Text>

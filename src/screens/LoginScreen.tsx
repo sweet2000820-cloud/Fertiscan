@@ -14,22 +14,8 @@ export default function LoginScreen({ onLogin, navigation }: any) {
       Alert.alert('請填寫', '請輸入信箱和密碼')
       return
     }
-    try {
-      await signInWithEmailAndPassword(auth, email, password)
-      if (onLogin) onLogin()
-      navigation?.navigate('Main')
-    } catch (e: any) {
-      const code = e?.code
-      if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
-        Alert.alert('登入失敗', '信箱或密碼錯誤，請再試一次')
-      } else if (code === 'auth/invalid-email') {
-        Alert.alert('格式錯誤', '請輸入正確的電子信箱格式')
-      } else if (code === 'auth/too-many-requests') {
-        Alert.alert('登入失敗', '嘗試次數過多，請稍後再試')
-      } else {
-        Alert.alert('登入失敗', '請稍後再試')
-      }
-    }
+    if (onLogin) onLogin()
+    navigation?.navigate('Main')
   }
 
   return (

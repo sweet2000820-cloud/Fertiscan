@@ -4,11 +4,11 @@ import { colors, typography } from '../theme'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const clinics = [
-  { id: 1, name: '艾微芙人工生殖中心', area: '台北市大安區', verified: true, url: 'https://www.taiwanivfgroup.com/' },
-  { id: 2, name: '華育生殖醫學中心', area: '台北市信義區', verified: true, url: 'https://huayuivf.com/' },
-  { id: 3, name: '王家瑋婦產科診所', area: '台中市西區', verified: true, url: 'https://www.bestivf.com.tw/TW/home/Default.asp' },
-  { id: 4, name: '茂盛醫院生殖醫學中心', area: '台中市北區', verified: true, url: 'https://www.ivftaiwan.tw/' },
-  { id: 5, name: '送子鳥生殖中心', area: '台北市中山區', verified: true, url: 'https://www.e-stork.com.tw/' },
+  { id: 1, name: '華育婦產科診所', area: '臺北市大安區敦化南路二段39號12樓', verified: true, url: 'https://huayuivf.com/' },
+  { id: 2, name: '王家瑋婦產科診所', area: '臺北市信義區基隆路二段60號', verified: true, url: 'https://www.bestivf.com.tw/TW/home/Default.asp' },
+  { id: 3, name: '艾微芙國際生殖醫學中心', area: '新竹縣竹北市文興路二段360號', verified: true, url: 'https://www.taiwanivfgroup.com/' },
+  { id: 4, name: '送子鳥診所', area: '新竹市東區忠孝路80號', verified: true, url: 'https://www.e-stork.com.tw/' },
+  { id: 5, name: '茂盛醫院生殖醫學中心', area: '臺中市北屯區昌平路一段30-6號', verified: true, url: 'https://www.ivftaiwan.tw/' },
 ]
 
 export default function ClinicSearchScreen({ navigation }: any) {
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     height: 42, borderRadius: 9, backgroundColor: colors.primary,
     alignItems: 'center', justifyContent: 'center',
   },
-  confirmBtnText: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: '#fff' },
+  confirmBtnText: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: '#fff' },
   clinicSubRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  detailBtn: { fontSize: typography.sizes.xs, color: colors.primary },
+  detailBtn: { fontSize: typography.sizes.sm, color: colors.primary },
 })

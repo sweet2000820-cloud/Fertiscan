@@ -5,10 +5,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Ionicons } from '@expo/vector-icons'
 
 const validCodes: Record<string, { clinicName: string}> = {
-  '123456': { clinicName: '艾微芙人工生殖中心'},
-  '654321': { clinicName: '華育生殖醫學中心'},
+  '123456': { clinicName: '艾微芙國際生殖醫學中心'},
+  '654321': { clinicName: '華育婦產科診所'},
   '111111': { clinicName: '王家瑋婦產科診所'},
   '999999': { clinicName: '茂盛醫院生殖醫學中心'},
+  '888888': { clinicName: '送子鳥診所'},
 }
 
 export default function ClinicCodeScreen({ navigation }: any) {
@@ -89,7 +90,7 @@ export default function ClinicCodeScreen({ navigation }: any) {
 
         <View style={styles.tealCard}>
           <Text style={styles.tealTitle}>測試用邀請碼</Text>
-          <Text style={styles.tealText}>123456 · 654321 · 111111</Text>
+          <Text style={styles.tealText}>123456 · 654321 · 111111 · 999999 · 888888</Text>
         </View>
 
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>

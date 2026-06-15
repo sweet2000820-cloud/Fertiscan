@@ -201,7 +201,7 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
             <Text style={styles.btnSecondaryText}>存入紀錄</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.btnPrimary} onPress={() => navigation.navigate('ShareRecord')}>
-            <Text style={styles.btnPrimaryText}>分享診所</Text>
+            <Text style={styles.btnPrimaryText}>與診所分享</Text>
           </TouchableOpacity>
         </View>
 
