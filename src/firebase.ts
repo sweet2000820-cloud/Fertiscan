@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app'
-import { getAuth } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import { initializeAuth, getReactNativePersistence } from 'firebase/auth'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const firebaseConfig = {
   apiKey: "AIzaSyCG6Vl2cwN6pVZsdBBgyOEUVgV-0zaBhhI",
@@ -8,9 +8,10 @@ const firebaseConfig = {
   projectId: "fertiscan-7039b",
   storageBucket: "fertiscan-7039b.firebasestorage.app",
   messagingSenderId: "780296736408",
-  appId: "1:780296736408:web:734c575ecb6888fae5caed",
+  appId: "1:780296736408:web:88d1550018ac5cc9e5caed",
 }
 
 const app = initializeApp(firebaseConfig)
-export const auth = getAuth(app)
-export const db = getFirestore(app)
+export const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(AsyncStorage)
+})

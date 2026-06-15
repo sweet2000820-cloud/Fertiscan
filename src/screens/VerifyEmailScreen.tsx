@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { colors, typography } from '../theme'
 import Button from '../components/Button'
+import { Alert } from 'react-native'
 
 export default function VerifyEmailScreen({ navigation, route }: any) {
   const email = route?.params?.email || 'your@email.com'
@@ -25,9 +26,24 @@ export default function VerifyEmailScreen({ navigation, route }: any) {
           <Text style={styles.tealText}>請確認信箱是否正確，或檢查垃圾郵件資料夾。連結有效期限為 24 小時。</Text>
         </View>
 
-        <Button title="重新傳送驗證信" onPress={() => {}} variant="secondary" />
+        <Button title="重新傳送驗證信" onPress={async () => {
+          try {
+            const { auth } = require('../firebase')
+            const user = auth.currentUser
+            if (user) {
+              await user.sendEmailVerification()
+              Alert.alert('已重新傳送', '驗證信已重新寄出，請查收信箱')
+            }
+          } catch (e) {
+            Alert.alert('傳送失敗', '請稍後再試')
+          }
+        }} variant="secondary" />
 
-        <TouchableOpacity style={styles.skipBtn} onPress={() => navigation.navigate('Main')}>
+        <TouchableOpacity style={styles.skipBtn} onPress={async () => {
+          const AsyncStorage = require('@react-native-async-storage/async-storage').default
+          await AsyncStorage.setItem('isLoggedIn', 'true')
+          navigation.navigate('Main')
+        }}>
           <Text style={styles.skipText}>稍後再驗證，先進入 App</Text>
         </TouchableOpacity>
 
