@@ -173,6 +173,7 @@ export default function SettingsScreen({ navigation }: any) {
               { text: '取消', style: 'cancel' },
               { text: '登出', style: 'destructive', onPress: async () => {
                 await AsyncStorage.removeItem('isLoggedIn')
+                await AsyncStorage.removeItem('userAvatar')
                 navigation.navigate('Login')
               }},
             ])

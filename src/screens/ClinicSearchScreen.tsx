@@ -2,30 +2,67 @@ import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Linking, Alert } from 'react-native'
 import { colors, typography } from '../theme'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as Location from 'expo-location'
+import { Ionicons } from '@expo/vector-icons'
 
 const clinics = [
-  { id: 1, name: '華育婦產科診所', area: '臺北市大安區敦化南路二段39號12樓', verified: true, url: 'https://huayuivf.com/' },
-  { id: 2, name: '王家瑋婦產科診所', area: '臺北市信義區基隆路二段60號', verified: true, url: 'https://www.bestivf.com.tw/TW/home/Default.asp' },
-  { id: 3, name: '艾微芙國際生殖醫學中心', area: '新竹縣竹北市文興路二段360號', verified: true, url: 'https://www.taiwanivfgroup.com/' },
-  { id: 4, name: '送子鳥診所', area: '新竹市東區忠孝路80號', verified: true, url: 'https://www.e-stork.com.tw/' },
-  { id: 5, name: '茂盛醫院生殖醫學中心', area: '臺中市北屯區昌平路一段30-6號', verified: true, url: 'https://www.ivftaiwan.tw/' },
+  { id: 1, name: '華育婦產科診所', area: '臺北市大安區敦化南路二段39號12樓', verified: true, url: 'https://huayuivf.com/', lat: 25.0268, lng: 121.5509 },
+  { id: 2, name: '王家瑋婦產科診所', area: '臺北市信義區基隆路二段60號', verified: true, url: 'https://www.bestivf.com.tw/TW/home/Default.asp', lat: 25.0268, lng: 121.5609 },
+  { id: 3, name: '艾微芙國際生殖醫學中心', area: '新竹縣竹北市文興路二段360號', verified: true, url: 'https://www.taiwanivfgroup.com/', lat: 24.8364, lng: 121.0087 },
+  { id: 4, name: '送子鳥診所', area: '新竹市東區忠孝路80號', verified: true, url: 'https://www.e-stork.com.tw/', lat: 24.8013, lng: 120.9714 },
+  { id: 5, name: '茂盛醫院生殖醫學中心', area: '臺中市北屯區昌平路一段30-6號', verified: true, url: 'https://www.ivftaiwan.tw/', lat: 24.1726, lng: 120.6805 },
 ]
+
+function getDistance(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng/2) * Math.sin(dLng/2)
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+}
 
 export default function ClinicSearchScreen({ navigation }: any) {
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<number | null>(null)
   const [linkedNames, setLinkedNames] = useState<string[]>([])
+  const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null)
+  const [locating, setLocating] = useState(false)
 
   useEffect(() => {
     AsyncStorage.getItem('clinics').then(val => {
-      if (val) {
-        const saved = JSON.parse(val)
-        setLinkedNames(saved.map((c: any) => c.name))
-      }
+      if (val) setLinkedNames(JSON.parse(val).map((c: any) => c.name))
     })
   }, [])
 
-  const filtered = clinics.filter(c =>
+  async function handleLocate() {
+    setLocating(true)
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync()
+      if (status !== 'granted') {
+        Alert.alert('需要定位權限', '請在設定中允許存取位置')
+        setLocating(false)
+        return
+      }
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+      setUserLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude })
+    } catch (e) {
+      Alert.alert('定位失敗', '請稍後再試')
+    }
+    setLocating(false)
+  }
+
+  const clinicsWithDistance = clinics.map(c => ({
+    ...c,
+    distance: userLocation ? getDistance(userLocation.lat, userLocation.lng, c.lat, c.lng) : null
+  }))
+
+  const sorted = userLocation
+    ? [...clinicsWithDistance].sort((a, b) => (a.distance || 0) - (b.distance || 0))
+    : clinicsWithDistance
+
+  const filtered = sorted.filter(c =>
     c.name.includes(query) || c.area.includes(query)
   )
 
@@ -36,11 +73,14 @@ export default function ClinicSearchScreen({ navigation }: any) {
           <Text style={styles.back}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.appbarTitle}>搜尋合作診所</Text>
+        <TouchableOpacity onPress={handleLocate} style={styles.locateBtn}>
+          <Ionicons name={locating ? 'locate' : 'locate-outline'} size={20} color={userLocation ? colors.primary : colors.gray400} />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.searchArea}>
         <View style={styles.searchBox}>
-          <Text style={styles.searchIcon}>🔍</Text>
+          <Ionicons name="search-outline" size={16} color={colors.gray400} />
           <TextInput
             style={styles.searchInput}
             placeholder="輸入診所名稱、醫師或地區"
@@ -51,16 +91,26 @@ export default function ClinicSearchScreen({ navigation }: any) {
           />
           {query.length > 0 && (
             <TouchableOpacity onPress={() => setQuery('')}>
-              <Text style={styles.clearBtn}>✕</Text>
+              <Ionicons name="close-circle" size={16} color={colors.gray400} />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
+      {userLocation && (
+        <View style={styles.locationBanner}>
+          <Ionicons name="location" size={14} color={colors.primary} />
+          <Text style={styles.locationText}>已依距離排序，顯示最近的診所</Text>
+        </View>
+      )}
+
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        {query.length === 0 && (
-          <Text style={styles.hint}>目前顯示所有 FertiScan 合作診所</Text>
+        {query.length === 0 && !userLocation && (
+          <TouchableOpacity style={styles.locateTip} onPress={handleLocate}>
+            <Ionicons name="navigate-outline" size={16} color={colors.primary} />
+            <Text style={styles.locateTipText}>點擊右上角定位，查看附近診所距離</Text>
+          </TouchableOpacity>
         )}
 
         {filtered.length === 0 && (
@@ -102,14 +152,19 @@ export default function ClinicSearchScreen({ navigation }: any) {
                   )}
                 </View>
                 <View style={styles.clinicSubRow}>
-                  <Text style={styles.clinicSub}>{clinic.area}</Text>
+                  <Text style={styles.clinicSub} numberOfLines={1}>{clinic.area}</Text>
                   <TouchableOpacity onPress={() => Linking.openURL(clinic.url)}>
                     <Text style={styles.detailBtn}>詳情 ›</Text>
                   </TouchableOpacity>
                 </View>
+                {clinic.distance !== null && (
+                  <Text style={styles.distanceText}>
+                    距離約 {clinic.distance < 1 ? `${Math.round(clinic.distance * 1000)} 公尺` : `${clinic.distance.toFixed(1)} 公里`}
+                  </Text>
+                )}
               </View>
               {selected === clinic.id && (
-                <Text style={{ color: colors.primary, fontSize: 18 }}>✓</Text>
+                <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
               )}
             </TouchableOpacity>
           ))}
@@ -129,7 +184,7 @@ export default function ClinicSearchScreen({ navigation }: any) {
                 Alert.alert('已連結', `您已經連結了${clinic.name}，無法重複連結。`)
                 return
               }
-              navigation.navigate('Consent', { clinicName: clinic.name})
+              navigation.navigate('Consent', { clinicName: clinic.name })
             }}
           >
             <Text style={styles.confirmBtnText}>
@@ -149,18 +204,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
   },
   back: { fontSize: 30, color: colors.primary, marginRight: 6 },
-  appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
+  appbarTitle: { flex: 1, fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
+  locateBtn: { padding: 4 },
   searchArea: { padding: 14, borderBottomWidth: 0.5, borderBottomColor: colors.gray200 },
   searchBox: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: colors.gray100, borderRadius: 10,
     paddingHorizontal: 12, height: 40, gap: 8,
   },
-  searchIcon: { fontSize: 14 },
   searchInput: { flex: 1, fontSize: typography.sizes.md, color: colors.gray900 },
-  clearBtn: { fontSize: 14, color: colors.gray400 },
+  locationBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: colors.primaryLight, paddingHorizontal: 16, paddingVertical: 8,
+  },
+  locationText: { fontSize: typography.sizes.xs, color: colors.primary },
   scroll: { flex: 1, padding: 16 },
   hint: { fontSize: typography.sizes.sm, color: colors.gray400, marginBottom: 10 },
+  locateTip: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: colors.primaryLight, borderRadius: 8,
+    padding: 10, marginBottom: 12,
+  },
+  locateTipText: { fontSize: typography.sizes.sm, color: colors.primary },
   emptyArea: { alignItems: 'center', paddingVertical: 40, gap: 6 },
   emptyText: { fontSize: typography.sizes.md, color: colors.gray500 },
   listCard: { borderWidth: 0.5, borderColor: colors.gray200, borderRadius: 10, overflow: 'hidden' },
@@ -178,13 +243,14 @@ const styles = StyleSheet.create({
   clinicName: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
   verifiedBadge: { backgroundColor: colors.successLight, paddingHorizontal: 5, paddingVertical: 1, borderRadius: 3 },
   verifiedText: { fontSize: 10, color: colors.success, fontWeight: typography.weights.medium },
-  clinicSub: { fontSize: typography.sizes.xs, color: colors.gray400 },
+  clinicSub: { fontSize: typography.sizes.xs, color: colors.gray400, flex: 1 },
+  clinicSubRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 },
+  distanceText: { fontSize: typography.sizes.xs, color: colors.primary },
+  detailBtn: { fontSize: 14, color: colors.primary, fontWeight: '500' },
   footer: { padding: 14, borderTopWidth: 0.5, borderTopColor: colors.gray200 },
   confirmBtn: {
     height: 42, borderRadius: 9, backgroundColor: colors.primary,
     alignItems: 'center', justifyContent: 'center',
   },
   confirmBtnText: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: '#fff' },
-  clinicSubRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  detailBtn: { fontSize: typography.sizes.sm, color: colors.primary },
 })
