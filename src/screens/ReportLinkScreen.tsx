@@ -14,6 +14,10 @@ export default function ReportLinkScreen({ navigation, route }: any) {
   const records = route?.params?.records || []
 
   async function exportPDF() {
+    const nameRaw = await AsyncStorage.getItem('userName') || ''
+    const maskedName = nameRaw.length > 0
+      ? nameRaw.slice(0, 1) + '○' + (nameRaw.length > 2 ? nameRaw.slice(-1) : '')
+      : '使用者'
     const html = `
       <html>
       <head>
@@ -40,7 +44,7 @@ export default function ReportLinkScreen({ navigation, route }: any) {
       </head>
       <body>
         <h1>FertiScan 檢測報告</h1>
-        <p class="subtitle">共 ${records.length} 筆紀錄 · 匿名 ID: FS-4A2C · 產生時間：${new Date().toLocaleDateString('zh-TW')}</p>
+        <p class="subtitle">使用者：${maskedName} · 共 ${records.length} 筆紀錄 · 產生時間：${new Date().toLocaleDateString('zh-TW')}</p>
         <div class="section">
           <div class="section-title">檢測紀錄明細</div>
           ${records.map((r: any) => {

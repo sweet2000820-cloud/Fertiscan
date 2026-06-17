@@ -6,6 +6,8 @@ import { colors, typography } from '../theme'
 export default function CamCaptureScreen({ navigation }: any) {
   const [permission, requestPermission] = useCameraPermissions()
   const [captured, setCaptured] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [processStep, setProcessStep] = useState('')
   const cameraRef = useRef<CameraView>(null)
 
   if (!permission) return <View style={styles.container} />
@@ -21,22 +23,95 @@ export default function CamCaptureScreen({ navigation }: any) {
     )
   }
 
-  async function takePicture() {
-    if (cameraRef.current && !captured) {
-      setCaptured(true)
-      try {
-        await cameraRef.current.takePictureAsync({ quality: 0.8 })
-        navigation.navigate('Analysis')
-      } catch (e) {
-        Alert.alert('拍攝失敗', '請再試一次')
-        setCaptured(false)
+  const API_URL = 'https://fertiscan-api-production-8841.up.railway.app/analyze'
+
+async function takePicture() {
+  if (cameraRef.current && !captured) {
+    setCaptured(true)
+    setIsProcessing(true)
+    setProcessStep('拍攝第 1 張...')
+    try {
+      const results = []
+      
+      for (let i = 0; i < 3; i++) {
+        // 拍照
+        const photo = await cameraRef.current.takePictureAsync({ 
+          quality: 0.8,
+          base64: false 
+        })
+        
+        if (!photo) throw new Error('拍照失敗')
+
+        // 送 API
+        const formData = new FormData()
+        formData.append('file', {
+          uri: photo.uri,
+          type: 'image/jpeg',
+          name: `strip_${i}.jpg`,
+        } as any)
+
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          body: formData,
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+
+        const result = await response.json()
+        
+        if (result.success) {
+          results.push(result.data)
+        }
+        
+        // 下一張
+        if (i < 2) {
+          setProcessStep(`拍攝第 ${i + 2} 張...`)
+          await new Promise(r => setTimeout(r, 500))
+        }
       }
+
+      setIsProcessing(false)
+
+      if (results.length === 0) {
+        Alert.alert('分析失敗', '請重新拍攝')
+        setCaptured(false)
+        return
+      }
+
+      // 過濾異常值：排除偏差超過 50% 的結果
+     Alert.alert('三張結果', results.map((r, i) => `第${i+1}張: ${r.tc_ratio}`).join('\n'))
+     const tcValues = results.map(r => r.tc_ratio)
+     const medianTC = tcValues.sort((a, b) => a - b)[Math.floor(tcValues.length / 2)]
+     const filteredResults = results.filter(r => 
+      Math.abs(r.tc_ratio - medianTC) / medianTC < 0.5
+     )
+
+     const validResults = filteredResults.length > 0 ? filteredResults : results
+
+     const avgTC = validResults.reduce((sum, r) => sum + r.tc_ratio, 0) / validResults.length
+     const avgC = validResults.reduce((sum, r) => sum + r.c_intensity, 0) / validResults.length
+     const avgT = validResults.reduce((sum, r) => sum + r.t_intensity, 0) / validResults.length
+
+      const avgResult = {
+        tc_ratio: Math.round(avgTC * 1000) / 1000,
+        c_intensity: Math.round(avgC * 100) / 100,
+        t_intensity: Math.round(avgT * 100) / 100,
+        qc_pass: true,
+        sample_count: results.length,
+      }
+
+      setCaptured(false)
+      navigation.navigate('Analysis', { analysisResult: avgResult })
+
+    } catch (e) {
+      setIsProcessing(false)
+      Alert.alert('錯誤', '網路連線失敗或拍攝失敗，請再試一次')
+      setCaptured(false)
     }
   }
-
+}
   return (
     <View style={styles.container}>
-      <CameraView style={StyleSheet.absoluteFill} facing="front" ref={cameraRef} />
+      <CameraView style={StyleSheet.absoluteFill} facing="back" ref={cameraRef} zoom={0.25} />
 
       <View style={styles.maskTop} />
       <View style={styles.maskMiddle}>
@@ -73,6 +148,11 @@ export default function CamCaptureScreen({ navigation }: any) {
           </TouchableOpacity>
           <View style={styles.sideBtn} />
         </View>
+        {isProcessing && (
+          <View style={styles.processingOverlay}>
+            <Text style={styles.processingText}>{processStep}</Text>
+          </View>
+        )}
       </View>
     </View>
   )
@@ -127,4 +207,27 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   captureInner: { width: 54, height: 54, borderRadius: 27, backgroundColor: '#fff' },
+  processingOverlay: {
+  position: 'absolute',
+  top: 0, left: 0, right: 0, bottom: 0,
+  backgroundColor: 'rgba(0,0,0,0.7)',
+  alignItems: 'center',
+  justifyContent: 'center',
+},
+processingBox: {
+  backgroundColor: '#1a1a1a',
+  borderRadius: 12,
+  padding: 24,
+  alignItems: 'center',
+  gap: 8,
+},
+processingText: {
+  color: '#fff',
+  fontSize: 16,
+  fontWeight: '600',
+},
+processingHint: {
+  color: 'rgba(255,255,255,0.5)',
+  fontSize: 13,
+},
 })

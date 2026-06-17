@@ -37,7 +37,6 @@ import ShareSentScreen from './screens/ShareSentScreen'
 import ReportLinkScreen from './screens/ReportLinkScreen'
 import AIAdviceScreen from './screens/AIAdviceScreen'
 import AIChatScreen from './screens/AIChatScreen'
-import WhiteCaptureScreen from './screens/WhiteCaptureScreen'
 import ForgotPasswordScreen from './screens/ForgotPasswordScreen'
 import VerifyEmailScreen from './screens/VerifyEmailScreen'
 import LotQRScreen from './screens/LotQRScreen'
@@ -135,7 +134,6 @@ export default function Navigation({ onLogin }: any) {
         <Stack.Screen name="ReportLink" component={ReportLinkScreen} />
         <Stack.Screen name="AIAdvice" component={AIAdviceScreen} />
         <Stack.Screen name="AIChat" component={AIChatScreen} />
-        <Stack.Screen name="WhiteCapture" component={WhiteCaptureScreen} />
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
         <Stack.Screen name="LotQR" component={LotQRScreen} />

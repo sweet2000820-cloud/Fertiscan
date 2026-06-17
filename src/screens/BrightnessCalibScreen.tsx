@@ -81,7 +81,7 @@ export default function BrightnessCalibScreen({ navigation }: any) {
         <Text style={styles.sectionTitle}>白場校準步驟</Text>
         {[
           { num: '✓', title: '停用自動亮度', sub: '已完成', done: true },
-          { num: '2', title: '拍攝空白背景', sub: '未放試紙，拍一張純白場作為基準', active: true },
+          { num: '2', title: '準備試紙', sub: '將試紙放入夾具，確認 C、T 兩條線清晰', active: true },
           { num: '3', title: '基準值確認', sub: '計算背景灰階均值，作為後續扣除基底', pending: true },
         ].map((step, i) => (
           <View key={i} style={[styles.stepRow, step.pending && { opacity: 0.4 }]}>
@@ -100,7 +100,7 @@ export default function BrightnessCalibScreen({ navigation }: any) {
           </View>
         ))}
 
-        <Button title="拍攝空白白場 ›" onPress={() => navigation.navigate('WhiteCapture')} />
+        <Button title="開始拍攝試紙 ›" onPress={() => navigation.navigate('CamCapture')} />
 
       </ScrollView>
     </View>
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: colors.gray200,
   },
-  back: { fontSize: 22, color: colors.primary, marginRight: 6 },
+  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
   appbarTitle: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.medium,

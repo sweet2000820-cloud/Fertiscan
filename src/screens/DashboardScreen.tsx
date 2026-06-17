@@ -22,7 +22,11 @@ export default function DashboardScreen({ navigation }: any) {
       AsyncStorage.getItem('lastTestDate').then(val => {
         
         if (val) {
-          const diff = Math.floor((Date.now() - new Date(val).getTime()) / (1000 * 60 * 60 * 24))
+          const last = new Date(val)
+          const today = new Date()
+          const lastDate = new Date(last.getFullYear(), last.getMonth(), last.getDate())
+          const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+          const diff = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24))
           setDaysSince(diff === 0 ? '今天' : `${diff} 天前`)
         }
       })

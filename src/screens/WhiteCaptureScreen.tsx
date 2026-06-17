@@ -21,19 +21,54 @@ export default function WhiteCaptureScreen({ navigation }: any) {
     )
   }
 
-  async function takeWhiteCapture() {
-    if (cameraRef.current && !captured) {
-      setCaptured(true)
-      try {
-        await cameraRef.current.takePictureAsync({ quality: 0.8 })
-        navigation.navigate('CamCapture')
-      } catch (e) {
-        Alert.alert('拍攝失敗', '請再試一次')
+  const API_URL = 'https://fertiscan-api-production-8841.up.railway.app'
+
+async function takeWhiteCapture() {
+  if (cameraRef.current && !captured) {
+    setCaptured(true)
+    try {
+      // 拍白場照片
+      const photo = await cameraRef.current.takePictureAsync({ 
+        quality: 0.8,
+        base64: false 
+      })
+      
+      if (!photo) throw new Error('拍照失敗')
+
+      // 送到 API 校準
+      const formData = new FormData()
+      formData.append('file', {
+        uri: photo.uri,
+        type: 'image/jpeg',
+        name: 'white.jpg',
+      } as any)
+
+      const response = await fetch(`${API_URL}/calibrate`, {
+        method: 'POST',
+        body: formData,
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        // 白場校準成功，繼續下一步
+        Alert.alert(
+          '白場校準完成', 
+          `平均亮度：${result.data.white_mean}`,
+          [{ text: '繼續', onPress: () => navigation.navigate('CamCapture') }]
+        )
+      } else {
+        Alert.alert('校準失敗', result.error || '請重新拍攝')
         setCaptured(false)
       }
+
+    } catch (e: any) {
+      Alert.alert('錯誤詳情', e?.message || JSON.stringify(e))
+      setCaptured(false)
     }
   }
-
+}
   return (
     <View style={styles.container}>
       <CameraView style={StyleSheet.absoluteFill} facing="front" ref={cameraRef} />

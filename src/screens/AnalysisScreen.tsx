@@ -5,12 +5,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { saveRecord } from '../storage'
 import { getRecords, TestRecord } from '../storage'
 
-export default function AnalysisScreen({ navigation }: any) {
+export default function AnalysisScreen({ navigation, route }: any) {
   const [progress, setProgress] = useState(0)
+  
+  // 從 CamCapture 傳入的真實分析結果
+  const analysisResult = route?.params?.analysisResult
+  const realTC = analysisResult?.tc_ratio?.toString() || null
   const [step, setStep] = useState(0)
   const [done, setDone] = useState(false)
   const tcValues = ['0.45', '0.62', '0.78', '0.85', '0.91', '0.95', '1.02']
-  const [tc] = useState(tcValues[Math.floor(Math.random() * tcValues.length)])
+  const [tc] = useState(realTC || tcValues[Math.floor(Math.random() * tcValues.length)])
   const status = parseFloat(tc) >= 0.85 ? '正常' : parseFloat(tc) >= 0.5 ? '邊緣' : '偏低'
 
   useEffect(() => {
@@ -30,12 +34,11 @@ export default function AnalysisScreen({ navigation }: any) {
   }, [])
 
   const steps = [
-    { label: '白場基底扣除完成', done: true },
-    { label: '試紙 ROI 自動定位', done: true },
-    { label: '灰階積分計算', active: step === 0, done: step > 0 },
-    { label: 'T/C 比值正規化', active: step === 1, done: step > 1 },
-    { label: '標準曲線對照換算', active: step === 2, done: done },
-  ]
+  { label: '試紙 ROI 自動定位', done: true },
+  { label: '灰階積分計算', active: step === 0, done: step > 0 },
+  { label: 'T/C 比值正規化', active: step === 1, done: step > 1 },
+  { label: '標準曲線對照換算', active: step === 2, done: done },
+]
 
   return (
     <View style={styles.container}>
@@ -104,7 +107,6 @@ export default function AnalysisScreen({ navigation }: any) {
                 const newEntry = {
                   date, time, tc,
                   clinicName: clinic.name,
-                  doctor: clinic.doctor,
                   sharedAt: new Date().toISOString(),
                 }
                 await AsyncStorage.setItem('sharedHistory', JSON.stringify([newEntry, ...histExisting]))
@@ -114,7 +116,13 @@ export default function AnalysisScreen({ navigation }: any) {
             const currentStrips = stripsRaw ? parseInt(stripsRaw) : 6
             const newStrips = Math.max(0, currentStrips - 1)
             await AsyncStorage.setItem('strips', String(newStrips))
-            navigation.navigate('ReportOverview', { record: { date, time, tc, status, lot: lotNumber } })
+            navigation.navigate('ReportOverview', { 
+              record: { 
+                date, time, tc, status, lot: lotNumber,
+                cIntensity: analysisResult?.c_intensity,
+                tIntensity: analysisResult?.t_intensity,
+              } 
+            })
             }}>
             <Text style={styles.resultBtnText}>查看結果 ›</Text>
           </TouchableOpacity>

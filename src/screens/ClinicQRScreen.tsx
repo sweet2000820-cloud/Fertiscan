@@ -22,24 +22,14 @@ export default function ClinicQRScreen({ navigation }: any) {
       </View>
     )
   }
-async function handleScan({ data }: { data: string }) {
+
+  function handleScan({ data }: { data: string }) {
     if (scanned) return
     setScanned(true)
-    const clinicName = '艾微芙人工生殖中心'
-    const doctor = '陳明哲 醫師'
-    const raw = await AsyncStorage.getItem('clinics')
-    const existing = raw ? JSON.parse(raw) : []
-    const alreadyLinked = existing.some((c: any) => c.name === clinicName)
-    if (alreadyLinked) {
-      Alert.alert('已連結', `您已經連結了${clinicName}，無法重複連結。`, [
-        { text: '確定', onPress: () => setScanned(false) }
-      ])
-      return
-    }
     Alert.alert(
       '掃描成功',
       `已掃描到診所 QR Code`,
-      [{ text: '繼續', onPress: () => navigation.navigate('Consent', { clinicName, doctor }) }]
+      [{ text: '繼續', onPress: () => navigation.navigate('Consent') }]
     )
   }
 

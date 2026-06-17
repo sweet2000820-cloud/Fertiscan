@@ -36,9 +36,9 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
     ? { bg: colors.warningLight, text: colors.warning, label: '邊緣值' }
     : { bg: colors.dangerLight, text: colors.danger, label: '偏低值' }
 
-  const cLine = Math.round(tcVal * 142 / 0.68)
-  const tLine = Math.round(97 * tcVal / 0.68)
-  const conc = Math.round(22 * tcVal / 0.68)
+  const cLine = record.cIntensity ? record.cIntensity.toFixed(1) : Math.round(tcVal * 142 / 0.68)
+  const tLine = record.tIntensity ? record.tIntensity.toFixed(1) : Math.round(97 * tcVal / 0.68)
+  const conc = '待校準'
 
   async function exportPDF() {
     const html = `
