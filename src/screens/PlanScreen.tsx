@@ -43,9 +43,9 @@ export default function PlanScreen({ navigation }: any) {
             <View style={{ flex: 1 }}>
               <View style={styles.planRow}>
                 <Text style={styles.planTitle}>{currentPlan === 'pro' ? 'Pro 版' : '免費版'}</Text>
-                <View style={styles.freeBadge}>
-                  <Text style={styles.freeBadgeText}>免費</Text>
-                </View>
+                <Text style={styles.freeBadgeText}>\
+                  {currentPlan === 'pro' ? 'Pro' : '免費'}
+                  </Text>
               </View>
               <Text style={styles.planSub}>基本檢測功能</Text>
             </View>

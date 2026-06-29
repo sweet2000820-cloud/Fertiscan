@@ -17,6 +17,7 @@ export default function SettingsScreen({ navigation }: any) {
   const [userName, setUserName] = useState('陳小明')
   const [userEmail, setUserEmail] = useState('chen@gmail.com')
   const [avatar, setAvatar] = useState<string | null>(null)
+  const [userPlan, setUserPlan] = useState('free')
 
   useFocusEffect(
     useCallback(() => {
@@ -27,6 +28,7 @@ export default function SettingsScreen({ navigation }: any) {
       AsyncStorage.getItem('userAvatar').then(val => { setAvatar(val) })
       AsyncStorage.getItem('userEmail').then(val => { if (val) setUserEmail(val) })
       AsyncStorage.getItem('reminderWeeks').then(val => { if (val) setReminderWeeks(parseInt(val)) })
+      AsyncStorage.getItem('userPlan').then(val => { if (val) setUserPlan(val) })
     }, [])
   )
 
@@ -87,11 +89,15 @@ export default function SettingsScreen({ navigation }: any) {
           <View style={styles.planInfo}>
             <View style={styles.planRow}>
               <Text style={styles.planTitle}>目前方案</Text>
-              <View style={styles.freeBadge}>
-                <Text style={styles.freeBadgeText}>免費版</Text>
+              <View style={[styles.freeBadge, userPlan === 'pro' && { backgroundColor: 'rgba(93,191,204,0.3)' }]}>
+                <Text style={[styles.freeBadgeText, userPlan === 'pro' && { color: '#5dbfcc' }]}>
+                  {userPlan === 'pro' ? 'Pro 版' : '免費版'}
+                </Text>
               </View>
             </View>
-            <Text style={styles.planSub}>升級 Pro · 解鎖 AI 深度建議</Text>
+            <Text style={styles.planSub}>
+              {userPlan === 'pro' ? '已解鎖 AI 深度建議 · 點擊管理方案' : '升級 Pro · 解鎖 AI 深度建議'}
+            </Text>
           </View>
           <Text style={styles.planArrow}>›</Text>
         </TouchableOpacity>
@@ -174,6 +180,20 @@ export default function SettingsScreen({ navigation }: any) {
               { text: '登出', style: 'destructive', onPress: async () => {
                 await AsyncStorage.removeItem('isLoggedIn')
                 await AsyncStorage.removeItem('userAvatar')
+                await AsyncStorage.removeItem('userName')
+                await AsyncStorage.removeItem('userEmail')
+                await AsyncStorage.removeItem('userPlan')
+                await AsyncStorage.removeItem('userPlanType')
+                await AsyncStorage.removeItem('strips')
+                await AsyncStorage.removeItem('lastTestDate')
+                await AsyncStorage.removeItem('clinics')
+                await AsyncStorage.removeItem('sharedHistory')
+                await AsyncStorage.removeItem('lastQuestionnaire')
+                await AsyncStorage.removeItem('userBirthYear')
+                await AsyncStorage.removeItem('userBirthMonth')
+                await AsyncStorage.removeItem('userBirthDay')
+                await AsyncStorage.removeItem('userHeight')
+                await AsyncStorage.removeItem('userWeight')
                 navigation.navigate('Login')
               }},
             ])
