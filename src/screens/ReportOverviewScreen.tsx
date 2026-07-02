@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } from 'react-native'
 import { colors, typography } from '../theme'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -181,6 +181,31 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
             </View>
           ))}
         </View>
+        {(record.debugFull || record.debugInner) && (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>偵測影像（除錯用）</Text>
+            {record.debugFull && (
+              <>
+                <Text style={[styles.hint, { marginBottom: 6 }]}>完整拍攝畫面 / ROI 定位</Text>
+                <Image
+                  source={{ uri: `data:image/jpeg;base64,${record.debugFull}` }}
+                  style={styles.debugImage}
+                  resizeMode="contain"
+                />
+              </>
+            )}
+            {record.debugInner && (
+              <>
+                <Text style={[styles.hint, { marginTop: 12, marginBottom: 6 }]}>實際辨識區域（試紙裁切）</Text>
+                <Image
+                  source={{ uri: `data:image/jpeg;base64,${record.debugInner}` }}
+                  style={styles.debugImage}
+                  resizeMode="contain"
+                />
+              </>
+            )}
+          </View>
+        )}
 
         <View style={[styles.warnCard, { backgroundColor: badgeStyle.bg }]}>
           <Text style={[styles.warnTitle, { color: badgeStyle.text }]}>
@@ -268,6 +293,12 @@ const styles = StyleSheet.create({
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
   infoValue: { fontSize: typography.sizes.sm, color: colors.gray900 },
   card: { backgroundColor: colors.gray100, borderRadius: 10, padding: 12, marginBottom: 14 },
+  debugImage: {
+    width: '100%',
+    height: 220,
+    borderRadius: 8,
+    backgroundColor: colors.gray200,
+  },
   qcRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5, borderBottomWidth: 0.5, borderBottomColor: colors.gray200 },
   warnCard: { borderRadius: 10, padding: 12, marginBottom: 14 },
   warnTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, marginBottom: 4 },

@@ -156,10 +156,10 @@ export default function SettingsScreen({ navigation }: any) {
             <Text style={styles.rowLabel}>App 版本</Text>
             <Text style={styles.rowHint}>v1.2.0</Text>
           </View>
-          <TouchableOpacity style={styles.row} onPress={() => Linking.openURL('https://www.ipreginc.com/')}>
-            <Text style={styles.rowLabel}>關於 FertiScan</Text>
-            <Text style={styles.rowHint}>›</Text>
-          </TouchableOpacity>
+          <View style={[styles.row, { borderBottomWidth: 0 }]}>
+            <Text style={styles.rowLabel}>圖示版權</Text>
+            <Text style={styles.rowHint}>Freepik - Flaticon</Text>
+          </View>
           <TouchableOpacity style={styles.row} onPress={async () => {
             await AsyncStorage.setItem('clinics', JSON.stringify([]))
             await AsyncStorage.removeItem('sharedHistory')
@@ -204,6 +204,7 @@ export default function SettingsScreen({ navigation }: any) {
         </View>
 
         <Text style={styles.disclaimer}>本產品僅供初步參考，不構成醫療診斷</Text>
+        
 
       </ScrollView>
     </View>
@@ -290,4 +291,7 @@ const styles = StyleSheet.create({
   tealTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.primary, marginBottom: 4 },
   tealText: { fontSize: typography.sizes.xs, color: '#0d7a8f', lineHeight: 18 },
   disclaimer: { fontSize: typography.sizes.xs, color: colors.gray400, textAlign: 'center', marginBottom: 20 },
+  creditCard: { backgroundColor: colors.gray100, borderRadius: 10, padding: 12, marginBottom: 16 },
+  creditTitle: { fontSize: typography.sizes.xs, color: colors.gray500, marginBottom: 4 },
+  creditText: { fontSize: typography.sizes.xs, color: colors.primary, textDecorationLine: 'underline' },
 })

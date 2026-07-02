@@ -91,12 +91,19 @@ async function takePicture() {
      const avgC = validResults.reduce((sum, r) => sum + r.c_intensity, 0) / validResults.length
      const avgT = validResults.reduce((sum, r) => sum + r.t_intensity, 0) / validResults.length
 
+      // 取最接近中位數那張的 debug 圖片作為代表（三張圖沒辦法平均，只能選一張）
+      const representative = validResults.reduce((closest, r) =>
+        Math.abs(r.tc_ratio - medianTC) < Math.abs(closest.tc_ratio - medianTC) ? r : closest
+      , validResults[0])
+
       const avgResult = {
         tc_ratio: Math.round(avgTC * 1000) / 1000,
         c_intensity: Math.round(avgC * 100) / 100,
         t_intensity: Math.round(avgT * 100) / 100,
         qc_pass: true,
         sample_count: results.length,
+        debug_inner: representative.debug_inner,
+        debug_full: representative.debug_full,
       }
 
       setCaptured(false)

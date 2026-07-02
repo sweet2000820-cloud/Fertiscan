@@ -121,6 +121,8 @@ export default function AnalysisScreen({ navigation, route }: any) {
                 date, time, tc, status, lot: lotNumber,
                 cIntensity: analysisResult?.c_intensity,
                 tIntensity: analysisResult?.t_intensity,
+                debugInner: analysisResult?.debug_inner,
+                debugFull: analysisResult?.debug_full,
               } 
             })
             }}>
