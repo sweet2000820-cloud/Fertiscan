@@ -1,106 +1,195 @@
 import { useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
+import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
 import { colors, typography } from '../theme'
 
-const questions = [
-  {
-    q: '最近 1 個月，平均每晚睡幾小時？',
-    opts: ['少於 5 小時', '5–6 小時', '7–8 小時', '超過 9 小時']
-  },
-  {
-    q: '最近 1 個月，每週運動幾次？',
-    opts: ['幾乎不運動', '每週 1–2 次', '每週 3–4 次', '每週 5 次以上']
-  },
-  {
-    q: '最近 1 個月，是否有長時間久坐（每天超過 6 小時）？',
-    opts: ['很少', '偶爾', '幾乎每天']
-  },
-  {
-    q: '最近 1 個月，飲酒頻率？',
-    opts: ['不喝', '偶爾（每月 1–3 次）', '每週 1–2 次', '每週 3 次以上']
-  },
-  {
-    q: '最近 2 週，整體壓力狀況？',
-    opts: ['壓力不大', '有些壓力，尚可承受', '壓力較大', '壓力很大']
-  },
+// 是非題（2選項）
+const yesNoQuestions = [
+  { key: 'sampleComplete', q: '本次檢體是否完整採集？' },
+  { key: 'usedLubricant', q: '採樣過程是否使用潤滑劑？' },
+  { key: 'hadFever', q: '最近 2 週是否有發燒超過 38.5°C？' },
+  { key: 'newMedication', q: '最近 3 個月是否有新增或調整用藥？' },
+  { key: 'heavyDrinking', q: '最近 48 小時是否大量飲酒？' },
 ]
 
-export default function PreQuestionnaireScreen({ navigation }: any) {
+// 頻率程度題（4選項）
+const heatExposureOpts = [
+  { label: '從不', value: 'never' },
+  { label: '偶爾', value: 'occasional' },
+  { label: '常常', value: 'often' },
+  { label: '幾乎每天', value: 'almostDaily' },
+]
+const sleepHoursOpts = [
+  { label: '少於 5 小時', value: 'lt5' },
+  { label: '5–6 小時', value: '5to6' },
+  { label: '7–8 小時', value: '7to8' },
+  { label: '超過 9 小時', value: 'gt9' },
+]
+const stressOpts = [
+  { label: '壓力不大', value: 'low' },
+  { label: '有些壓力，尚可承受', value: 'moderate' },
+  { label: '壓力較大', value: 'high' },
+  { label: '壓力很大', value: 'veryHigh' },
+]
+
+export default function PreQuestionnaireScreen({ navigation, route }: any) {
   const [step, setStep] = useState(0)
-  const [answers, setAnswers] = useState<number[]>([])
 
-  const current = questions[step]
-  const selected = answers[step]
-  const progress = ((step + 1) / questions.length * 100).toFixed(0)
+  // 數字輸入
+  const [abstinenceDays, setAbstinenceDays] = useState('')
+  const [sampleIntervalMinutes, setSampleIntervalMinutes] = useState('')
 
-  function selectAnswer(i: number) {
-    const newAnswers = [...answers]
-    newAnswers[step] = i
-    setAnswers(newAnswers)
+  // 是非題答案
+  const [yesNoAnswers, setYesNoAnswers] = useState<Record<string, boolean | undefined>>({})
+
+  // 頻率程度題答案
+  const [heatExposure, setHeatExposure] = useState<string | undefined>()
+  const [sleepHours, setSleepHours] = useState<string | undefined>()
+  const [stressLevel, setStressLevel] = useState<string | undefined>()
+
+  // 總步驟：2個數字輸入 + 5個是非題 + 3個頻率題 = 10 頁
+  const totalSteps = 2 + yesNoQuestions.length + 3
+  const progress = ((step + 1) / totalSteps * 100).toFixed(0)
+
+  function canProceed() {
+    if (step === 0) return abstinenceDays.trim() !== ''
+    if (step === 1) return sampleIntervalMinutes.trim() !== ''
+    const yesNoIndex = step - 2
+    if (yesNoIndex >= 0 && yesNoIndex < yesNoQuestions.length) {
+      return yesNoAnswers[yesNoQuestions[yesNoIndex].key] !== undefined
+    }
+    const freqIndex = step - 2 - yesNoQuestions.length
+    if (freqIndex === 0) return heatExposure !== undefined
+    if (freqIndex === 1) return sleepHours !== undefined
+    if (freqIndex === 2) return stressLevel !== undefined
+    return false
   }
 
-  async function next() {
-    if (selected === undefined) return
-    if (step < questions.length - 1) {
+  function next() {
+    if (!canProceed()) return
+    if (step < totalSteps - 1) {
       setStep(step + 1)
     } else {
-      const questionnaireData = {
-        sleepHours: questions[0].opts[answers[0]],
-        exerciseDays: questions[1].opts[answers[1]],
-        sitting: questions[2].opts[answers[2]],
-        alcohol: questions[3].opts[answers[3]],
-        stress: questions[4].opts[answers[4]],
+      const preTestSurvey = {
+        abstinenceDays: parseInt(abstinenceDays, 10),
+        sampleIntervalMinutes: parseInt(sampleIntervalMinutes, 10),
+        sampleComplete: !!yesNoAnswers.sampleComplete,
+        usedLubricant: !!yesNoAnswers.usedLubricant,
+        hadFever: !!yesNoAnswers.hadFever,
+        newMedication: !!yesNoAnswers.newMedication,
+        heavyDrinking: !!yesNoAnswers.heavyDrinking,
+        heatExposure: heatExposure as 'never' | 'occasional' | 'often' | 'almostDaily',
+        sleepHours: sleepHours as 'lt5' | '5to6' | '7to8' | 'gt9',
+        stressLevel: stressLevel as 'low' | 'moderate' | 'high' | 'veryHigh',
       }
-      const AsyncStorage = require('@react-native-async-storage/async-storage').default
-      await AsyncStorage.setItem('lastQuestionnaire', JSON.stringify(questionnaireData))
-      navigation.navigate('BrightnessCalib')
+      navigation.navigate('BrightnessCalib', { ...route?.params, preTestSurvey })
     }
+  }
+
+  function back() {
+    if (step > 0) setStep(step - 1)
+    else navigation.goBack()
+  }
+
+  // 渲染題目內容
+  function renderQuestion() {
+    if (step === 0) {
+      return (
+        <>
+          <Text style={styles.question}>距離上次射精，已經幾天了？</Text>
+          <Text style={styles.hint}>建議禁慾 2–7 天內採樣，準確度較高</Text>
+          <TextInput
+            style={styles.numInput}
+            placeholder="請輸入天數"
+            placeholderTextColor={colors.gray400}
+            keyboardType="number-pad"
+            value={abstinenceDays}
+            onChangeText={setAbstinenceDays}
+          />
+        </>
+      )
+    }
+    
+    const yesNoIndex = step - 2
+    if (yesNoIndex >= 0 && yesNoIndex < yesNoQuestions.length) {
+      const item = yesNoQuestions[yesNoIndex]
+      const selected = yesNoAnswers[item.key]
+      return (
+        <>
+          <Text style={styles.question}>{item.q}</Text>
+          <View style={styles.optionList}>
+            {[{ label: '是', value: true }, { label: '否', value: false }].map(opt => (
+              <TouchableOpacity
+                key={String(opt.value)}
+                style={[styles.option, selected === opt.value && styles.optionSelected]}
+                onPress={() => setYesNoAnswers({ ...yesNoAnswers, [item.key]: opt.value })}
+              >
+                <View style={[styles.radio, selected === opt.value && styles.radioSelected]}>
+                  {selected === opt.value && <View style={styles.radioDot} />}
+                </View>
+                <Text style={[styles.optionText, selected === opt.value && styles.optionTextSelected]}>{opt.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </>
+      )
+    }
+    const freqIndex = step - 2 - yesNoQuestions.length
+    const freqConfigs = [
+      { q: '最近是否有泡三溫暖/熱水澡/久坐？', opts: heatExposureOpts, selected: heatExposure, setter: setHeatExposure },
+      { q: '昨晚睡眠時數？', opts: sleepHoursOpts, selected: sleepHours, setter: setSleepHours },
+      { q: '最近整體壓力狀況？', opts: stressOpts, selected: stressLevel, setter: setStressLevel },
+    ]
+    const cfg = freqConfigs[freqIndex]
+    if (!cfg) return null
+    return (
+      <>
+        <Text style={styles.question}>{cfg.q}</Text>
+        <View style={styles.optionList}>
+          {cfg.opts.map(opt => (
+            <TouchableOpacity
+              key={opt.value}
+              style={[styles.option, cfg.selected === opt.value && styles.optionSelected]}
+              onPress={() => cfg.setter(opt.value)}
+            >
+              <View style={[styles.radio, cfg.selected === opt.value && styles.radioSelected]}>
+                {cfg.selected === opt.value && <View style={styles.radioDot} />}
+              </View>
+              <Text style={[styles.optionText, cfg.selected === opt.value && styles.optionTextSelected]}>{opt.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </>
+    )
   }
 
   return (
     <View style={styles.container}>
       <View style={styles.appbar}>
-        <TouchableOpacity onPress={() => step > 0 ? setStep(step - 1) : navigation.goBack()}>
+        <TouchableOpacity onPress={back}>
           <Text style={styles.back}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.appbarTitle}>採樣前問卷</Text>
       </View>
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
         <View style={styles.progressRow}>
           <Text style={styles.hint}>步驟 2 / 6</Text>
-          <Text style={styles.hint}>問題 {step + 1} / {questions.length}</Text>
+          <Text style={styles.hint}>問題 {step + 1} / {totalSteps}</Text>
         </View>
         <View style={styles.progressBg}>
-          <View style={[styles.progressFill, {width:`${progress}%` as any}]} />
+          <View style={[styles.progressFill, { width: `${progress}%` as any }]} />
         </View>
 
-        <Text style={styles.question}>{current.q}</Text>
-        <Text style={styles.hint}>回答將用於 AI 生活習慣建議參考</Text>
-
-        <View style={styles.optionList}>
-          {current.opts.map((opt, i) => (
-            <TouchableOpacity
-              key={i}
-              style={[styles.option, selected === i && styles.optionSelected]}
-              onPress={() => selectAnswer(i)}
-            >
-              <View style={[styles.radio, selected === i && styles.radioSelected]}>
-                {selected === i && <View style={styles.radioDot} />}
-              </View>
-              <Text style={[styles.optionText, selected === i && styles.optionTextSelected]}>{opt}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {renderQuestion()}
 
         <TouchableOpacity
-          style={[styles.nextBtn, selected === undefined && styles.nextBtnDisabled]}
+          style={[styles.nextBtn, !canProceed() && styles.nextBtnDisabled]}
           onPress={next}
-          disabled={selected === undefined}
+          disabled={!canProceed()}
         >
           <Text style={styles.nextBtnText}>
-            {step === questions.length - 1 ? '完成，開始校準 ›' : '下一題 ›'}
+            {step === totalSteps - 1 ? '完成，開始校準 ›' : '下一題 ›'}
           </Text>
         </TouchableOpacity>
 
@@ -131,7 +220,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 6,
   },
-  hint: { fontSize: typography.sizes.sm, color: colors.gray400 },
+  hint: { fontSize: typography.sizes.sm, color: colors.gray400, marginBottom: 6 },
   progressBg: {
     height: 4,
     backgroundColor: colors.gray200,
@@ -149,6 +238,17 @@ const styles = StyleSheet.create({
     color: colors.gray900,
     lineHeight: 24,
     marginBottom: 6,
+  },
+  numInput: {
+  height: 46,
+  borderWidth: 0.5,
+  borderColor: colors.gray300,
+  borderRadius: 8,
+  paddingHorizontal: 14,
+  fontSize: typography.sizes.lg,
+  color: colors.gray900,
+  marginTop: 16,
+  marginBottom: 24,
   },
   optionList: { gap: 10, marginTop: 16, marginBottom: 20 },
   option: {

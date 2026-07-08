@@ -43,6 +43,7 @@ import LotQRScreen from './screens/LotQRScreen'
 import ShopScreen from './screens/ShopScreen'
 import OrderConfirmScreen from './screens/OrderConfirmScreen'
 import PaymentScreen from './screens/PaymentScreen'
+import RestTimerScreen from './screens/RestTimerScreen'
 
 
 
@@ -140,6 +141,7 @@ export default function Navigation({ onLogin }: any) {
         <Stack.Screen name="Shop" component={ShopScreen} />
         <Stack.Screen name="OrderConfirm" component={OrderConfirmScreen} />
         <Stack.Screen name="Payment" component={PaymentScreen} />
+        <Stack.Screen name="RestTimer" component={RestTimerScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   )

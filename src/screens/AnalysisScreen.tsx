@@ -95,7 +95,12 @@ export default function AnalysisScreen({ navigation, route }: any) {
             const date = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`
             const time = `${now.getHours() < 12 ? '上午' : '下午'} ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`
             const lotNumber = await AsyncStorage.getItem('lotNumber') || '未知批號'
-            await saveRecord({ date, time, tc, status, lot: lotNumber })
+            await saveRecord({
+              date, time, tc, status, lot: lotNumber,
+              cIntensity: analysisResult?.c_intensity,
+              tIntensity: analysisResult?.t_intensity,
+              preTestSurvey: route?.params?.preTestSurvey,
+            })
             await AsyncStorage.setItem('lastTestDate', now.toISOString())
             // 自動分享
             const clinicsRaw = await AsyncStorage.getItem('clinics')

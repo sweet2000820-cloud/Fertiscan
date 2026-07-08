@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { colors, typography } from '../theme'
 
-export default function CamCaptureScreen({ navigation }: any) {
+export default function CamCaptureScreen({ navigation, route }: any) {
   const [permission, requestPermission] = useCameraPermissions()
   const [captured, setCaptured] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -107,7 +107,7 @@ async function takePicture() {
       }
 
       setCaptured(false)
-      navigation.navigate('Analysis', { analysisResult: avgResult })
+      navigation.navigate('Analysis', { analysisResult: avgResult, ...route?.params })
 
     } catch (e) {
       setIsProcessing(false)

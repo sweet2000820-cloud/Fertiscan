@@ -4,7 +4,8 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { colors, typography } from '../theme'
 import Button from '../components/Button'
 
-export default function BrightnessCalibScreen({ navigation }: any) {
+
+export default function BrightnessCalibScreen({ navigation, route }: any) {
   const [brightness, setBrightness] = useState(88)
 
   useEffect(() => {
@@ -100,7 +101,7 @@ export default function BrightnessCalibScreen({ navigation }: any) {
           </View>
         ))}
 
-        <Button title="開始拍攝試紙 ›" onPress={() => navigation.navigate('CamCapture')} />
+        <Button title="開始拍攝試紙 ›" onPress={() => navigation.navigate('CamCapture', { ...route?.params })} />
 
       </ScrollView>
     </View>
