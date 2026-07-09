@@ -36,7 +36,6 @@ export default function PreQuestionnaireScreen({ navigation, route }: any) {
 
   // 數字輸入
   const [abstinenceDays, setAbstinenceDays] = useState('')
-  const [sampleIntervalMinutes, setSampleIntervalMinutes] = useState('')
 
   // 是非題答案
   const [yesNoAnswers, setYesNoAnswers] = useState<Record<string, boolean | undefined>>({})
@@ -46,18 +45,17 @@ export default function PreQuestionnaireScreen({ navigation, route }: any) {
   const [sleepHours, setSleepHours] = useState<string | undefined>()
   const [stressLevel, setStressLevel] = useState<string | undefined>()
 
-  // 總步驟：2個數字輸入 + 5個是非題 + 3個頻率題 = 10 頁
-  const totalSteps = 2 + yesNoQuestions.length + 3
+  // 總步驟：1個數字輸入 + 5個是非題 + 3個頻率題 = 9 頁
+  const totalSteps = 1 + yesNoQuestions.length + 3
   const progress = ((step + 1) / totalSteps * 100).toFixed(0)
 
   function canProceed() {
     if (step === 0) return abstinenceDays.trim() !== ''
-    if (step === 1) return sampleIntervalMinutes.trim() !== ''
-    const yesNoIndex = step - 2
+    const yesNoIndex = step - 1
     if (yesNoIndex >= 0 && yesNoIndex < yesNoQuestions.length) {
       return yesNoAnswers[yesNoQuestions[yesNoIndex].key] !== undefined
     }
-    const freqIndex = step - 2 - yesNoQuestions.length
+    const freqIndex = step - 1 - yesNoQuestions.length
     if (freqIndex === 0) return heatExposure !== undefined
     if (freqIndex === 1) return sleepHours !== undefined
     if (freqIndex === 2) return stressLevel !== undefined
@@ -71,7 +69,7 @@ export default function PreQuestionnaireScreen({ navigation, route }: any) {
     } else {
       const preTestSurvey = {
         abstinenceDays: parseInt(abstinenceDays, 10),
-        sampleIntervalMinutes: parseInt(sampleIntervalMinutes, 10),
+        restTimeConfirmed: !!route?.params?.restTimeConfirmed,
         sampleComplete: !!yesNoAnswers.sampleComplete,
         usedLubricant: !!yesNoAnswers.usedLubricant,
         hadFever: !!yesNoAnswers.hadFever,
@@ -108,8 +106,8 @@ export default function PreQuestionnaireScreen({ navigation, route }: any) {
         </>
       )
     }
-    
-    const yesNoIndex = step - 2
+
+    const yesNoIndex = step - 1
     if (yesNoIndex >= 0 && yesNoIndex < yesNoQuestions.length) {
       const item = yesNoQuestions[yesNoIndex]
       const selected = yesNoAnswers[item.key]
@@ -133,7 +131,7 @@ export default function PreQuestionnaireScreen({ navigation, route }: any) {
         </>
       )
     }
-    const freqIndex = step - 2 - yesNoQuestions.length
+    const freqIndex = step - 1 - yesNoQuestions.length
     const freqConfigs = [
       { q: '最近是否有泡三溫暖/熱水澡/久坐？', opts: heatExposureOpts, selected: heatExposure, setter: setHeatExposure },
       { q: '昨晚睡眠時數？', opts: sleepHoursOpts, selected: sleepHours, setter: setSleepHours },
@@ -240,15 +238,15 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   numInput: {
-  height: 46,
-  borderWidth: 0.5,
-  borderColor: colors.gray300,
-  borderRadius: 8,
-  paddingHorizontal: 14,
-  fontSize: typography.sizes.lg,
-  color: colors.gray900,
-  marginTop: 16,
-  marginBottom: 24,
+    height: 46,
+    borderWidth: 0.5,
+    borderColor: colors.gray300,
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    fontSize: typography.sizes.lg,
+    color: colors.gray900,
+    marginTop: 16,
+    marginBottom: 24,
   },
   optionList: { gap: 10, marginTop: 16, marginBottom: 20 },
   option: {

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native'
 import { colors, typography } from '../theme'
+import { Ionicons } from '@expo/vector-icons'
 
 const TOTAL_SECONDS = 5 * 60 // 5 分鐘
 
@@ -168,11 +169,77 @@ const quizzes = [
     correct: 1,
     explain: '單次數值容易受當下狀態影響，長期追蹤趨勢更能反映真實狀況 📈',
   },
+  {
+    q: '陰囊皮膚為什麼會隨溫度收縮或放鬆？',
+    opts: ['純粹反射動作，沒有意義', '幫助調節睪丸溫度，是身體的溫控機制', '只是緊張反應'],
+    correct: 1,
+    explain: '陰囊肌肉會依環境溫度收縮或放鬆，幫助睪丸維持最適合的生成溫度 🧊',
+  },
+  {
+    q: '長期熬夜對生殖荷爾蒙的影響？',
+    opts: ['完全沒有關係', '可能干擾睪固酮等荷爾蒙分泌節律', '只影響隔天精神'],
+    correct: 1,
+    explain: '荷爾蒙分泌有其晝夜節律，長期熬夜可能打亂這個規律運作 🌙',
+  },
+  {
+    q: '運動後馬上做檢測，數值會準嗎？',
+    opts: ['完全不影響，隨時都可以測', '劇烈運動後體溫升高，建議稍作休息再測', '運動後測更準確'],
+    correct: 1,
+    explain: '劇烈運動會讓體溫短暫升高，建議讓身體恢復平靜後再進行檢測 🏋️',
+  },
+  {
+    q: '哪個部位的溫度對精子生成最關鍵？',
+    opts: ['全身體溫', '陰囊局部溫度', '手腳溫度'],
+    correct: 1,
+    explain: '陰囊局部溫度需維持在比核心體溫略低的狀態，精子生成才能順利進行 🌡️',
+  },
+  {
+    q: '長期處於高壓工作環境，該怎麼調適？',
+    opts: ['忽略它，繼續拼命工作', '找到適合自己的紓壓方式並規律執行', '壓力對身體沒有影響'],
+    correct: 1,
+    explain: '找到適合自己的紓壓管道，並養成規律習慣，對整體健康都有正面幫助 🌿',
+  },
+  {
+    q: '飲食中攝取足夠鋅對生殖健康有幫助嗎？',
+    opts: ['沒有任何關聯', '鋅是研究關注的重要微量元素之一', '只對免疫系統有用'],
+    correct: 1,
+    explain: '鋅是精子生成過程中受到關注的微量元素之一，均衡飲食有助於攝取足夠營養 🦪',
+  },
+  {
+    q: '睡前使用手機、平板會怎樣？',
+    opts: ['完全無關，隨便滑', '藍光可能干擾睡眠品質與褪黑激素分泌', '只影響視力'],
+    correct: 1,
+    explain: '睡前長時間使用發光螢幕，可能影響褪黑激素分泌，進而干擾睡眠品質 📱',
+  },
+  {
+    q: '規律作息對生殖荷爾蒙的意義？',
+    opts: ['沒有太大意義', '有助於維持穩定的荷爾蒙分泌節律', '只影響情緒穩定度'],
+    correct: 1,
+    explain: '規律的作息有助於身體維持穩定的荷爾蒙分泌節律，是簡單卻有效的保養方式 ⏱️',
+  },
+  {
+    q: '身體發炎反應會影響精子品質嗎？',
+    opts: ['完全不會', '慢性發炎可能與氧化壓力增加有關', '只影響局部組織'],
+    correct: 1,
+    explain: '慢性發炎反應可能增加體內氧化壓力，進而對精子品質產生潛在影響 🔥',
+  },
+  {
+    q: '適量曬太陽對生殖健康有幫助嗎？',
+    opts: ['完全無關', '有助於維生素D合成，可能有正面幫助', '曬越多越好'],
+    correct: 1,
+    explain: '適量日曬有助於身體合成維生素D，部分研究關注其與生殖健康的關聯性 ☀️',
+  },
+  {
+    q: '長期使用類固醇藥物會有什麼影響？',
+    opts: ['完全沒有影響', '可能抑制自身荷爾蒙分泌，建議諮詢醫師', '只影響肌肉量'],
+    correct: 1,
+    explain: '長期使用類固醇類藥物可能影響自身荷爾蒙分泌軸，用藥前後建議諮詢專業醫師 💊',
+  },
 ]
 
 export default function RestTimerScreen({ navigation, route }: any) {
   const [secondsLeft, setSecondsLeft] = useState(TOTAL_SECONDS)
-  const [quizIndex, setQuizIndex] = useState(0)
+  const [quizIndex, setQuizIndex] = useState(() => Math.floor(Math.random() * quizzes.length))
   const [selectedOpt, setSelectedOpt] = useState<number | null>(null)
   const timerRef = useRef<any>(null)
 
@@ -205,7 +272,14 @@ export default function RestTimerScreen({ navigation, route }: any) {
 
   function nextQuiz() {
     setSelectedOpt(null)
-    setQuizIndex(prev => (prev + 1) % quizzes.length)
+    setQuizIndex(prev => {
+      if (quizzes.length <= 1) return prev
+      let next = Math.floor(Math.random() * quizzes.length)
+      while (next === prev) {
+        next = Math.floor(Math.random() * quizzes.length)
+      }
+      return next
+    })
   }
 
   const minutes = Math.floor(secondsLeft / 60)
@@ -241,12 +315,13 @@ const isCorrect = selectedOpt === quiz.correct
         <Text style={styles.subtitle}>請讓試紙靜置顯色，滿 5 分鐘後即可拍攝</Text>
 
         <View style={styles.timerCircle}>
+          <Ionicons name="time-outline" size={20} color={colors.primary} style={{ marginBottom: 2 }} />
           <Text style={styles.timerText}>{timeText}</Text>
           <Text style={styles.timerLabel}>倒數中</Text>
         </View>
 
         <View style={styles.quizCard}>
-          <Text style={styles.quizEmoji}>🤔</Text>
+          <Text style={styles.quizLabel}>生殖健康小知識</Text>
           <Text style={styles.quizQ}>{quiz.q}</Text>
 
           <View style={styles.quizOpts}>
@@ -271,9 +346,20 @@ const isCorrect = selectedOpt === quiz.correct
                   onPress={() => selectAnswer(i)}
                   disabled={answered}
                 >
-                  <Text style={textStyle}>{opt}</Text>
-                  {answered && isRightAnswer && <Text style={styles.checkIcon}>✓</Text>}
-                  {answered && isSelected && !isRightAnswer && <Text style={styles.crossIcon}>✕</Text>}
+                  <View style={styles.optLeft}>
+                    <View style={[
+                      styles.optLetter,
+                      answered && isRightAnswer && styles.optLetterCorrect,
+                      answered && isSelected && !isRightAnswer && styles.optLetterWrong,
+                    ]}>
+                      <Text style={[
+                        styles.optLetterText,
+                        answered && isRightAnswer && styles.optLetterTextCorrect,
+                        answered && isSelected && !isRightAnswer && styles.optLetterTextWrong,
+                      ]}>{String.fromCharCode(65 + i)}</Text>
+                    </View>
+                    <Text style={textStyle}>{opt}</Text>
+                  </View>
                 </TouchableOpacity>
               )
             })}
@@ -281,7 +367,7 @@ const isCorrect = selectedOpt === quiz.correct
 
           {answered && (
             <View style={styles.explainBox}>
-              <Text style={styles.explainTitle}>{isCorrect ? '答對了！' : '答案是這個 👇'}</Text>
+              <Text style={styles.explainTitle}>{isCorrect ? '答對了！' : '答案是這個'}</Text>
               <Text style={styles.explainText}>{quiz.explain}</Text>
               <TouchableOpacity style={styles.nextQuizBtn} onPress={nextQuiz}>
                 <Text style={styles.nextQuizBtnText}>下一題 ›</Text>
@@ -303,15 +389,16 @@ const isCorrect = selectedOpt === quiz.correct
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46,
+    height: 52,
+    alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
     borderBottomWidth: 0.5,
     borderBottomColor: colors.gray200,
   },
   appbarTitle: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.medium,
+    fontSize: 17,
+    fontWeight: '600',
     color: colors.gray900,
   },
   scroll: { flex: 1 },
@@ -329,6 +416,7 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     borderWidth: 8,
     borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 28,
@@ -345,38 +433,59 @@ const styles = StyleSheet.create({
   },
   quizCard: {
     width: '100%',
-    backgroundColor: colors.gray100,
-    borderRadius: 14,
-    padding: 18,
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    borderWidth: 0.5,
+    borderColor: colors.gray200,
+    padding: 20,
     alignItems: 'center',
     marginBottom: 16,
   },
-  quizEmoji: { fontSize: 22, marginBottom: 6 },
+  quizLabel: {
+    fontSize: 11,
+    fontWeight: typography.weights.medium,
+    color: colors.primary,
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
   quizQ: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.medium,
     color: colors.gray900,
     textAlign: 'center',
-    marginBottom: 14,
+    marginBottom: 16,
+    lineHeight: 22,
   },
   quizOpts: { width: '100%', gap: 8 },
   quizOpt: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     padding: 12,
-    borderRadius: 9,
-    borderWidth: 1,
+    borderRadius: 10,
+    borderWidth: 1.5,
     borderColor: colors.gray200,
     backgroundColor: colors.white,
   },
   quizOptCorrect: { borderColor: colors.success, backgroundColor: colors.successLight },
   quizOptWrong: { borderColor: colors.danger, backgroundColor: colors.dangerLight },
-  quizOptText: { fontSize: typography.sizes.sm, color: colors.gray900 },
+  optLeft: { flexDirection: 'row', alignItems: 'center', gap: 9, flex: 1 },
+  optLetter: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: colors.gray100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  optLetterCorrect: { backgroundColor: colors.success },
+  optLetterWrong: { backgroundColor: colors.danger },
+  optLetterText: { fontSize: 11, fontWeight: typography.weights.medium, color: colors.gray500 },
+  optLetterTextCorrect: { color: colors.white },
+  optLetterTextWrong: { color: colors.white },
+  quizOptText: { fontSize: typography.sizes.sm, color: colors.gray900, flex: 1 },
   quizOptTextCorrect: { color: colors.success, fontWeight: typography.weights.medium },
   quizOptTextWrong: { color: colors.danger },
-  checkIcon: { fontSize: typography.sizes.sm, color: colors.success, fontWeight: typography.weights.medium },
-  crossIcon: { fontSize: typography.sizes.sm, color: colors.danger },
   explainBox: {
     width: '100%',
     marginTop: 14,
