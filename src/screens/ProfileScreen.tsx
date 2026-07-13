@@ -6,12 +6,25 @@ import DatePickerModal from '../components/DatePickerModal'
 import PickerModal from '../components/PickerModal'
 import * as ImagePicker from 'expo-image-picker'
 
+const occupationOpts = [
+  { label: '久坐辦公', value: 'sedentary' },
+  { label: '站立走動', value: 'active' },
+  { label: '高溫作業', value: 'highHeat' },
+  { label: '其他', value: 'other' },
+]
+const tryingOpts = [
+  { label: '是', value: 'yes' },
+  { label: '否', value: 'no' },
+  { label: '尚未決定', value: 'undecided' },
+]
+
 export default function ProfileScreen({ navigation }: any) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [height, setHeight] = useState('')
   const [weight, setWeight] = useState('')
   const [smoke, setSmoke] = useState(false)
+  const [smokeYears, setSmokeYears] = useState('')
   const [drink, setDrink] = useState(0)
   const [birthYear, setBirthYear] = useState('')
   const [birthMonth, setBirthMonth] = useState('')
@@ -21,6 +34,14 @@ export default function ProfileScreen({ navigation }: any) {
   const [showWeightPicker, setShowWeightPicker] = useState(false)
   const [avatar, setAvatar] = useState<string | null>(null)
 
+  // 新增的生殖健康背景欄位
+  const [varicocele, setVaricocele] = useState<boolean | null>(null)
+  const [testicularHistory, setTesticularHistory] = useState<boolean | null>(null)
+  const [endocrineDisease, setEndocrineDisease] = useState<boolean | null>(null)
+  const [hadSemenTest, setHadSemenTest] = useState<boolean | null>(null)
+  const [occupationType, setOccupationType] = useState<string | null>(null)
+  const [tryingToConceive, setTryingToConceive] = useState<string | null>(null)
+
   useEffect(() => {
     AsyncStorage.getItem('userName').then(val => { if (val) setName(val) })
     AsyncStorage.getItem('userEmail').then(val => { if (val) setEmail(val) })
@@ -29,20 +50,41 @@ export default function ProfileScreen({ navigation }: any) {
     AsyncStorage.getItem('userBirthDay').then(val => { if (val) setBirthDay(val) })
     AsyncStorage.getItem('userHeight').then(val => { if (val) setHeight(val) })
     AsyncStorage.getItem('userWeight').then(val => { if (val) setWeight(val) })
-    AsyncStorage.getItem('userSmoke').then(val => { if (val !== null) setSmoke(val === '1') })
+    AsyncStorage.getItem('userSmoke').then(val => { if (val !== null) setSmoke(val === 'true') })
+    AsyncStorage.getItem('userSmokeYears').then(val => { if (val) setSmokeYears(val) })
     AsyncStorage.getItem('userDrink').then(val => { if (val !== null) setDrink(parseInt(val)) })
     AsyncStorage.getItem('userAvatar').then(val => { if (val) setAvatar(val) })
+    AsyncStorage.getItem('userVaricocele').then(val => { if (val !== null) setVaricocele(val === 'true') })
+    AsyncStorage.getItem('userTesticularHistory').then(val => { if (val !== null) setTesticularHistory(val === 'true') })
+    AsyncStorage.getItem('userEndocrineDisease').then(val => { if (val !== null) setEndocrineDisease(val === 'true') })
+    AsyncStorage.getItem('userHadSemenTest').then(val => { if (val !== null) setHadSemenTest(val === 'true') })
+    AsyncStorage.getItem('userOccupationType').then(val => { if (val) setOccupationType(val) })
+    AsyncStorage.getItem('userTryingToConceive').then(val => { if (val) setTryingToConceive(val) })
   }, [])
 
   async function handleSave() {
-    await AsyncStorage.setItem('userName', name)
-    await AsyncStorage.setItem('userHeight', height)
-    await AsyncStorage.setItem('userWeight', weight)
-    await AsyncStorage.setItem('userSmoke', smoke ? '1' : '0')
+    if (name) await AsyncStorage.setItem('userName', name)
+    if (height) await AsyncStorage.setItem('userHeight', height)
+    if (weight) await AsyncStorage.setItem('userWeight', weight)
+    await AsyncStorage.setItem('userSmoke', smoke ? 'true' : 'false')
     await AsyncStorage.setItem('userDrink', String(drink))
-    await AsyncStorage.setItem('userBirthYear', birthYear)
-    await AsyncStorage.setItem('userBirthMonth', birthMonth)
-    await AsyncStorage.setItem('userBirthDay', birthDay)
+    if (birthYear) await AsyncStorage.setItem('userBirthYear', birthYear)
+    if (birthMonth) await AsyncStorage.setItem('userBirthMonth', birthMonth)
+    if (birthDay) await AsyncStorage.setItem('userBirthDay', birthDay)
+      
+    if (smoke && smokeYears) {
+      await AsyncStorage.setItem('userSmokeYears', smokeYears)
+    } else {
+      await AsyncStorage.removeItem('userSmokeYears')
+    }
+
+    if (varicocele !== null) await AsyncStorage.setItem('userVaricocele', varicocele ? 'true' : 'false')
+    if (testicularHistory !== null) await AsyncStorage.setItem('userTesticularHistory', testicularHistory ? 'true' : 'false')
+    if (endocrineDisease !== null) await AsyncStorage.setItem('userEndocrineDisease', endocrineDisease ? 'true' : 'false')
+    if (hadSemenTest !== null) await AsyncStorage.setItem('userHadSemenTest', hadSemenTest ? 'true' : 'false')
+    if (occupationType) await AsyncStorage.setItem('userOccupationType', occupationType)
+    if (tryingToConceive) await AsyncStorage.setItem('userTryingToConceive', tryingToConceive)
+
     if (avatar) {
       await AsyncStorage.setItem('userAvatar', avatar)
     } else {
@@ -90,6 +132,25 @@ export default function ProfileScreen({ navigation }: any) {
   const birthDisplay = birthYear && birthMonth && birthDay
     ? `${birthYear}/${birthMonth.padStart(2, '0')}/${birthDay.padStart(2, '0')}`
     : '未設定'
+
+  function YesNoRow({ label, value, onChange }: { label: string, value: boolean | null, onChange: (v: boolean) => void }) {
+    return (
+      <View style={styles.fieldRow}>
+        <Text style={styles.fieldLabel}>{label}</Text>
+        <View style={styles.optRow}>
+          {['是', '否'].map((opt, i) => (
+            <TouchableOpacity
+              key={i}
+              style={[styles.opt, value === (i === 0) && styles.optSelected]}
+              onPress={() => onChange(i === 0)}
+            >
+              <Text style={[styles.optText, value === (i === 0) && styles.optTextSelected]}>{opt}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    )
+  }
 
   return (
     <View style={styles.container}>
@@ -170,6 +231,22 @@ export default function ProfileScreen({ navigation }: any) {
               ))}
             </View>
           </View>
+          {smoke && (
+            <View style={styles.fieldRow}>
+              <Text style={styles.fieldLabel}>吸菸年資</Text>
+              <View style={styles.fieldRight}>
+                <TextInput
+                  style={[styles.fieldInput, { minWidth: 40 }]}
+                  value={smokeYears}
+                  onChangeText={setSmokeYears}
+                  keyboardType="number-pad"
+                  textAlign="right"
+                  placeholder="—"
+                />
+                <Text style={styles.unit}>年</Text>
+              </View>
+            </View>
+          )}
           <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
             <Text style={styles.fieldLabel}>飲酒頻率</Text>
             <View style={styles.optRow}>
@@ -180,6 +257,48 @@ export default function ProfileScreen({ navigation }: any) {
                   onPress={() => setDrink(i)}
                 >
                   <Text style={[styles.optText, drink === i && styles.optTextSelected]}>{opt}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
+
+        <Text style={styles.sectionTitle}>生殖健康背景</Text>
+        <View style={styles.listCard}>
+          <YesNoRow label="精索靜脈曲張病史" value={varicocele} onChange={setVaricocele} />
+          <YesNoRow label="隱睪症／睪丸手術病史" value={testicularHistory} onChange={setTesticularHistory} />
+          <YesNoRow label="內分泌相關疾病" value={endocrineDisease} onChange={setEndocrineDisease} />
+          <YesNoRow label="曾做過正式精液檢查" value={hadSemenTest} onChange={setHadSemenTest} />
+
+          <View style={styles.fieldRow}>
+            <Text style={styles.fieldLabel}>職業型態</Text>
+          </View>
+          <View style={[styles.fieldRow, { paddingTop: 0 }]}>
+            <View style={styles.optRowWrap}>
+              {occupationOpts.map(opt => (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[styles.opt, occupationType === opt.value && styles.optSelected]}
+                  onPress={() => setOccupationType(opt.value)}
+                >
+                  <Text style={[styles.optText, occupationType === opt.value && styles.optTextSelected]}>{opt.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.fieldRow}>
+            <Text style={styles.fieldLabel}>是否正在備孕</Text>
+          </View>
+          <View style={[styles.fieldRow, { borderBottomWidth: 0, paddingTop: 0 }]}>
+            <View style={styles.optRowWrap}>
+              {tryingOpts.map(opt => (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[styles.opt, tryingToConceive === opt.value && styles.optSelected]}
+                  onPress={() => setTryingToConceive(opt.value)}
+                >
+                  <Text style={[styles.optText, tryingToConceive === opt.value && styles.optTextSelected]}>{opt.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -276,6 +395,7 @@ const styles = StyleSheet.create({
   verifiedBadge: { fontSize: typography.sizes.xs, color: colors.success },
   unit: { fontSize: typography.sizes.sm, color: colors.gray400 },
   optRow: { flexDirection: 'row', gap: 6 },
+  optRowWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingBottom: 10, flex: 1, justifyContent: 'flex-end' },
   opt: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, borderWidth: 0.5, borderColor: colors.gray200 },
   optSelected: { backgroundColor: colors.primaryLight, borderColor: colors.primary },
   optText: { fontSize: typography.sizes.sm, color: colors.gray500 },

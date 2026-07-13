@@ -122,13 +122,14 @@ export default function AnalysisScreen({ navigation, route }: any) {
             const newStrips = Math.max(0, currentStrips - 1)
             await AsyncStorage.setItem('strips', String(newStrips))
             navigation.navigate('ReportOverview', { 
-              record: { 
-                date, time, tc, status, lot: lotNumber,
-                cIntensity: analysisResult?.c_intensity,
-                tIntensity: analysisResult?.t_intensity,
-                debugInner: analysisResult?.debug_inner,
-                debugFull: analysisResult?.debug_full,
-              } 
+            record: { 
+            date, time, tc, status, lot: lotNumber,
+            cIntensity: analysisResult?.c_intensity,
+            tIntensity: analysisResult?.t_intensity,
+            debugInner: analysisResult?.debug_inner,
+            debugFull: analysisResult?.debug_full,
+            preTestSurvey: route?.params?.preTestSurvey,
+            } 
             })
             }}>
             <Text style={styles.resultBtnText}>查看結果 ›</Text>

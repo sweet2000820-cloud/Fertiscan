@@ -2,114 +2,190 @@ import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
 import { colors, typography } from '../theme'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getRecords } from '../storage'
+import { getRecords, TestRecord } from '../storage'
+import { getBaziFromYear, elementColors, elementReadings, getDailyFortune } from '../utils/bazi'
+
+const sleepLabels: Record<string, string> = {
+  lt5: '少於 5 小時', '5to6': '5–6 小時', '7to8': '7–8 小時', gt9: '超過 9 小時',
+}
+const stressLabels: Record<string, string> = {
+  low: '壓力不大', moderate: '有些壓力', high: '壓力較大', veryHigh: '壓力很大',
+}
+const heatLabels: Record<string, string> = {
+  never: '從不', occasional: '偶爾', often: '常常', almostDaily: '幾乎每天',
+}
+const occupationLabels: Record<string, string> = {
+  sedentary: '久坐辦公', active: '站立走動', highHeat: '高溫作業', other: '其他',
+}
+
+function avg(arr: number[]) {
+  return arr.reduce((a, b) => a + b, 0) / arr.length
+}
+
+function correlationInsight(
+  records: TestRecord[],
+  getGroup: (s: NonNullable<TestRecord['preTestSurvey']>) => 'good' | 'bad' | null,
+  label: string,
+  goodDesc: string,
+  badDesc: string
+) {
+  const good: number[] = []
+  const bad: number[] = []
+  records.forEach(r => {
+    if (!r.preTestSurvey) return
+    const g = getGroup(r.preTestSurvey)
+    if (g === 'good') good.push(parseFloat(r.tc))
+    else if (g === 'bad') bad.push(parseFloat(r.tc))
+  })
+  if (good.length < 2 || bad.length < 2) return null
+  const goodAvg = avg(good)
+  const badAvg = avg(bad)
+  if (badAvg === 0) return null
+  const diffPct = Math.round(((goodAvg - badAvg) / badAvg) * 100)
+  if (Math.abs(diffPct) < 10) return null
+  return { label, goodDesc, badDesc, goodAvg, badAvg, diffPct, goodCount: good.length, badCount: bad.length }
+}
 
 export default function AIAdviceScreen({ navigation, route }: any) {
-  const record = route?.params?.record
-  const [questionnaire, setQuestionnaire] = useState<any>(null)
-  const [allRecords, setAllRecords] = useState<any[]>([])
-  const [userProfile, setUserProfile] = useState<any>(null)
+  const record: TestRecord = route?.params?.record
+  const survey = record?.preTestSurvey
+
+  const [allRecords, setAllRecords] = useState<TestRecord[]>([])
+  const [profile, setProfile] = useState<any>(null)
 
   useEffect(() => {
-    AsyncStorage.getItem('lastQuestionnaire').then(val => {
-      if (val) setQuestionnaire(JSON.parse(val))
-    })
-    getRecords().then(r => setAllRecords(r));
-    (async () => {
-      const birthYear = await AsyncStorage.getItem('userBirthYear')
-      const height = await AsyncStorage.getItem('userHeight')
-      const weight = await AsyncStorage.getItem('userWeight')
-      setUserProfile({ birthYear, height, weight })
+    getRecords().then(setAllRecords)
+    ;(async () => {
+      const keys = [
+        'userBirthYear', 'userHeight', 'userWeight', 'userSmoke', 'userSmokeYears',
+        'userVaricocele', 'userTesticularHistory', 'userEndocrineDisease',
+        'userHadSemenTest', 'userOccupationType', 'userTryingToConceive',
+      ]
+      const values = await AsyncStorage.multiGet(keys)
+      const p: any = {}
+      values.forEach(([k, v]) => { p[k] = v })
+      setProfile(p)
     })()
   }, [])
 
   const tcVal = parseFloat(record?.tc || '0')
   const status = record?.status || '—'
+  const statusColor = status === '正常' ? colors.success : status === '邊緣' ? '#EF9F27' : colors.danger
 
-  function getScoreColor(score: number) {
-    if (score >= 70) return colors.success
-    if (score >= 40) return '#EF9F27'
-    return colors.danger
-  }
-  const age = userProfile?.birthYear ? new Date().getFullYear() - parseInt(userProfile.birthYear) : null
-  const bmi = userProfile?.height && userProfile?.weight
-    ? (parseInt(userProfile.weight) / Math.pow(parseInt(userProfile.height) / 100, 2)).toFixed(1)
+  const age = profile?.userBirthYear ? new Date().getFullYear() - parseInt(profile.userBirthYear) : null
+  const baziInfo = profile?.userBirthYear ? getBaziFromYear(parseInt(profile.userBirthYear)) : null
+  const dailyFortune = baziInfo && record?.date ? getDailyFortune(baziInfo.element, record.date) : null
+  const bmi = profile?.userHeight && profile?.userWeight
+    ? (parseInt(profile.userWeight) / Math.pow(parseInt(profile.userHeight) / 100, 2)).toFixed(1)
     : null
   const bmiNum = bmi ? parseFloat(bmi) : null
-  const bmiStatus = bmiNum
-    ? bmiNum < 18.5 ? '偏輕' : bmiNum < 24 ? '正常' : bmiNum < 27 ? '過重' : '肥胖'
-    : '未填寫'
-  const bmiColor = bmiNum
-    ? bmiNum < 18.5 ? '#EF9F27' : bmiNum < 24 ? colors.success : bmiNum < 27 ? '#EF9F27' : colors.danger
-    : colors.gray400
-  const recentRecords = allRecords.slice(0, 5)
-  const avgTC = recentRecords.length > 0
-    ? recentRecords.reduce((s, r) => s + parseFloat(r.tc), 0) / recentRecords.length
-    : 0
+  const bmiStatus = bmiNum ? (bmiNum < 18.5 ? '偏輕' : bmiNum < 24 ? '正常' : bmiNum < 27 ? '過重' : '肥胖') : '未填寫'
+  const bmiColor = bmiNum ? (bmiNum < 18.5 ? '#EF9F27' : bmiNum < 24 ? colors.success : '#EF9F27') : colors.gray400
+  const profileComplete = !!(profile?.userBirthYear && profile?.userHeight && profile?.userWeight)
 
-  const trend = recentRecords.length >= 2
-    ? parseFloat(recentRecords[0].tc) > parseFloat(recentRecords[1].tc)
-      ? '上升'
-      : parseFloat(recentRecords[0].tc) < parseFloat(recentRecords[1].tc)
-      ? '下降'
-      : '穩定'
+  const riskFactors: string[] = []
+  if (profile?.userVaricocele === 'true') riskFactors.push('精索靜脈曲張病史')
+  if (profile?.userTesticularHistory === 'true') riskFactors.push('隱睪症／睪丸手術病史')
+  if (profile?.userEndocrineDisease === 'true') riskFactors.push('內分泌相關疾病')
+  if (profile?.userSmoke === 'true') riskFactors.push(`吸菸${profile?.userSmokeYears ? `（約 ${profile.userSmokeYears} 年）` : ''}`)
+  if (profile?.userOccupationType === 'highHeat') riskFactors.push('高溫作業環境')
+
+  const currentAbstinence = survey?.abstinenceDays
+  const comparableRecords = currentAbstinence != null
+    ? allRecords.filter(r => {
+        const d = r.preTestSurvey?.abstinenceDays
+        return d != null && Math.abs(d - currentAbstinence) <= 2
+      })
+    : []
+  const trend = comparableRecords.length >= 2
+    ? parseFloat(comparableRecords[0].tc) > parseFloat(comparableRecords[1].tc) ? '上升'
+      : parseFloat(comparableRecords[0].tc) < parseFloat(comparableRecords[1].tc) ? '下降' : '穩定'
     : '資料不足'
-
   const trendColor = trend === '上升' ? colors.success : trend === '下降' ? colors.danger : '#EF9F27'
+  const avgTC = comparableRecords.length > 0 ? avg(comparableRecords.map(r => parseFloat(r.tc))) : 0
 
-  const sleepHours = questionnaire?.sleepHours || '未填寫'
-  const exerciseDays = questionnaire?.exerciseDays || '未填寫'
-  const sitting = questionnaire?.sitting || '未填寫'
-  const alcohol = questionnaire?.alcohol || '未填寫'
-  const stress = questionnaire?.stress || '未填寫'
+  const qualityFlags: string[] = []
+  if (currentAbstinence != null && (currentAbstinence < 2 || currentAbstinence > 7)) {
+    qualityFlags.push(`本次禁慾 ${currentAbstinence} 天，超出建議的 2–7 天範圍，數值可能受此影響`)
+  }
+  if (survey?.sampleComplete === false) qualityFlags.push('本次檢體採集不完整，結果僅供參考')
+  if (survey?.usedLubricant === true) qualityFlags.push('本次採樣使用了潤滑劑，可能影響訊號準確度')
+  if (survey?.hadFever === true) qualityFlags.push('近 2 週曾發燒，可能暫時影響精子生成')
+  if (survey?.newMedication === true) qualityFlags.push('近 3 個月有新增或調整用藥')
 
-  const score = Math.min(100, Math.round(
-    (tcVal >= 0.85 ? 30 : tcVal >= 0.5 ? 15 : 5) +
-    (questionnaire ? 40 : 20)
-  ))
+  const unfavorable: string[] = []
+  if (survey) {
+    if (survey.sleepHours === 'lt5' || survey.sleepHours === '5to6') unfavorable.push('睡眠不足')
+    if (survey.stressLevel === 'high' || survey.stressLevel === 'veryHigh') unfavorable.push('壓力偏高')
+    if (survey.heatExposure === 'often' || survey.heatExposure === 'almostDaily') unfavorable.push('高溫暴露頻繁')
+    if (survey.heavyDrinking) unfavorable.push('近48小時大量飲酒')
+    if (survey.hadFever) unfavorable.push('近期發燒')
+    if (currentAbstinence != null && (currentAbstinence < 2 || currentAbstinence > 7)) unfavorable.push('禁慾天數超出建議範圍')
+  }
+  const hasCompoundRisk = unfavorable.length >= 2
 
-  const suggestions = [
+  const scoreItems = survey ? [
     {
-      icon: '😴', label: '睡眠',
-      status: sleepHours === '7–9 小時' ? '良好' : '需要改善',
-      statusColor: sleepHours === '7–9 小時' ? colors.success : colors.danger,
-      text: sleepHours === '7–9 小時'
-        ? '睡眠時間充足，繼續維持。'
-        : '睡眠不足會影響荷爾蒙平衡，建議每晚維持 7–9 小時。'
+      label: '睡眠', max: 25,
+      score: survey.sleepHours === '7to8' || survey.sleepHours === 'gt9' ? 25
+        : survey.sleepHours === '5to6' ? 14 : survey.sleepHours === 'lt5' ? 5 : 12,
+      detail: sleepLabels[survey.sleepHours] || '未填寫',
     },
     {
-      icon: '🏃', label: '運動',
-      status: exerciseDays === '每週 3 次以上' ? '良好' : '可以加強',
-      statusColor: exerciseDays === '每週 3 次以上' ? colors.success : '#EF9F27',
-      text: exerciseDays === '每週 3 次以上'
-        ? '運動習慣良好，有助於改善生殖功能。'
-        : '建議每週至少 3 次有氧運動，每次 30 分鐘。'
+      label: '壓力', max: 25,
+      score: survey.stressLevel === 'low' ? 25 : survey.stressLevel === 'moderate' ? 16
+        : survey.stressLevel === 'high' ? 8 : survey.stressLevel === 'veryHigh' ? 3 : 12,
+      detail: stressLabels[survey.stressLevel] || '未填寫',
     },
     {
-      icon: '🪑', label: '久坐',
-      status: sitting === '幾乎不久坐' ? '良好' : '需要改善',
-      statusColor: sitting === '幾乎不久坐' ? colors.success : colors.danger,
-      text: sitting === '幾乎不久坐'
-        ? '活動量充足，骨盆血液循環良好。'
-        : '建議每小時起身活動 5 分鐘，改善骨盆血液循環。'
+      label: '高溫暴露', max: 25,
+      score: survey.heatExposure === 'never' ? 25 : survey.heatExposure === 'occasional' ? 16
+        : survey.heatExposure === 'often' ? 8 : survey.heatExposure === 'almostDaily' ? 3 : 12,
+      detail: heatLabels[survey.heatExposure] || '未填寫',
     },
     {
-      icon: '🍺', label: '飲酒',
-      status: alcohol === '不喝' ? '良好' : '可以注意',
-      statusColor: alcohol === '不喝' ? colors.success : '#EF9F27',
-      text: alcohol === '不喝'
-        ? '不飲酒是最佳選擇。'
-        : '適量飲酒對生殖功能影響有限，但建議控制在每週 2 次以下。'
+      label: '飲酒', max: 25,
+      score: survey.heavyDrinking ? 5 : 25,
+      detail: survey.heavyDrinking ? '近48小時有大量飲酒' : '近48小時無大量飲酒',
     },
-    {
-      icon: '😤', label: '壓力',
-      status: stress === '壓力不大' ? '良好' : '可以加強',
-      statusColor: stress === '壓力不大' ? colors.success : '#EF9F27',
-      text: stress === '壓力不大'
-        ? '壓力管理良好。'
-        : '慢性壓力會影響荷爾蒙，建議嘗試冥想或規律運動來舒壓。'
-    },
-  ]
+  ] : []
+  const score = scoreItems.length > 0 ? scoreItems.reduce((s, i) => s + i.score, 0) : null
+
+  function getScoreColor(s: number) {
+    if (s >= 70) return colors.success
+    if (s >= 40) return '#EF9F27'
+    return colors.danger
+  }
+
+  const insights = [
+    correlationInsight(allRecords,
+      s => (s.sleepHours === '7to8' || s.sleepHours === 'gt9') ? 'good' : (s.sleepHours === 'lt5' || s.sleepHours === '5to6') ? 'bad' : null,
+      '睡眠', '睡眠充足（7小時以上）', '睡眠不足（少於7小時）'),
+    correlationInsight(allRecords,
+      s => (s.stressLevel === 'low' || s.stressLevel === 'moderate') ? 'good' : (s.stressLevel === 'high' || s.stressLevel === 'veryHigh') ? 'bad' : null,
+      '壓力', '壓力較低', '壓力較高'),
+    correlationInsight(allRecords,
+      s => (s.heatExposure === 'never' || s.heatExposure === 'occasional') ? 'good' : (s.heatExposure === 'often' || s.heatExposure === 'almostDaily') ? 'bad' : null,
+      '高溫暴露', '高溫暴露較少', '高溫暴露頻繁'),
+    correlationInsight(allRecords,
+      s => s.heavyDrinking === false ? 'good' : s.heavyDrinking === true ? 'bad' : null,
+      '飲酒', '未大量飲酒', '有大量飲酒'),
+  ].filter((x): x is NonNullable<typeof x> => x !== null)
+
+  const surveyedRecordsCount = allRecords.filter(r => r.preTestSurvey).length
+
+  const factors = survey ? [
+    { label: '睡眠', value: sleepLabels[survey.sleepHours] || '未填寫', good: survey.sleepHours === '7to8' || survey.sleepHours === 'gt9' },
+    { label: '壓力', value: stressLabels[survey.stressLevel] || '未填寫', good: survey.stressLevel === 'low' },
+    { label: '高溫暴露', value: heatLabels[survey.heatExposure] || '未填寫', good: survey.heatExposure === 'never' || survey.heatExposure === 'occasional' },
+    { label: '飲酒', value: survey.heavyDrinking ? '近48小時有大量飲酒' : '近48小時無大量飲酒', good: !survey.heavyDrinking },
+  ] : []
+
+  const actionList = survey ? [
+    !(survey.sleepHours === '7to8' || survey.sleepHours === 'gt9') && { title: '固定就寢時間，目標 7–8 小時', text: '從今晚起設定固定就寢時間，睡前 30 分鐘避免使用螢幕。' },
+    survey.stressLevel !== 'low' && { title: '每天安排 10 分鐘放鬆時間', text: '嘗試冥想、深呼吸或散步，幫助調節壓力荷爾蒙。' },
+    (survey.heatExposure === 'often' || survey.heatExposure === 'almostDaily') && { title: '減少高溫暴露頻率', text: '減少三溫暖、熱水澡或久坐時間，每小時起身活動。' },
+  ].filter(Boolean) as { title: string, text: string }[] : []
 
   return (
     <View style={styles.container}>
@@ -129,18 +205,18 @@ export default function AIAdviceScreen({ navigation, route }: any) {
           <Text style={styles.darkLabel}>{record?.date} · 本次檢測摘要</Text>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>T/C 比值</Text>
-            <Text style={[styles.summaryValue, { color: status === '正常' ? colors.success : status === '邊緣' ? '#EF9F27' : colors.danger }]}>{record?.tc}</Text>
+            <Text style={[styles.summaryValue, { color: statusColor }]}>{record?.tc}</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>狀態</Text>
-            <Text style={[styles.summaryValue, { color: status === '正常' ? colors.success : status === '邊緣' ? '#EF9F27' : colors.danger }]}>{status}</Text>
+            <Text style={[styles.summaryValue, { color: statusColor }]}>{status}</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>批號</Text>
-            <Text style={styles.summaryValue}>{record?.lot}</Text>
+            <Text style={styles.summaryLabel}>本次禁慾天數</Text>
+            <Text style={styles.summaryValue}>{currentAbstinence != null ? `${currentAbstinence} 天` : '未記錄'}</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>近 {recentRecords.length} 次平均 T/C</Text>
+            <Text style={styles.summaryLabel}>同禁慾天數(±2天)歷史平均</Text>
             <Text style={[styles.summaryValue, { color: avgTC >= 0.85 ? colors.success : avgTC >= 0.5 ? '#EF9F27' : colors.danger }]}>
               {avgTC > 0 ? avgTC.toFixed(2) : '—'}
             </Text>
@@ -151,103 +227,148 @@ export default function AIAdviceScreen({ navigation, route }: any) {
           </View>
         </View>
 
-        <View style={styles.adviceCard}>
-          <Text style={styles.adviceTitle}>整體生活習慣評估</Text>
-          <View style={styles.scoreRow}>
-            <Text style={styles.scoreLabel}>整體評分</Text>
-            <View style={styles.scoreBar}>
-              <View style={[styles.scoreBarFill, { width: `${score}%`, backgroundColor: getScoreColor(score) }]} />
-            </View>
-            <Text style={[styles.scoreValue, { color: getScoreColor(score) }]}>{score} / 100</Text>
+        {qualityFlags.length > 0 && (
+          <View style={styles.warnCard}>
+            <Text style={styles.warnTitle}>本次採樣可能影響判讀準確度</Text>
+            {qualityFlags.map((f, i) => <Text key={i} style={styles.warnText}>• {f}</Text>)}
           </View>
-          <Text style={styles.adviceText}>
-            {recentRecords.length >= 2
-              ? `根據最近 ${recentRecords.length} 次檢測，您的 T/C 比值趨勢為「${trend}」，平均值為 ${avgTC.toFixed(2)}。${trend === '上升' ? '持續保持良好生活習慣！' : trend === '下降' ? '建議關注生活習慣，考慮諮詢醫師。' : '數值穩定，繼續維持目前狀態。'}`
-              : questionnaire
-              ? `根據本次問卷與檢測結果，您的整體生活習慣評分為 ${score} 分。`
-              : '尚無足夠歷史紀錄，建議多次檢測後可看到趨勢分析。'}
-          </Text>
+        )}
+
+        {hasCompoundRisk && (
+          <View style={styles.compoundCard}>
+            <Text style={styles.compoundTitle}>多重不利因素同時發生</Text>
+            <Text style={styles.compoundSub}>本次同時記錄到 {unfavorable.length} 項不利因素，可能有加乘影響：</Text>
+            <View style={styles.compoundTags}>
+              {unfavorable.map((f, i) => (
+                <View key={i} style={styles.compoundTag}>
+                  <Text style={styles.compoundTagText}>{f}</Text>
+                </View>
+              ))}
+            </View>
+            <Text style={styles.compoundHint}>建議優先從最容易改善的一項開始調整，而不是同時處理所有面向。</Text>
+          </View>
+        )}
+
+        <View style={styles.adviceCard}>
+          <Text style={styles.adviceTitle}>本次生活習慣評分</Text>
+          {score != null ? (
+            <>
+              <View style={styles.scoreRow}>
+                <Text style={styles.scoreLabel}>總分</Text>
+                <View style={styles.scoreBar}>
+                  <View style={[styles.scoreBarFill, { width: `${score}%`, backgroundColor: getScoreColor(score) }]} />
+                </View>
+                <Text style={[styles.scoreValue, { color: getScoreColor(score) }]}>{score} / 100</Text>
+              </View>
+
+              <View style={styles.breakdownList}>
+                {scoreItems.map((item, i) => (
+                  <View key={i} style={styles.breakdownRow}>
+                    <Text style={styles.breakdownLabel}>{item.label}（{item.detail}）</Text>
+                    <View style={styles.breakdownBarBg}>
+                      <View style={[styles.breakdownBarFill, { width: `${(item.score / item.max) * 100}%`, backgroundColor: getScoreColor((item.score / item.max) * 100) }]} />
+                    </View>
+                    <Text style={styles.breakdownScore}>{item.score}/{item.max}</Text>
+                  </View>
+                ))}
+              </View>
+
+              <Text style={[styles.adviceText, { marginTop: 10 }]}>
+                {trend !== '資料不足'
+                  ? `在禁慾天數相近的紀錄中，您的 T/C 比值趨勢為「${trend}」。${trend === '下降' ? '建議關注生活習慣變化。' : trend === '上升' ? '持續保持良好生活習慣！' : '數值穩定，繼續維持目前狀態。'}`
+                  : '目前尚無禁慾天數相近的歷史紀錄可比較，多次檢測後可看到趨勢分析。'}
+              </Text>
+            </>
+          ) : (
+            <Text style={styles.adviceText}>本次無問卷紀錄，無法產生生活習慣評分。</Text>
+          )}
         </View>
+
 
         <View style={styles.adviceCard}>
           <Text style={styles.adviceTitle}>個人健康綜合評估</Text>
-          <View style={styles.profileRow}>
-            <View style={styles.profileItem}>
-              <Text style={styles.profileLabel}>年齡</Text>
-              <Text style={styles.profileValue}>{age ? `${age} 歲` : '未填寫'}</Text>
-              <Text style={[styles.profileHint, { color: age && age >= 20 && age <= 40 ? colors.success : '#EF9F27' }]}>
-                {age ? (age < 20 ? '較年輕' : age <= 40 ? '黃金時期' : '建議定期追蹤') : '—'}
-              </Text>
-            </View>
-            <View style={styles.profileItem}>
-              <Text style={styles.profileLabel}>BMI</Text>
-              <Text style={styles.profileValue}>{bmi || '—'}</Text>
-              <Text style={[styles.profileHint, { color: bmiColor }]}>{bmiStatus}</Text>
-            </View>
-            <View style={styles.profileItem}>
-              <Text style={styles.profileLabel}>近期趨勢</Text>
-              <Text style={styles.profileValue}>{trend}</Text>
-              <Text style={[styles.profileHint, { color: trendColor }]}>
-                {trend === '上升' ? '持續改善' : trend === '下降' ? '需關注' : '維持中'}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.divider} />
-
-          <Text style={[styles.adviceText, { marginTop: 8 }]}>
-            {age && bmiNum
-              ? `根據您的年齡（${age} 歲）與 BMI（${bmi}，${bmiStatus}）綜合評估：${
-                  bmiNum >= 24
-                    ? '體重偏高可能影響荷爾蒙分泌，建議透過飲食控制與規律運動改善。'
-                    : bmiNum < 18.5
-                    ? '體重偏輕可能影響營養供給，建議增加蛋白質攝取。'
-                    : '體重在正常範圍，繼續維持健康生活習慣。'
-                }${
-                  age > 35
-                    ? ' 年齡超過 35 歲後生殖功能自然下降，建議每 2–4 週定期追蹤。'
-                    : ''
-                }`
-              : '請在個人資料頁面填寫出生年份與身高體重，以獲得更精確的綜合評估。'}
-          </Text>
-        </View>
-
-        <View style={styles.adviceCard}>
-          <Text style={styles.adviceTitle}>各面向詳細分析</Text>
-          {suggestions.map((item, i) => (
-            <View key={i} style={styles.factorCard}>
-              <View style={styles.factorHeader}>
-                <Text style={styles.factorIcon}>{item.icon}</Text>
-                <Text style={styles.factorLabel}>{item.label}</Text>
-                <View style={[styles.factorBadge, { backgroundColor: item.statusColor + '20' }]}>
-                  <Text style={[styles.factorBadgeText, { color: item.statusColor }]}>{item.status}</Text>
+          {profileComplete ? (
+            <>
+              <View style={styles.profileRow}>
+                <View style={styles.profileItem}>
+                  <Text style={styles.profileLabel}>年齡</Text>
+                  <Text style={styles.profileValue}>{age} 歲</Text>
+                </View>
+                <View style={styles.profileItem}>
+                  <Text style={styles.profileLabel}>BMI</Text>
+                  <Text style={styles.profileValue}>{bmi}</Text>
+                  <Text style={[styles.profileHint, { color: bmiColor }]}>{bmiStatus}</Text>
+                </View>
+                <View style={styles.profileItem}>
+                  <Text style={styles.profileLabel}>職業型態</Text>
+                  <Text style={styles.profileValue}>{occupationLabels[profile?.userOccupationType] || '未填寫'}</Text>
                 </View>
               </View>
-              <Text style={styles.factorText}>{item.text}</Text>
-            </View>
-          ))}
+              {riskFactors.length > 0 && (
+                <>
+                  <View style={styles.divider} />
+                  <Text style={styles.riskTitle}>已知風險因子</Text>
+                  {riskFactors.map((f, i) => <Text key={i} style={styles.riskText}>• {f}</Text>)}
+                </>
+              )}
+              {baziInfo && (
+              <View style={styles.baziCard}>
+                <Text style={styles.baziLabel}>命理小彩蛋</Text>
+                <Text style={[styles.baziValue, { color: elementColors[baziInfo.element] }]}>
+                  {baziInfo.ganzhi}年・{baziInfo.nayin}
+                </Text>
+                <View style={styles.baziDivider} />
+                <Text style={styles.baziReadingLabel}>性格特質</Text>
+                <Text style={styles.baziReadingText}>{elementReadings[baziInfo.element]?.trait}</Text>
+                {dailyFortune && (
+                  <>
+                    <Text style={[styles.baziReadingLabel, { marginTop: 8 }]}>當日運勢</Text>
+                    <Text style={styles.baziReadingText}>{dailyFortune.text}</Text>
+                  </>
+                )}
+                <Text style={styles.baziDisclaimer}>本區塊為趣味小彩蛋，非醫學或命理專業建議，僅供參考。</Text>
+              </View>
+            )}
+            </>
+          ) : (
+            <Text style={styles.adviceText}>請至「設定 → 個人資料」填寫基礎資料，以獲得更完整的綜合評估。</Text>
+          )}
         </View>
 
-        <View style={styles.adviceCard}>
-          <Text style={styles.adviceTitle}>本週行動清單</Text>
-          {[
-            { num: '1', title: '固定就寢時間，目標 7 小時', text: '從今晚起設定固定就寢時間，不看螢幕 30 分鐘前。' },
-            { num: '2', title: '每小時起身活動 5 分鐘', text: '設定手機提醒，站起來走動或伸展。' },
-            { num: '3', title: '本週新增一次 30 分鐘有氧', text: '快走、騎車或游泳都可以，重點是持續 30 分鐘。' },
-          ].map((item, i) => (
-            <View key={i} style={styles.actionRow}>
-              <View style={styles.actionNum}>
-                <Text style={styles.actionNumText}>{item.num}</Text>
+        {survey && (
+          <View style={styles.adviceCard}>
+            <Text style={styles.adviceTitle}>各面向詳細分析</Text>
+            {factors.map((item, i) => (
+              <View key={i} style={styles.factorCard}>
+                <View style={styles.factorHeader}>
+                  <Text style={styles.factorLabel}>{item.label}</Text>
+                  <View style={[styles.factorBadge, { backgroundColor: (item.good ? colors.success : '#EF9F27') + '20' }]}>
+                    <Text style={[styles.factorBadgeText, { color: item.good ? colors.success : '#EF9F27' }]}>{item.value}</Text>
+                  </View>
+                </View>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.actionTitle}>{item.title}</Text>
-                <Text style={styles.actionText}>{item.text}</Text>
-              </View>
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
+        )}
 
-        <Text style={styles.disclaimer}>以上建議由 AI 根據本次問卷與檢測結果生成，僅供生活習慣參考，不構成醫療診斷。</Text>
+        {actionList.length > 0 && (
+          <View style={styles.adviceCard}>
+            <Text style={styles.adviceTitle}>本週行動清單</Text>
+            {actionList.map((item, i) => (
+              <View key={i} style={styles.actionRow}>
+                <View style={styles.actionNum}>
+                  <Text style={styles.actionNumText}>{i + 1}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.actionTitle}>{item.title}</Text>
+                  <Text style={styles.actionText}>{item.text}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
+        <Text style={styles.disclaimer}>以上建議根據本次問卷與檢測結果生成，僅供生活習慣參考，不構成醫療診斷。</Text>
 
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Text style={styles.backBtnText}>返回報告</Text>
@@ -268,28 +389,46 @@ const styles = StyleSheet.create({
   back: { fontSize: 30, color: colors.primary, marginRight: 6 },
   appbarTitle: { flex: 1, fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
   proBadge: { backgroundColor: colors.primaryLight, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
-  proBadgeText: { fontSize: typography.sizes.xs, color: colors.primary, fontWeight: typography.weights.medium },
+  proBadgeText: { fontSize: typography.sizes.sm, color: colors.primary, fontWeight: typography.weights.medium },
   scroll: { flex: 1, padding: 18 },
-  darkCard: { backgroundColor: '#0a1628', borderRadius: 12, padding: 12, marginBottom: 14 },
-  darkLabel: { fontSize: typography.sizes.xs, color: 'rgba(255,255,255,0.35)', marginBottom: 10 },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
-  summaryLabel: { fontSize: typography.sizes.xs, color: 'rgba(255,255,255,0.5)' },
-  summaryValue: { fontSize: typography.sizes.xs, fontWeight: typography.weights.medium },
+  darkCard: { backgroundColor: colors.primaryLight, borderRadius: 12, padding: 14, marginBottom: 14 },
+  darkLabel: { fontSize: typography.sizes.sm, color: colors.primary, marginBottom: 12, fontWeight: typography.weights.medium },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
+  summaryLabel: { fontSize: typography.sizes.sm, color: '#0d7a8f' },
+  summaryValue: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray900 },  
+  warnCard: { backgroundColor: '#FFF4E0', borderRadius: 10, padding: 12, marginBottom: 14 },
+  warnTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: '#B8720A', marginBottom: 6 },
+  warnText: { fontSize: typography.sizes.sm, color: '#8A5A08', lineHeight: 18 },
+  compoundCard: { backgroundColor: '#FDEEEE', borderRadius: 10, padding: 12, marginBottom: 14 },
+  compoundTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.danger, marginBottom: 4 },
+  compoundSub: { fontSize: typography.sizes.sm, color: colors.gray500, marginBottom: 8, lineHeight: 18 },
+  compoundTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
+  compoundTag: { backgroundColor: '#fff', borderWidth: 1, borderColor: colors.danger, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
+  compoundTagText: { fontSize: typography.sizes.sm, color: colors.danger },
+  compoundHint: { fontSize: typography.sizes.sm, color: colors.gray500, lineHeight: 18 },
   adviceCard: { borderWidth: 0.5, borderColor: colors.gray200, borderRadius: 10, padding: 12, marginBottom: 14 },
   adviceTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900, marginBottom: 10 },
-  scoreRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  scoreLabel: { fontSize: typography.sizes.xs, color: colors.gray400 },
+  scoreRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  scoreLabel: { fontSize: typography.sizes.sm, color: colors.gray400 },
   scoreBar: { flex: 1, height: 4, backgroundColor: colors.gray200, borderRadius: 2, overflow: 'hidden' },
   scoreBarFill: { height: '100%', borderRadius: 2 },
-  scoreValue: { fontSize: typography.sizes.xs, fontWeight: typography.weights.medium },
-  adviceText: { fontSize: typography.sizes.xs, color: colors.gray500, lineHeight: 18 },
+  scoreValue: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium },
+  breakdownList: { gap: 8 },
+  breakdownRow: { gap: 3 },
+  breakdownLabel: { fontSize: typography.sizes.sm, color: colors.gray500 },
+  breakdownBarBg: { height: 5, backgroundColor: colors.gray200, borderRadius: 3, overflow: 'hidden' },
+  breakdownBarFill: { height: '100%', borderRadius: 3 },
+  breakdownScore: { fontSize: 10, color: colors.gray400, textAlign: 'right' },
+  adviceText: { fontSize: typography.sizes.sm, color: colors.gray500, lineHeight: 18 },
+  insightRow: { marginBottom: 10, paddingBottom: 10, borderBottomWidth: 0.5, borderBottomColor: colors.gray100 },
+  insightLabel: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray900, marginBottom: 3 },
+  insightText: { fontSize: typography.sizes.sm, color: colors.gray500, lineHeight: 18 },
+  insightCaveat: { fontSize: 10, color: colors.gray400, lineHeight: 15, marginTop: 4 },
   factorCard: { backgroundColor: colors.gray100, borderRadius: 8, padding: 10, marginBottom: 8 },
-  factorHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 5 },
-  factorIcon: { fontSize: 14 },
+  factorHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   factorLabel: { flex: 1, fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray900 },
   factorBadge: { paddingHorizontal: 6, paddingVertical: 1, borderRadius: 3 },
-  factorBadgeText: { fontSize: typography.sizes.xs, fontWeight: typography.weights.medium },
-  factorText: { fontSize: typography.sizes.xs, color: colors.gray500, lineHeight: 18 },
+  factorBadgeText: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium },
   actionRow: { flexDirection: 'row', gap: 10, paddingVertical: 8, borderBottomWidth: 0.5, borderBottomColor: colors.gray100 },
   actionNum: {
     width: 20, height: 20, borderRadius: 10,
@@ -298,8 +437,8 @@ const styles = StyleSheet.create({
   },
   actionNumText: { fontSize: 9, fontWeight: typography.weights.medium, color: colors.success },
   actionTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray900, marginBottom: 2 },
-  actionText: { fontSize: typography.sizes.xs, color: colors.gray400, lineHeight: 16 },
-  disclaimer: { fontSize: typography.sizes.xs, color: colors.gray400, textAlign: 'center', marginBottom: 12, lineHeight: 16 },
+  actionText: { fontSize: typography.sizes.sm, color: colors.gray400, lineHeight: 16 },
+  disclaimer: { fontSize: typography.sizes.sm, color: colors.gray400, textAlign: 'center', marginBottom: 12, lineHeight: 16 },
   backBtn: {
     height: 36, borderRadius: 9, backgroundColor: colors.gray100,
     alignItems: 'center', justifyContent: 'center',
@@ -307,8 +446,23 @@ const styles = StyleSheet.create({
   backBtnText: { fontSize: typography.sizes.sm, color: colors.gray500 },
   profileRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 10 },
   profileItem: { alignItems: 'center', gap: 4 },
-  profileLabel: { fontSize: typography.sizes.xs, color: colors.gray400 },
+  profileLabel: { fontSize: typography.sizes.sm, color: colors.gray400 },
   profileValue: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
-  profileHint: { fontSize: typography.sizes.xs },
+  profileHint: { fontSize: typography.sizes.sm },
   divider: { height: 0.5, backgroundColor: colors.gray200, marginVertical: 8 },
+  riskTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray500, marginBottom: 4 },
+  riskText: { fontSize: typography.sizes.sm, color: colors.danger, lineHeight: 18 },
+  baziCard: {
+    backgroundColor: colors.gray100,
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 10,
+    alignItems: 'center',
+  },
+  baziLabel: { fontSize: typography.sizes.sm, color: colors.gray400, marginBottom: 4 },
+  baziValue: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium },
+  baziDivider: { height: 0.5, backgroundColor: colors.gray200, width: '100%', marginVertical: 8 },
+  baziReadingLabel: { fontSize: typography.sizes.sm, color: colors.gray400 },
+  baziReadingText: { fontSize: typography.sizes.sm, color: colors.gray500, textAlign: 'center', lineHeight: 18 },
+  baziDisclaimer: { fontSize: 10, color: colors.gray400, textAlign: 'center', marginTop: 6, lineHeight: 15 },
 })
