@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native'
 import { colors, typography } from '../theme'
 import Button from '../components/Button'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { doc, setDoc } from 'firebase/firestore'
 import DatePickerModal from '../components/DatePickerModal'
 import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth'
-import { auth } from '../firebase'
+import { auth, db } from '../firebase'
 
 export default function RegisterScreen({ navigation }: any) {
   const [name, setName] = useState('')
@@ -16,8 +16,10 @@ export default function RegisterScreen({ navigation }: any) {
   const [birthMonth, setBirthMonth] = useState('')
   const [birthDay, setBirthDay] = useState('')
   const [showDatePicker, setShowDatePicker] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   async function handleRegister() {
+    if (submitting) return
     if (!name || !email || !password) {
       Alert.alert('請填寫', '請填寫所有欄位')
       return
@@ -26,17 +28,28 @@ export default function RegisterScreen({ navigation }: any) {
       Alert.alert('請同意', '請同意服務條款與隱私政策')
       return
     }
-    await AsyncStorage.multiRemove([
-      'userName', 'userEmail', 'userBirthYear', 'userBirthMonth', 'userBirthDay',
-      'userHeight', 'userWeight', 'userSmoke', 'userDrink',
-      'strips', 'lastTestDate', 'testRecords', 'clinics', 'reminderWeeks', 'lotNumber', 'onboardingShown'
-    ])
-    await AsyncStorage.setItem('userName', name)
-    await AsyncStorage.setItem('userEmail', email)
-    await AsyncStorage.setItem('userBirthYear', birthYear)
-    await AsyncStorage.setItem('userBirthMonth', birthMonth)
-    await AsyncStorage.setItem('userBirthDay', birthDay)
-    navigation.navigate('VerifyEmail', { email })
+    setSubmitting(true)
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+      await sendEmailVerification(userCredential.user)
+
+      await setDoc(doc(db, 'users', userCredential.user.uid), {
+        name,
+        birthYear,
+        birthMonth,
+        birthDay,
+      })
+
+      navigation.navigate('VerifyEmail', { email })
+    } catch (error: any) {
+      let message = '註冊失敗，請稍後再試'
+      if (error.code === 'auth/email-already-in-use') message = '此信箱已被註冊過'
+      else if (error.code === 'auth/weak-password') message = '密碼強度不足，請至少輸入 6 個字元'
+      else if (error.code === 'auth/invalid-email') message = '信箱格式不正確'
+      Alert.alert('註冊失敗', message)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const strength = password.length === 0 ? 0 : password.length < 6 ? 1 : password.length < 10 ? 3 : 4
@@ -110,11 +123,11 @@ export default function RegisterScreen({ navigation }: any) {
             {agreed && <Text style={styles.checkmark}>✓</Text>}
           </View>
           <Text style={styles.agreeText}>
-            我同意<Text style={styles.link}>服務條款</Text>與<Text style={styles.link}>隱私政策</Text>，我的檢測數據僅存於本機
+            我同意<Text style={styles.link}>服務條款</Text>與<Text style={styles.link}>隱私政策</Text>
           </Text>
         </TouchableOpacity>
 
-        <Button title="建立帳號" onPress={handleRegister} />
+        <Button title={submitting ? '處理中...' : '建立帳號'} onPress={handleRegister} disabled={submitting} />
 
         <View style={{ height: 30 }} />
         <DatePickerModal

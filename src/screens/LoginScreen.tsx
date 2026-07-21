@@ -1,22 +1,39 @@
+import { signInWithEmailAndPassword } from 'firebase/auth'
+import { auth } from '../firebase'
 import { useState } from 'react'
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Keyboard, TouchableWithoutFeedback } from 'react-native'
 import { colors, typography } from '../theme'
 import Button from '../components/Button'
-import { signInWithEmailAndPassword } from 'firebase/auth'
-import { auth } from '../firebase'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+
 
 export default function LoginScreen({ onLogin, navigation }: any) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
   async function handleLogin() {
-    if (!email || !password) {
-      Alert.alert('請填寫', '請輸入信箱和密碼')
+  if (!email || !password) {
+    Alert.alert('請填寫', '請輸入信箱和密碼')
+    return
+  }
+  try {
+  const userCredential = await signInWithEmailAndPassword(auth, email, password)
+  const savedName = await AsyncStorage.getItem('userName')
+  console.log('登入當下 AsyncStorage 裡的 userName:', savedName)
+  if (!userCredential.user.emailVerified) {
+      Alert.alert('信箱尚未驗證', '請先完成信箱驗證才能使用')
+      navigation?.navigate('VerifyEmail', { email })
       return
     }
     if (onLogin) onLogin()
-    navigation?.navigate('Main')
+  } catch (error: any) {
+    let message = '登入失敗，請稍後再試'
+    if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') message = '信箱或密碼錯誤'
+    else if (error.code === 'auth/user-not-found') message = '找不到此帳號，請先註冊'
+    else if (error.code === 'auth/too-many-requests') message = '嘗試次數過多，請稍後再試'
+    Alert.alert('登入失敗', message)
   }
+}
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>

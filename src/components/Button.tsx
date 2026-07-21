@@ -7,11 +7,16 @@ interface ButtonProps {
   title: string
   onPress: () => void
   variant?: ButtonVariant
+  disabled?: boolean
 }
 
-export default function Button({ title, onPress, variant = 'primary' }: ButtonProps) {
+export default function Button({ title, onPress, variant = 'primary', disabled = false }: ButtonProps) {
   return (
-    <TouchableOpacity style={[styles.base, styles[variant]]} onPress={onPress}>
+    <TouchableOpacity
+      style={[styles.base, styles[variant], disabled && styles.disabled]}
+      onPress={onPress}
+      disabled={disabled}
+    >
       <Text style={[styles.text, styles[`${variant}Text`]]}>{title}</Text>
     </TouchableOpacity>
   )
@@ -42,6 +47,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderWidth: 1.5,
     borderColor: colors.danger,
+  },
+  disabled: {
+    opacity: 0.5,
   },
   text: {
     fontSize: typography.sizes.md,

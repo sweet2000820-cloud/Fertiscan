@@ -7,6 +7,8 @@ import { colors, typography } from './theme'
 import { useState, useEffect } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Ionicons } from '@expo/vector-icons'
+import { onAuthStateChanged } from 'firebase/auth'
+import { auth } from './firebase'
 
 
 import DashboardScreen from './screens/DashboardScreen'
@@ -95,53 +97,61 @@ function TabNavigator() {
 }
 
 export default function Navigation({ onLogin }: any) {
-  const [initialRoute, setInitialRoute] = useState<string | null>(null)
+  const [user, setUser] = useState<any>(undefined)
 
   useEffect(() => {
-    AsyncStorage.getItem('isLoggedIn').then(val => {
-      setInitialRoute(val === 'true' ? 'Main' : 'Login')
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u)
     })
+    return unsubscribe
   }, [])
 
-  if (!initialRoute) return null
+  if (user === undefined) return null
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { paddingTop: 50 } }} initialRouteName={initialRoute}>
-        <Stack.Screen name="Login">
-          {(props) => <LoginScreen {...props} onLogin={onLogin} />}
-        </Stack.Screen>
-        <Stack.Screen name="Register" component={RegisterScreen} />
-        <Stack.Screen name="Main" component={TabNavigator} />
-        <Stack.Screen name="Profile" component={ProfileScreen} />
-        <Stack.Screen name="Plan" component={PlanScreen} />
-        <Stack.Screen name="PreCheck" component={PreCheckScreen} />
-        <Stack.Screen name="PreQuestionnaire" component={PreQuestionnaireScreen} />
-        <Stack.Screen name="BrightnessCalib" component={BrightnessCalibScreen} />
-        <Stack.Screen name="CamCapture" component={CamCaptureScreen} />
-        <Stack.Screen name="Analysis" component={AnalysisScreen} />
-        <Stack.Screen name="ReportOverview" component={ReportOverviewScreen} />
-        <Stack.Screen name="QCFail" component={QCFailScreen} />
-        <Stack.Screen name="ClinicList" component={ClinicListScreen} />
-        <Stack.Screen name="ClinicAdd" component={ClinicAddScreen} />
-        <Stack.Screen name="ClinicQR" component={ClinicQRScreen} />
-        <Stack.Screen name="ClinicCode" component={ClinicCodeScreen} />
-        <Stack.Screen name="ClinicSearch" component={ClinicSearchScreen} />
-        <Stack.Screen name="Consent" component={ConsentScreen} />
-        <Stack.Screen name="ClinicConfirm" component={ClinicConfirmScreen} />
-        <Stack.Screen name="ClinicSuccess" component={ClinicSuccessScreen} />
-        <Stack.Screen name="ShareRecord" component={ShareRecordScreen} />
-        <Stack.Screen name="ShareSent" component={ShareSentScreen} />
-        <Stack.Screen name="ReportLink" component={ReportLinkScreen} />
-        <Stack.Screen name="AIAdvice" component={AIAdviceScreen} />
-        <Stack.Screen name="AIChat" component={AIChatScreen} />
-        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-        <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
-        <Stack.Screen name="LotQR" component={LotQRScreen} />
-        <Stack.Screen name="Shop" component={ShopScreen} />
-        <Stack.Screen name="OrderConfirm" component={OrderConfirmScreen} />
-        <Stack.Screen name="Payment" component={PaymentScreen} />
-        <Stack.Screen name="RestTimer" component={RestTimerScreen} />
+      <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { paddingTop: 50 } }}>
+        {!user || !user.emailVerified ? (
+          <>
+            <Stack.Screen name="Login">
+              {(props) => <LoginScreen {...props} onLogin={onLogin} />}
+            </Stack.Screen>
+            <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+            <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
+          </>
+        ) : (
+          <>
+            <Stack.Screen name="Main" component={TabNavigator} />
+            <Stack.Screen name="Profile" component={ProfileScreen} />
+            <Stack.Screen name="Plan" component={PlanScreen} />
+            <Stack.Screen name="PreCheck" component={PreCheckScreen} />
+            <Stack.Screen name="PreQuestionnaire" component={PreQuestionnaireScreen} />
+            <Stack.Screen name="BrightnessCalib" component={BrightnessCalibScreen} />
+            <Stack.Screen name="CamCapture" component={CamCaptureScreen} />
+            <Stack.Screen name="Analysis" component={AnalysisScreen} />
+            <Stack.Screen name="ReportOverview" component={ReportOverviewScreen} />
+            <Stack.Screen name="QCFail" component={QCFailScreen} />
+            <Stack.Screen name="ClinicList" component={ClinicListScreen} />
+            <Stack.Screen name="ClinicAdd" component={ClinicAddScreen} />
+            <Stack.Screen name="ClinicQR" component={ClinicQRScreen} />
+            <Stack.Screen name="ClinicCode" component={ClinicCodeScreen} />
+            <Stack.Screen name="ClinicSearch" component={ClinicSearchScreen} />
+            <Stack.Screen name="Consent" component={ConsentScreen} />
+            <Stack.Screen name="ClinicConfirm" component={ClinicConfirmScreen} />
+            <Stack.Screen name="ClinicSuccess" component={ClinicSuccessScreen} />
+            <Stack.Screen name="ShareRecord" component={ShareRecordScreen} />
+            <Stack.Screen name="ShareSent" component={ShareSentScreen} />
+            <Stack.Screen name="ReportLink" component={ReportLinkScreen} />
+            <Stack.Screen name="AIAdvice" component={AIAdviceScreen} />
+            <Stack.Screen name="AIChat" component={AIChatScreen} />
+            <Stack.Screen name="LotQR" component={LotQRScreen} />
+            <Stack.Screen name="Shop" component={ShopScreen} />
+            <Stack.Screen name="OrderConfirm" component={OrderConfirmScreen} />
+            <Stack.Screen name="Payment" component={PaymentScreen} />
+            <Stack.Screen name="RestTimer" component={RestTimerScreen} />
+          </>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   )

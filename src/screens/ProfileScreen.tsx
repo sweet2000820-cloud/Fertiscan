@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, Image } from 'react-native'
 import { colors, typography } from '../theme'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { auth, db } from '../firebase'
 import DatePickerModal from '../components/DatePickerModal'
 import PickerModal from '../components/PickerModal'
 import * as ImagePicker from 'expo-image-picker'
@@ -33,8 +34,8 @@ export default function ProfileScreen({ navigation }: any) {
   const [showHeightPicker, setShowHeightPicker] = useState(false)
   const [showWeightPicker, setShowWeightPicker] = useState(false)
   const [avatar, setAvatar] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  // 新增的生殖健康背景欄位
   const [varicocele, setVaricocele] = useState<boolean | null>(null)
   const [testicularHistory, setTesticularHistory] = useState<boolean | null>(null)
   const [endocrineDisease, setEndocrineDisease] = useState<boolean | null>(null)
@@ -43,55 +44,73 @@ export default function ProfileScreen({ navigation }: any) {
   const [tryingToConceive, setTryingToConceive] = useState<string | null>(null)
 
   useEffect(() => {
-    AsyncStorage.getItem('userName').then(val => { if (val) setName(val) })
-    AsyncStorage.getItem('userEmail').then(val => { if (val) setEmail(val) })
-    AsyncStorage.getItem('userBirthYear').then(val => { if (val) setBirthYear(val) })
-    AsyncStorage.getItem('userBirthMonth').then(val => { if (val) setBirthMonth(val) })
-    AsyncStorage.getItem('userBirthDay').then(val => { if (val) setBirthDay(val) })
-    AsyncStorage.getItem('userHeight').then(val => { if (val) setHeight(val) })
-    AsyncStorage.getItem('userWeight').then(val => { if (val) setWeight(val) })
-    AsyncStorage.getItem('userSmoke').then(val => { if (val !== null) setSmoke(val === 'true') })
-    AsyncStorage.getItem('userSmokeYears').then(val => { if (val) setSmokeYears(val) })
-    AsyncStorage.getItem('userDrink').then(val => { if (val !== null) setDrink(parseInt(val)) })
-    AsyncStorage.getItem('userAvatar').then(val => { if (val) setAvatar(val) })
-    AsyncStorage.getItem('userVaricocele').then(val => { if (val !== null) setVaricocele(val === 'true') })
-    AsyncStorage.getItem('userTesticularHistory').then(val => { if (val !== null) setTesticularHistory(val === 'true') })
-    AsyncStorage.getItem('userEndocrineDisease').then(val => { if (val !== null) setEndocrineDisease(val === 'true') })
-    AsyncStorage.getItem('userHadSemenTest').then(val => { if (val !== null) setHadSemenTest(val === 'true') })
-    AsyncStorage.getItem('userOccupationType').then(val => { if (val) setOccupationType(val) })
-    AsyncStorage.getItem('userTryingToConceive').then(val => { if (val) setTryingToConceive(val) })
+    async function loadProfile() {
+      const user = auth.currentUser
+      if (!user) {
+        setLoading(false)
+        return
+      }
+      setEmail(user.email || '')
+      try {
+        const snap = await getDoc(doc(db, 'users', user.uid))
+        if (snap.exists()) {
+          const data: any = snap.data()
+          if (data.name) setName(data.name)
+          if (data.birthYear) setBirthYear(data.birthYear)
+          if (data.birthMonth) setBirthMonth(data.birthMonth)
+          if (data.birthDay) setBirthDay(data.birthDay)
+          if (data.height) setHeight(data.height)
+          if (data.weight) setWeight(data.weight)
+          if (data.smoke !== undefined) setSmoke(data.smoke)
+          if (data.smokeYears) setSmokeYears(data.smokeYears)
+          if (data.drink !== undefined) setDrink(data.drink)
+          if (data.avatar) setAvatar(data.avatar)
+          if (data.varicocele !== undefined) setVaricocele(data.varicocele)
+          if (data.testicularHistory !== undefined) setTesticularHistory(data.testicularHistory)
+          if (data.endocrineDisease !== undefined) setEndocrineDisease(data.endocrineDisease)
+          if (data.hadSemenTest !== undefined) setHadSemenTest(data.hadSemenTest)
+          if (data.occupationType) setOccupationType(data.occupationType)
+          if (data.tryingToConceive) setTryingToConceive(data.tryingToConceive)
+        }
+      } catch (e) {
+        Alert.alert('讀取失敗', '無法讀取個人資料，請稍後再試')
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadProfile()
   }, [])
 
   async function handleSave() {
-    if (name) await AsyncStorage.setItem('userName', name)
-    if (height) await AsyncStorage.setItem('userHeight', height)
-    if (weight) await AsyncStorage.setItem('userWeight', weight)
-    await AsyncStorage.setItem('userSmoke', smoke ? 'true' : 'false')
-    await AsyncStorage.setItem('userDrink', String(drink))
-    if (birthYear) await AsyncStorage.setItem('userBirthYear', birthYear)
-    if (birthMonth) await AsyncStorage.setItem('userBirthMonth', birthMonth)
-    if (birthDay) await AsyncStorage.setItem('userBirthDay', birthDay)
-      
-    if (smoke && smokeYears) {
-      await AsyncStorage.setItem('userSmokeYears', smokeYears)
-    } else {
-      await AsyncStorage.removeItem('userSmokeYears')
+    const user = auth.currentUser
+    if (!user) {
+      Alert.alert('請重新登入', '找不到登入狀態')
+      return
     }
-
-    if (varicocele !== null) await AsyncStorage.setItem('userVaricocele', varicocele ? 'true' : 'false')
-    if (testicularHistory !== null) await AsyncStorage.setItem('userTesticularHistory', testicularHistory ? 'true' : 'false')
-    if (endocrineDisease !== null) await AsyncStorage.setItem('userEndocrineDisease', endocrineDisease ? 'true' : 'false')
-    if (hadSemenTest !== null) await AsyncStorage.setItem('userHadSemenTest', hadSemenTest ? 'true' : 'false')
-    if (occupationType) await AsyncStorage.setItem('userOccupationType', occupationType)
-    if (tryingToConceive) await AsyncStorage.setItem('userTryingToConceive', tryingToConceive)
-
-    if (avatar) {
-      await AsyncStorage.setItem('userAvatar', avatar)
-    } else {
-      await AsyncStorage.removeItem('userAvatar')
+    try {
+      await setDoc(doc(db, 'users', user.uid), {
+        name,
+        birthYear,
+        birthMonth,
+        birthDay,
+        height,
+        weight,
+        smoke,
+        smokeYears: smoke ? smokeYears : null,
+        drink,
+        avatar: avatar || null,
+        varicocele,
+        testicularHistory,
+        endocrineDisease,
+        hadSemenTest,
+        occupationType,
+        tryingToConceive,
+      }, { merge: true })
+      Alert.alert('已儲存', '個人資料已更新')
+      navigation.goBack()
+    } catch (e) {
+      Alert.alert('儲存失敗', '請稍後再試')
     }
-    Alert.alert('已儲存', '個人資料已更新')
-    navigation.goBack()
   }
 
   async function handlePickAvatar() {
@@ -147,6 +166,16 @@ export default function ProfileScreen({ navigation }: any) {
               <Text style={[styles.optText, value === (i === 0) && styles.optTextSelected]}>{opt}</Text>
             </TouchableOpacity>
           ))}
+        </View>
+      </View>
+    )
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.appbar}>
+          <Text style={styles.appbarTitle}>個人資料</Text>
         </View>
       </View>
     )

@@ -1,9 +1,11 @@
+import { signOut } from 'firebase/auth'
+import { auth, db } from '../firebase'
+import { doc, getDoc } from 'firebase/firestore'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Linking } from 'react-native'
 import { colors, typography } from '../theme'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Notifications from 'expo-notifications'
 import { useState } from 'react'
-import { useEffect } from 'react'
 import { useFocusEffect } from '@react-navigation/native'
 import { useCallback } from 'react'
 import { Ionicons } from '@expo/vector-icons'
@@ -14,8 +16,8 @@ export default function SettingsScreen({ navigation }: any) {
   const [notifyEnabled, setNotifyEnabled] = useState(true)
   const [reminderWeeks, setReminderWeeks] = useState(4)
   const [clinicCount, setClinicCount] = useState(0)
-  const [userName, setUserName] = useState('陳小明')
-  const [userEmail, setUserEmail] = useState('chen@gmail.com')
+  const [userName, setUserName] = useState('')
+  const [userEmail, setUserEmail] = useState('')
   const [avatar, setAvatar] = useState<string | null>(null)
   const [userPlan, setUserPlan] = useState('free')
 
@@ -24,11 +26,20 @@ export default function SettingsScreen({ navigation }: any) {
       AsyncStorage.getItem('clinics').then(val => {
         if (val) setClinicCount(JSON.parse(val).length)
       })
-      AsyncStorage.getItem('userName').then(val => { if (val) setUserName(val) })
-      AsyncStorage.getItem('userAvatar').then(val => { setAvatar(val) })
-      AsyncStorage.getItem('userEmail').then(val => { if (val) setUserEmail(val) })
       AsyncStorage.getItem('reminderWeeks').then(val => { if (val) setReminderWeeks(parseInt(val)) })
       AsyncStorage.getItem('userPlan').then(val => { if (val) setUserPlan(val) })
+
+      const user = auth.currentUser
+      if (user) {
+        setUserEmail(user.email || '')
+        getDoc(doc(db, 'users', user.uid)).then(snap => {
+          if (snap.exists()) {
+            const data: any = snap.data()
+            if (data.name) setUserName(data.name)
+            if (data.avatar) setAvatar(data.avatar)
+          }
+        })
+      }
     }, [])
   )
 
@@ -72,11 +83,11 @@ export default function SettingsScreen({ navigation }: any) {
             {avatar ? (
               <Image source={{ uri: avatar }} style={{ width: 46, height: 46, borderRadius: 23 }} />
             ) : (
-              <Text style={styles.avatarText}>{userName.slice(0, 1)}</Text>
+              <Text style={styles.avatarText}>{userName ? userName.slice(0, 1) : '?'}</Text>
             )}
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{userName}</Text>
+            <Text style={styles.profileName}>{userName || '尚未設定姓名'}</Text>
             <Text style={styles.profileEmail}>{userEmail}</Text>
           </View>
           <Text style={styles.editBtn}>編輯 ›</Text>
@@ -147,7 +158,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         <View style={styles.tealCard}>
           <Text style={styles.tealTitle}>隱私說明</Text>
-          <Text style={styles.tealText}>所有影像與分析均在手機本地完成，原始影像不會上傳。</Text>
+          <Text style={styles.tealText}>照片會上傳至伺服器進行分析，分析完成後不會保留原始影像。</Text>
         </View>
 
         <Text style={styles.sectionTitle}>其他</Text>
@@ -178,23 +189,11 @@ export default function SettingsScreen({ navigation }: any) {
             Alert.alert('登出帳號', '確定要登出嗎？', [
               { text: '取消', style: 'cancel' },
               { text: '登出', style: 'destructive', onPress: async () => {
-                await AsyncStorage.removeItem('isLoggedIn')
-                await AsyncStorage.removeItem('userAvatar')
-                await AsyncStorage.removeItem('userName')
-                await AsyncStorage.removeItem('userEmail')
-                await AsyncStorage.removeItem('userPlan')
-                await AsyncStorage.removeItem('userPlanType')
-                await AsyncStorage.removeItem('strips')
-                await AsyncStorage.removeItem('lastTestDate')
-                await AsyncStorage.removeItem('clinics')
-                await AsyncStorage.removeItem('sharedHistory')
-                await AsyncStorage.removeItem('lastQuestionnaire')
-                await AsyncStorage.removeItem('userBirthYear')
-                await AsyncStorage.removeItem('userBirthMonth')
-                await AsyncStorage.removeItem('userBirthDay')
-                await AsyncStorage.removeItem('userHeight')
-                await AsyncStorage.removeItem('userWeight')
-                navigation.navigate('Login')
+                try {
+                  await signOut(auth)
+                } catch (e) {
+                  Alert.alert('登出失敗', '請稍後再試')
+                }
               }},
             ])
           }}>
@@ -204,7 +203,7 @@ export default function SettingsScreen({ navigation }: any) {
         </View>
 
         <Text style={styles.disclaimer}>本產品僅供初步參考，不構成醫療診斷</Text>
-        
+
 
       </ScrollView>
     </View>

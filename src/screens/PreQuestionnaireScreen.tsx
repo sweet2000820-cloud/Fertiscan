@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
 import { colors, typography } from '../theme'
+import PickerModal from '../components/PickerModal'
 
 // 是非題（2選項）
 const yesNoQuestions = [
@@ -36,6 +37,7 @@ export default function PreQuestionnaireScreen({ navigation, route }: any) {
 
   // 數字輸入
   const [abstinenceDays, setAbstinenceDays] = useState('')
+  const [showAbstinencePicker, setShowAbstinencePicker] = useState(false)
 
   // 是非題答案
   const [yesNoAnswers, setYesNoAnswers] = useState<Record<string, boolean | undefined>>({})
@@ -91,22 +93,18 @@ export default function PreQuestionnaireScreen({ navigation, route }: any) {
   // 渲染題目內容
   function renderQuestion() {
     if (step === 0) {
-      return (
-        <>
-          <Text style={styles.question}>距離上次射精，已經幾天了？</Text>
-          <Text style={styles.hint}>建議禁慾 2–7 天內採樣，準確度較高</Text>
-          <TextInput
-            style={styles.numInput}
-            placeholder="請輸入天數"
-            placeholderTextColor={colors.gray400}
-            keyboardType="number-pad"
-            value={abstinenceDays}
-            onChangeText={setAbstinenceDays}
-          />
-        </>
-      )
-    }
-
+  return (
+    <>
+      <Text style={styles.question}>【禁慾天數】距離上次射精，已經幾天了？</Text>
+      <Text style={styles.hint}>建議禁慾 3–5 天內採樣，準確度較高</Text>
+      <TouchableOpacity style={styles.numInput} onPress={() => setShowAbstinencePicker(true)}>
+        <Text style={{ color: abstinenceDays ? colors.gray900 : colors.gray400, fontSize: typography.sizes.lg }}>
+          {abstinenceDays ? `${abstinenceDays} 天` : '請選擇天數'}
+        </Text>
+      </TouchableOpacity>
+    </>
+  )
+}
     const yesNoIndex = step - 1
     if (yesNoIndex >= 0 && yesNoIndex < yesNoQuestions.length) {
       const item = yesNoQuestions[yesNoIndex]
@@ -191,6 +189,19 @@ export default function PreQuestionnaireScreen({ navigation, route }: any) {
           </Text>
         </TouchableOpacity>
 
+        <PickerModal
+          visible={showAbstinencePicker}
+          title="禁慾天數"
+          value={abstinenceDays || '3'}
+          items={Array.from({ length: 31 }, (_, i) => String(i))}
+          unit=" 天"
+          onConfirm={(val) => {
+            setAbstinenceDays(val)
+            setShowAbstinencePicker(false)
+          }}
+          onCancel={() => setShowAbstinencePicker(false)}
+        />
+
       </ScrollView>
     </View>
   )
@@ -238,15 +249,14 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   numInput: {
-    height: 46,
-    borderWidth: 0.5,
-    borderColor: colors.gray300,
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    fontSize: typography.sizes.lg,
-    color: colors.gray900,
-    marginTop: 16,
-    marginBottom: 24,
+  height: 46,
+  borderWidth: 0.5,
+  borderColor: colors.gray300,
+  borderRadius: 8,
+  paddingHorizontal: 14,
+  justifyContent: 'center',
+  marginTop: 16,
+  marginBottom: 24,
   },
   optionList: { gap: 10, marginTop: 16, marginBottom: 20 },
   option: {
