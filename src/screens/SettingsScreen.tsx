@@ -10,6 +10,8 @@ import { useFocusEffect } from '@react-navigation/native'
 import { useCallback } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import { Image } from 'react-native'
+import { getUserPlan } from '../plan'
+import { getClinics, clearAllClinicsAndHistory, getSharedHistory } from '../clinics'
 
 
 export default function SettingsScreen({ navigation }: any) {
@@ -23,11 +25,9 @@ export default function SettingsScreen({ navigation }: any) {
 
   useFocusEffect(
     useCallback(() => {
-      AsyncStorage.getItem('clinics').then(val => {
-        if (val) setClinicCount(JSON.parse(val).length)
-      })
+      getClinics().then(list => setClinicCount(list.length))
       AsyncStorage.getItem('reminderWeeks').then(val => { if (val) setReminderWeeks(parseInt(val)) })
-      AsyncStorage.getItem('userPlan').then(val => { if (val) setUserPlan(val) })
+      getUserPlan().then(({ plan }) => setUserPlan(plan))
 
       const user = auth.currentUser
       if (user) {
@@ -148,13 +148,6 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>隱私與資料</Text>
-        <View style={styles.listCard}>
-          <View style={[styles.row, { borderBottomWidth: 0 }]}>
-            <Text style={styles.rowLabel}>資料上傳雲端</Text>
-            <Switch value={false} onValueChange={() => {}} trackColor={{ true: colors.primary }} />
-          </View>
-        </View>
 
         <View style={styles.tealCard}>
           <Text style={styles.tealTitle}>隱私說明</Text>
@@ -172,16 +165,15 @@ export default function SettingsScreen({ navigation }: any) {
             <Text style={styles.rowHint}>Freepik - Flaticon</Text>
           </View>
           <TouchableOpacity style={styles.row} onPress={async () => {
-            await AsyncStorage.setItem('clinics', JSON.stringify([]))
-            await AsyncStorage.removeItem('sharedHistory')
+            await clearAllClinicsAndHistory()
             setClinicCount(0)
             Alert.alert('已清除', '診所資料已清除')
           }}>
             <Text style={[styles.rowLabel, { color: colors.danger }]}>清除診所資料（測試用）</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.row} onPress={async () => {
-            const val = await AsyncStorage.getItem('sharedHistory')
-            Alert.alert('sharedHistory', val || '空的')
+            const history = await getSharedHistory(10)
+            Alert.alert('sharedHistory', JSON.stringify(history) || '空的')
           }}>
             <Text style={styles.rowLabel}>查看分享歷程（測試用）</Text>
           </TouchableOpacity>

@@ -4,9 +4,11 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch, Sh
 import * as Clipboard from 'expo-clipboard'
 import * as Print from 'expo-print'
 import * as Sharing from 'expo-sharing'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Ionicons } from '@expo/vector-icons'
 import * as FileSystem from 'expo-file-system/legacy'
+import { doc, getDoc } from 'firebase/firestore'
+import { auth, db } from '../firebase'
+import { getUserPlan } from '../plan'
 
 export default function ReportLinkScreen({ navigation, route }: any) {
   const [pwEnabled, setPwEnabled] = useState(false)
@@ -14,7 +16,15 @@ export default function ReportLinkScreen({ navigation, route }: any) {
   const records = route?.params?.records || []
 
   async function exportPDF() {
-    const nameRaw = await AsyncStorage.getItem('userName') || ''
+    const user = auth.currentUser
+    let nameRaw = ''
+    if (user) {
+      const snap = await getDoc(doc(db, 'users', user.uid))
+      if (snap.exists()) {
+        const data: any = snap.data()
+        nameRaw = data.name || ''
+      }
+    }
     const maskedName = nameRaw.length > 0
       ? nameRaw.slice(0, 1) + '○' + (nameRaw.length > 2 ? nameRaw.slice(-1) : '')
       : '使用者'
@@ -192,8 +202,8 @@ export default function ReportLinkScreen({ navigation, route }: any) {
         <TouchableOpacity
           style={styles.pdfBtn}
           onPress={async () => {
-            const plan = await AsyncStorage.getItem('userPlan')
-            if (plan === 'pro') {
+              const { plan } = await getUserPlan()
+              if (plan === 'pro') {
               exportPDF()
             } else {
               Alert.alert('Pro 功能', 'PDF 報告匯出為 Pro 版專屬功能。', [

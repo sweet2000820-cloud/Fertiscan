@@ -1,8 +1,8 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native'
 import { colors, typography } from '../theme'
 import { useState, useEffect } from 'react'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getRecords } from '../storage'
+import { getUserPlan, setUserPlan } from '../plan'
 
 export default function PlanScreen({ navigation }: any) {
   const [monthCount, setMonthCount] = useState(0)
@@ -10,9 +10,7 @@ export default function PlanScreen({ navigation }: any) {
   const [currentPlan, setCurrentPlan] = useState<string>('free')
 
   useEffect(() => {
-    AsyncStorage.getItem('userPlan').then(val => {
-      if (val) setCurrentPlan(val)
-    })
+    getUserPlan().then(({ plan }) => setCurrentPlan(plan))
     getRecords().then(records => {
       const now = new Date()
       const thisMonth = records.filter(r => {
@@ -34,7 +32,6 @@ export default function PlanScreen({ navigation }: any) {
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        {/* 目前方案卡片 */}
         <View style={styles.darkCard}>
           <View style={styles.darkCardHeader}>
             <View style={styles.planIcon}>
@@ -43,7 +40,7 @@ export default function PlanScreen({ navigation }: any) {
             <View style={{ flex: 1 }}>
               <View style={styles.planRow}>
                 <Text style={styles.planTitle}>{currentPlan === 'pro' ? 'Pro 版' : '免費版'}</Text>
-                <Text style={styles.freeBadgeText}>\
+                <Text style={styles.freeBadgeText}>
                   {currentPlan === 'pro' ? 'Pro' : '免費'}
                   </Text>
               </View>
@@ -64,7 +61,6 @@ export default function PlanScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* 功能比較 */}
         <Text style={styles.sectionTitle}>功能比較</Text>
         <View style={styles.compareCard}>
           <View style={styles.compareHeader}>
@@ -91,7 +87,6 @@ export default function PlanScreen({ navigation }: any) {
           ))}
         </View>
 
-        {/* 方案選擇 */}
         <Text style={styles.sectionTitle}>選擇方案</Text>
         <TouchableOpacity
           style={[styles.planOption, selected === 'monthly' && styles.planOptionSelected]}
@@ -139,7 +134,7 @@ export default function PlanScreen({ navigation }: any) {
               Alert.alert('取消訂閱', '確定要取消 Pro 訂閱嗎？\n\n取消後將在目前計費週期結束時降回免費版。', [
                 { text: '保留訂閱', style: 'cancel' },
                 { text: '確認取消', style: 'destructive', onPress: async () => {
-                  await AsyncStorage.setItem('userPlan', 'free')
+                  await setUserPlan('free')
                   setCurrentPlan('free')
                   Alert.alert('已取消訂閱', '您的訂閱已取消，將在計費週期結束後降回免費版。')
                 }},

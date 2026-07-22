@@ -4,6 +4,7 @@ import { colors, typography } from '../theme'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { saveRecord } from '../storage'
 import { getRecords, TestRecord } from '../storage'
+import { getInventory, setLastTestDate, setStrips as setStripsRemote } from '../inventory'
 
 export default function AnalysisScreen({ navigation, route }: any) {
   const [progress, setProgress] = useState(0)
@@ -94,14 +95,15 @@ export default function AnalysisScreen({ navigation, route }: any) {
             const now = new Date()
             const date = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`
             const time = `${now.getHours() < 12 ? '上午' : '下午'} ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`
-            const lotNumber = await AsyncStorage.getItem('lotNumber') || '未知批號'
+            const { lotNumber: currentLot, strips: currentStrips } = await getInventory()
+            const lotNumber = currentLot || '未知批號'
             await saveRecord({
               date, time, tc, status, lot: lotNumber,
               cIntensity: analysisResult?.c_intensity,
               tIntensity: analysisResult?.t_intensity,
               preTestSurvey: route?.params?.preTestSurvey,
             })
-            await AsyncStorage.setItem('lastTestDate', now.toISOString())
+            await setLastTestDate(now.toISOString())
             // 自動分享
             const clinicsRaw = await AsyncStorage.getItem('clinics')
             const clinics = clinicsRaw ? JSON.parse(clinicsRaw) : []
@@ -117,10 +119,8 @@ export default function AnalysisScreen({ navigation, route }: any) {
                 await AsyncStorage.setItem('sharedHistory', JSON.stringify([newEntry, ...histExisting]))
               }
             }
-            const stripsRaw = await AsyncStorage.getItem('strips')
-            const currentStrips = stripsRaw ? parseInt(stripsRaw) : 6
             const newStrips = Math.max(0, currentStrips - 1)
-            await AsyncStorage.setItem('strips', String(newStrips))
+            await setStripsRemote(newStrips)
             navigation.navigate('ReportOverview', { 
             record: { 
             date, time, tc, status, lot: lotNumber,

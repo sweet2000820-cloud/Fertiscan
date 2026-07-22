@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native'
 import { colors, typography } from '../theme'
 import { getRecords, TestRecord } from '../storage'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getClinics, getSharedHistory } from '../clinics'
 
 export default function ShareRecordScreen({ navigation }: any) {
   const [records, setRecords] = useState<TestRecord[]>([])
@@ -12,24 +12,21 @@ export default function ShareRecordScreen({ navigation }: any) {
   const [sharedDates, setSharedDates] = useState<string[]>([])
 
   useEffect(() => {
-    AsyncStorage.getItem('clinics').then(val => {
-      const parsed = val ? JSON.parse(val) : []
-      setClinics(parsed)
-      if (parsed.length > 0) setSelectedClinic(parsed[0])
-      AsyncStorage.getItem('sharedHistory').then(hval => {
-        if (hval && parsed.length > 0) {
-          const history = JSON.parse(hval)
-          const dates = history
-            .filter((h: any) => h.clinicName === parsed[0]?.name)
-            .map((h: any) => `${h.date}_${h.time}_${h.tc}`)
-          setSharedDates(dates)
-        }
-      })
-    })
-    getRecords().then(r => {
-      setRecords(r)
-    })
-  }, [])
+  getClinics().then(async parsed => {
+    setClinics(parsed)
+    if (parsed.length > 0) {
+      setSelectedClinic(parsed[0])
+      const history = await getSharedHistory(50)
+      const dates = history
+        .filter(h => h.clinicName === parsed[0]?.name)
+        .map(h => `${h.date}_${h.time}_${h.tc}`)
+      setSharedDates(dates)
+    }
+  })
+  getRecords().then(r => {
+    setRecords(r)
+  })
+}, [])
 
   function toggleRecord(i: number) {
     if (sharedDates.includes(records[i]?.date)) return
@@ -60,19 +57,14 @@ export default function ShareRecordScreen({ navigation }: any) {
             key={clinic.id}
             style={[styles.clinicRow, selectedClinic?.id === clinic.id && { backgroundColor: colors.primaryLight, borderRadius: 8, padding: 6 }]}
             onPress={async () => {
-              setSelectedClinic(clinic)
-              setSelected([])
-              const hval = await AsyncStorage.getItem('sharedHistory')
-              if (hval) {
-                const history = JSON.parse(hval)
-                const dates = history
-                  .filter((h: any) => h.clinicName === clinic.name)
-                  .map((h: any) => `${h.date}_${h.time}_${h.tc}`)
-                setSharedDates(dates)
-              } else {
-                setSharedDates([])
-              }
-            }}
+            setSelectedClinic(clinic)
+            setSelected([])
+            const history = await getSharedHistory(50)
+            const dates = history
+              .filter(h => h.clinicName === clinic.name)
+              .map(h => `${h.date}_${h.time}_${h.tc}`)
+            setSharedDates(dates)
+          }}
           >
             <View style={styles.clinicIcon}>
               <Text style={styles.clinicIconText}>{clinic.name.slice(0, 2)}</Text>

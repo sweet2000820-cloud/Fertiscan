@@ -3,6 +3,9 @@ import Button from '../components/Button'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native'
 import { useEffect, useState } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { doc, getDoc } from 'firebase/firestore'
+import { auth, db } from '../firebase'
+import { getInventory, setStrips as setStripsRemote } from '../inventory'
 import { getRecords, TestRecord } from '../storage'
 import { useFocusEffect } from '@react-navigation/native'
 import { useCallback } from 'react'
@@ -12,57 +15,54 @@ export default function DashboardScreen({ navigation }: any) {
   const [daysSince, setDaysSince] = useState<string>('尚未檢測')
   const [records, setRecords] = useState<TestRecord[]>([])
   const [strips, setStrips] = useState<number>(6)
-  const [userName, setUserName] = useState<string>('陳小明')
+  const [userName, setUserName] = useState<string>('')
   const [avatar, setAvatar] = useState<string | null>(null)
 
   useFocusEffect(
     useCallback(() => {
-      AsyncStorage.getItem('userName').then(val => { if (val) setUserName(val) })
-      AsyncStorage.getItem('userAvatar').then(val => { setAvatar(val) })
-      AsyncStorage.getItem('lastTestDate').then(val => {
-        
-        if (val) {
-          const last = new Date(val)
+      const user = auth.currentUser
+      if (user) {
+        getDoc(doc(db, 'users', user.uid)).then(snap => {
+          if (snap.exists()) {
+            const data: any = snap.data()
+            if (data.name) setUserName(data.name)
+            if (data.avatar) setAvatar(data.avatar)
+          }
+        })
+      }
+            getInventory().then(({ strips: n, lotNumber, lastTestDate }) => {
+        if (lastTestDate) {
+          const last = new Date(lastTestDate)
           const today = new Date()
           const lastDate = new Date(last.getFullYear(), last.getMonth(), last.getDate())
           const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate())
           const diff = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24))
           setDaysSince(diff === 0 ? '今天' : `${diff} 天前`)
         }
-      })
-      AsyncStorage.getItem('strips').then(val => {
-        if (val !== null) {
-          const n = parseInt(val)
-          setStrips(n)
-          if (n === 0) {
-            Alert.alert('試紙用完了', '您的試紙剩餘數量為 0，請前往商店購買。', [
-              { text: '稍後再說', style: 'cancel' },
-              { text: '前往商店', onPress: () => navigation.navigate('Main', { screen: '商店' }) },
-            ])
-          }
-        } else {
-          setStrips(6)
-          AsyncStorage.setItem('strips', '6')
+        setStrips(n)
+        if (n === 0) {
+          Alert.alert('試紙用完了', '您的試紙剩餘數量為 0，請前往商店購買。', [
+            { text: '稍後再說', style: 'cancel' },
+            { text: '前往商店', onPress: () => navigation.navigate('Main', { screen: '商店' }) },
+          ])
+        }
+        if (!lotNumber) {
+          AsyncStorage.getItem('onboardingShown').then(shown => {
+            if (!shown) {
+              AsyncStorage.setItem('onboardingShown', '1')
+              Alert.alert(
+                '歡迎使用 FertiScan 👋',
+                '開始檢測前，請先前往「校準」頁面設定試紙批號，確保結果準確。',
+                [
+                  { text: '稍後再說', style: 'cancel' },
+                  { text: '前往設定批號', onPress: () => navigation.navigate('Main', { screen: '校準' }) },
+                ]
+              )
+            }
+          })
         }
       })
       getRecords().then(r => setRecords(r))
-      ;(async () => {
-        const val = await AsyncStorage.getItem('lotNumber')
-        if (!val) {
-          const shown = await AsyncStorage.getItem('onboardingShown')
-          if (!shown) {
-            await AsyncStorage.setItem('onboardingShown', '1')
-            Alert.alert(
-              '歡迎使用 FertiScan 👋',
-              '開始檢測前，請先前往「校準」頁面設定試紙批號，確保結果準確。',
-              [
-                { text: '稍後再說', style: 'cancel' },
-                { text: '前往設定批號', onPress: () => navigation.navigate('Main', { screen: '校準' }) },
-              ]
-            )
-          }
-        }
-      })()
     }, [])
   )
 
@@ -94,7 +94,7 @@ export default function DashboardScreen({ navigation }: any) {
           if (val && !isNaN(parseInt(val))) {
             const n = parseInt(val)
             setStrips(n)
-            AsyncStorage.setItem('strips', String(n))
+            setStripsRemote(n)
           }
         }},
       ],
@@ -111,7 +111,7 @@ export default function DashboardScreen({ navigation }: any) {
           {avatar ? (
             <Image source={{ uri: avatar }} style={{ width: 40, height: 40, borderRadius: 20 }} />
           ) : (
-            <Text style={styles.avatarText}>{userName.slice(0, 1)}</Text>
+            <Text style={styles.avatarText}>{userName ? userName.slice(0, 1) : '?'}</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -121,9 +121,10 @@ export default function DashboardScreen({ navigation }: any) {
         <Text style={styles.greeting}>
           {(() => {
             const h = new Date().getHours()
-            if (h < 12) return `早安，${userName}`
-            if (h < 18) return `午安，${userName}`
-            return `晚安，${userName}`
+            const displayName = userName || '您'
+            if (h < 12) return `早安，${displayName}`
+            if (h < 18) return `午安，${displayName}`
+            return `晚安，${displayName}`
           })()}
         </Text>
 
@@ -131,7 +132,7 @@ export default function DashboardScreen({ navigation }: any) {
           <Text style={styles.cardTitle}>近 {Math.min(displayRecords.length, 4)} 次 T/C 比值趨勢</Text>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 80, gap: 6, marginBottom: 4 }}>
             {displayRecords.slice(0, 4).reverse().map((r, i, arr) => {
-              const h = Math.max(8, parseFloat(r.tc) * 50) // 將 T/C 比值轉換為柱狀圖高度
+              const h = Math.max(8, parseFloat(r.tc) * 50)
               const color = r.status === '正常' ? colors.primary : r.status === '邊緣' ? '#EF9F27' : colors.danger
               const isLast = i === arr.length - 1
               return (
@@ -165,8 +166,8 @@ export default function DashboardScreen({ navigation }: any) {
         </View>
 
         <Button title="開始新一次檢測" onPress={async () => {
-          const lot = await AsyncStorage.getItem('lotNumber')
-          if (!lot) {
+          const { lotNumber } = await getInventory()
+          if (!lotNumber) {
             Alert.alert('尚未設定批號', '請先前往「校準」頁面設定試紙批號，才能開始檢測。', [
               { text: '稍後再說', style: 'cancel' },
               { text: '前往設定批號', onPress: () => navigation.navigate('Main', { screen: '校準' }) },

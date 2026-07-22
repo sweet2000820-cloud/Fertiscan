@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Linking, Alert } from 'react-native'
 import { colors, typography } from '../theme'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getClinics } from '../clinics'
 import * as Location from 'expo-location'
 import { Ionicons } from '@expo/vector-icons'
 
@@ -31,10 +31,8 @@ export default function ClinicSearchScreen({ navigation }: any) {
   const [locating, setLocating] = useState(false)
 
   useEffect(() => {
-    AsyncStorage.getItem('clinics').then(val => {
-      if (val) setLinkedNames(JSON.parse(val).map((c: any) => c.name))
-    })
-  }, [])
+  getClinics().then(list => setLinkedNames(list.map(c => c.name)))
+}, [])
 
   async function handleLocate() {
     setLocating(true)

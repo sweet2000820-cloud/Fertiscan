@@ -1,12 +1,10 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native'
 import { colors, typography } from '../theme'
 import { useState } from 'react'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getClinics, addClinic, setClinicAutoShare, addSharedHistoryEntry } from '../clinics'
 
 export default function ClinicConfirmScreen({ navigation, route }: any) {
   const clinicName = route?.params?.clinicName || '台北生殖醫學中心'
-  console.log('ClinicSuccess params:', JSON.stringify(route?.params))
-  console.log('route params:', JSON.stringify(route?.params))
   const [shareTC, setShareTC] = useState(true)
   const [shareHistory, setShareHistory] = useState(false)
   const [autoShare, setAutoShare] = useState(false)
@@ -56,41 +54,36 @@ export default function ClinicConfirmScreen({ navigation, route }: any) {
         </View>
 
         <TouchableOpacity style={styles.ctaBtn} onPress={async () => {
-          const raw = await AsyncStorage.getItem('clinics')
-          const existing = raw ? JSON.parse(raw) : []
-          const alreadyLinked = existing.some((c: any) => c.name === clinicName)
-          if (!alreadyLinked) {
-            const newClinic = {
-              id: Date.now(),
-              name: clinicName,
-              date: new Date().toLocaleDateString('zh-TW').replace(/\//g, '/'),
-              autoShare,
-            }
-            const updated = [...existing, newClinic]
-            await AsyncStorage.setItem('clinics', JSON.stringify(updated))
+        const existing = await getClinics()
+        const alreadyLinked = existing.some(c => c.name === clinicName)
+        if (!alreadyLinked) {
+          await addClinic(clinicName)
+          if (autoShare) {
+            // addClinic 預設 autoShare 是 false，這裡確認要開啟的話再更新一次
+            const created = await getClinics()
+            const justAdded = created.find(c => c.name === clinicName)
+            if (justAdded) await setClinicAutoShare(justAdded.id, true)
           }
+        }
 
-          // 歷史趨勢分享
-          if (shareHistory) {
-            const { getRecords } = require('../storage')
-            const records = await getRecords()
-            const recent = records.slice(0, 6)
-            if (recent.length > 0) {
-              const histRaw = await AsyncStorage.getItem('sharedHistory')
-              const histExisting = histRaw ? JSON.parse(histRaw) : []
-              const newEntries = recent.map((r: any) => ({
-                date: r.date,
-                time: r.time,
-                tc: r.tc,
-                clinicName,
-                sharedAt: new Date().toISOString(),
-              }))
-              await AsyncStorage.setItem('sharedHistory', JSON.stringify([...newEntries, ...histExisting]))
-            }
+        // 歷史趨勢分享
+        if (shareHistory) {
+          const { getRecords } = require('../storage')
+          const records = await getRecords()
+          const recent = records.slice(0, 6)
+          for (const r of recent) {
+            await addSharedHistoryEntry({
+              date: r.date,
+              time: r.time,
+              tc: r.tc,
+              clinicName,
+              sharedAt: new Date().toISOString(),
+            })
           }
+        }
 
-          navigation.navigate('ClinicSuccess', { clinicName})
-        }}>
+        navigation.navigate('ClinicSuccess', { clinicName})
+      }}>
 
           <Text style={styles.ctaBtnText}>確認連結診所</Text>
         </TouchableOpacity>

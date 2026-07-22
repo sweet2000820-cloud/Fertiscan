@@ -23,7 +23,7 @@ export default function CamCaptureScreen({ navigation, route }: any) {
     )
   }
 
-  const API_URL = 'https://fertiscan-api-production-8841.up.railway.app/analyze'
+  const API_URL = 'https://fertiscan-api.onrender.com/analyze'
 
 async function takePicture() {
   if (cameraRef.current && !captured) {
@@ -37,7 +37,7 @@ async function takePicture() {
         // 拍照
         const photo = await cameraRef.current.takePictureAsync({ 
           quality: 0.8,
-          base64: false 
+          base64: false
         })
         
         if (!photo) throw new Error('拍照失敗')

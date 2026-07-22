@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native'
 import { colors, typography } from '../theme'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { setUserPlan } from '../plan'
 import { Ionicons } from '@expo/vector-icons'
 
 export default function PaymentScreen({ navigation, route }: any) {
@@ -150,12 +150,11 @@ export default function PaymentScreen({ navigation, route }: any) {
             Alert.alert('即將開放', '線上付款功能即將上線，敬請期待！\n\n（測試用：點確認直接升級）', [
               { text: '取消', style: 'cancel' },
               { text: '確認（測試）', onPress: async () => {
-                await AsyncStorage.setItem('userPlan', 'pro')
-                await AsyncStorage.setItem('userPlanType', planType)
-                Alert.alert('升級成功！', '您已成功升級為 Pro 版！', [
-                  { text: '太好了！', onPress: () => navigation.navigate('Main') }
-                ])
-              }}
+              await setUserPlan('pro', planType)
+              Alert.alert('升級成功！', '您已成功升級為 Pro 版！', [
+                { text: '太好了！', onPress: () => navigation.navigate('Main') }
+              ])
+            }}
             ])
           }}
         >

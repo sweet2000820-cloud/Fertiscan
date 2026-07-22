@@ -4,6 +4,8 @@ import { colors, typography } from '../theme'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getRecords, TestRecord } from '../storage'
 import { getBaziFromYear, elementColors, elementReadings, getDailyFortune } from '../utils/bazi'
+import { doc, getDoc } from 'firebase/firestore'
+import { auth, db } from '../firebase'
 
 const sleepLabels: Record<string, string> = {
   lt5: '少於 5 小時', '5to6': '5–6 小時', '7to8': '7–8 小時', gt9: '超過 9 小時',
@@ -54,19 +56,29 @@ export default function AIAdviceScreen({ navigation, route }: any) {
   const [profile, setProfile] = useState<any>(null)
 
   useEffect(() => {
-    getRecords().then(setAllRecords)
-    ;(async () => {
-      const keys = [
-        'userBirthYear', 'userHeight', 'userWeight', 'userSmoke', 'userSmokeYears',
-        'userVaricocele', 'userTesticularHistory', 'userEndocrineDisease',
-        'userHadSemenTest', 'userOccupationType', 'userTryingToConceive',
-      ]
-      const values = await AsyncStorage.multiGet(keys)
-      const p: any = {}
-      values.forEach(([k, v]) => { p[k] = v })
-      setProfile(p)
-    })()
-  }, [])
+  getRecords().then(setAllRecords)
+  ;(async () => {
+    const user = auth.currentUser
+    if (!user) return
+    const snap = await getDoc(doc(db, 'users', user.uid))
+    if (snap.exists()) {
+      const data: any = snap.data()
+      setProfile({
+        userBirthYear: data.birthYear || null,
+        userHeight: data.height || null,
+        userWeight: data.weight || null,
+        userSmoke: data.smoke ? 'true' : 'false',
+        userSmokeYears: data.smokeYears || null,
+        userVaricocele: data.varicocele ? 'true' : 'false',
+        userTesticularHistory: data.testicularHistory ? 'true' : 'false',
+        userEndocrineDisease: data.endocrineDisease ? 'true' : 'false',
+        userHadSemenTest: data.hadSemenTest ? 'true' : 'false',
+        userOccupationType: data.occupationType || null,
+        userTryingToConceive: data.tryingToConceive || null,
+      })
+    }
+  })()
+}, [])
 
   const tcVal = parseFloat(record?.tc || '0')
   const status = record?.status || '—'

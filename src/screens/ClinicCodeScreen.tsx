@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native'
 import { colors, typography } from '../theme'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getClinics } from '../clinics'
 import { Ionicons } from '@expo/vector-icons'
 
 const validCodes: Record<string, { clinicName: string}> = {
@@ -25,18 +25,17 @@ export default function ClinicCodeScreen({ navigation }: any) {
     setTimeout(async () => {
       setLoading(false)
       if (validCodes[code]) {
-        const raw = await AsyncStorage.getItem('clinics')
-        const existing = raw ? JSON.parse(raw) : []
-        const alreadyLinked = existing.some((c: any) => c.name === validCodes[code].clinicName)
-        if (alreadyLinked) {
-          Alert.alert('已連結', `您已經連結了${validCodes[code].clinicName}，無法重複連結。`)
-          setLoading(false)
-          return
-        }
-        navigation.navigate('Consent', {
-          clinicName: validCodes[code].clinicName,
-        })
-      } else {
+      const existing = await getClinics()
+      const alreadyLinked = existing.some(c => c.name === validCodes[code].clinicName)
+      if (alreadyLinked) {
+        Alert.alert('已連結', `您已經連結了${validCodes[code].clinicName}，無法重複連結。`)
+        setLoading(false)
+        return
+      }
+      navigation.navigate('Consent', {
+        clinicName: validCodes[code].clinicName,
+      })
+    } else {
         Alert.alert('邀請碼無效', '請確認邀請碼是否正確，或向診所重新索取')
       }
     }, 1000)

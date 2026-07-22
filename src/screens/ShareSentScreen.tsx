@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { colors, typography } from '../theme'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { addSharedHistoryEntry } from '../clinics'
 
 export default function ShareSentScreen({ navigation, route }: any) {
   const clinics = route?.params?.clinics || []
@@ -9,25 +9,21 @@ export default function ShareSentScreen({ navigation, route }: any) {
   const clinicNames = clinics.map((c: any) => c.name).join('、')
 
   useEffect(() => {
-    async function saveSharedHistory() {
-      const raw = await AsyncStorage.getItem('sharedHistory')
-      const existing = raw ? JSON.parse(raw) : []
-      const newEntries: any[] = []
-      for (const clinic of clinics) {
-        for (const r of records) {
-          newEntries.push({
-            date: r.date,
-            time: r.time,
-            tc: r.tc,
-            clinicName: clinic.name,
-            sharedAt: new Date().toISOString(),
-          })
-        }
+  async function saveSharedHistory() {
+    for (const clinic of clinics) {
+      for (const r of records) {
+        await addSharedHistoryEntry({
+          date: r.date,
+          time: r.time,
+          tc: r.tc,
+          clinicName: clinic.name,
+          sharedAt: new Date().toISOString(),
+        })
       }
-      await AsyncStorage.setItem('sharedHistory', JSON.stringify([...newEntries, ...existing]))
     }
-    if (records.length > 0 && clinics.length > 0) saveSharedHistory()
-  }, [])
+  }
+  if (records.length > 0 && clinics.length > 0) saveSharedHistory()
+}, [])
 
   return (
     <View style={styles.container}>

@@ -1,4 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp } from 'firebase/firestore'
+import { auth, db } from './firebase'
 
 export type TestRecord = {
   date: string
@@ -27,12 +28,22 @@ export type TestRecord = {
 }
 
 export async function saveRecord(record: TestRecord) {
-  const existing = await getRecords()
-  const updated = [record, ...existing].slice(0, 20)
-  await AsyncStorage.setItem('testRecords', JSON.stringify(updated))
+  const user = auth.currentUser
+  if (!user) return
+  await addDoc(collection(db, 'users', user.uid, 'records'), {
+    ...record,
+    createdAt: serverTimestamp(),
+  })
 }
 
 export async function getRecords(): Promise<TestRecord[]> {
-  const raw = await AsyncStorage.getItem('testRecords')
-  return raw ? JSON.parse(raw) : []
+  const user = auth.currentUser
+  if (!user) return []
+  const q = query(
+    collection(db, 'users', user.uid, 'records'),
+    orderBy('createdAt', 'desc'),
+    limit(20)
+  )
+  const snap = await getDocs(q)
+  return snap.docs.map(d => d.data() as TestRecord)
 }

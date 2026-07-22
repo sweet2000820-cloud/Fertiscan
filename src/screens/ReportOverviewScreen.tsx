@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } from 'react-native'
 import { colors, typography } from '../theme'
 import { Ionicons } from '@expo/vector-icons'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getUserPlan } from '../plan'
 import * as Print from 'expo-print'
 import * as Sharing from 'expo-sharing'
 
@@ -233,8 +233,8 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
         <TouchableOpacity
           style={styles.aiBtn}
           onPress={async () => {
-            const plan = await AsyncStorage.getItem('userPlan')
-            if (plan === 'pro') {
+              const { plan } = await getUserPlan()
+              if (plan === 'pro') {
               navigation.navigate('AIAdvice', { record })
             } else {
               Alert.alert('Pro 功能', 'AI 趨勢解讀為 Pro 版專屬功能，升級後即可使用。', [

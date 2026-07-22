@@ -18,8 +18,6 @@ export default function LoginScreen({ onLogin, navigation }: any) {
   }
   try {
   const userCredential = await signInWithEmailAndPassword(auth, email, password)
-  const savedName = await AsyncStorage.getItem('userName')
-  console.log('登入當下 AsyncStorage 裡的 userName:', savedName)
   if (!userCredential.user.emailVerified) {
       Alert.alert('信箱尚未驗證', '請先完成信箱驗證才能使用')
       navigation?.navigate('VerifyEmail', { email })

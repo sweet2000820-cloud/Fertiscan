@@ -1,52 +1,35 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native'
 import { colors, typography } from '../theme'
 import { useState, useEffect } from 'react'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getRecords } from '../storage'
+import { getClinics, getSharedHistory, setClinicAutoShare, removeClinic, Clinic, SharedHistoryEntry } from '../clinics'
 
 export default function ClinicListScreen({ navigation }: any) {
-  const [clinics, setClinics] = useState<any[]>([])
+  const [clinics, setClinics] = useState<Clinic[]>([])
   const [sharedHistory, setSharedHistory] = useState<{date: string, clinic: string}[]>([])
 
- useEffect(() => {
-    AsyncStorage.getItem('clinics').then(val => {
-      const parsed = val ? JSON.parse(val) : []
-      setClinics(parsed)
-      AsyncStorage.getItem('sharedHistory').then(hval => {
-      if (hval) {
-        const history = JSON.parse(hval)
-        const mapped = history.slice(0, 10).map((h: any) => ({
-          date: `${h.date} · T/C ${h.tc}`,
-          clinic: `${h.clinicName} `
-        }))
-        setSharedHistory(mapped)
-      }
-    })
+  useEffect(() => {
+    getClinics().then(setClinics)
+    getSharedHistory(10).then(history => {
+      const mapped = history.map((h: SharedHistoryEntry) => ({
+        date: `${h.date} · T/C ${h.tc}`,
+        clinic: `${h.clinicName} `,
+      }))
+      setSharedHistory(mapped)
     })
   }, [])
-  
 
-  async function handleDisconnect(id: number, name: string) {
+  async function handleDisconnect(id: string, name: string) {
     Alert.alert('解除連結', `確定要解除與${name}的連結嗎？\n\n解除後系統將不再傳送資料給此診所。`, [
       { text: '取消', style: 'cancel' },
       { text: '解除連結', style: 'destructive', onPress: async () => {
-        const updated = clinics.filter(c => c.id !== id)
-        setClinics(updated)
-        await AsyncStorage.setItem('clinics', JSON.stringify(updated))
-
-        // 清除此診所的分享歷程
-        const hval = await AsyncStorage.getItem('sharedHistory')
-        if (hval) {
-          const history = JSON.parse(hval)
-          const filtered = history.filter((h: any) => h.clinicName !== name)
-          await AsyncStorage.setItem('sharedHistory', JSON.stringify(filtered))
-          const mapped = filtered.slice(0, 10).map((h: any) => ({
-            date: `${h.date} · T/C ${h.tc}`,
-            clinic: h.clinicName,
-          }))
-          setSharedHistory(mapped)
-        }
-
+        await removeClinic(id, name)
+        setClinics(clinics.filter(c => c.id !== id))
+        const history = await getSharedHistory(10)
+        const mapped = history.map((h: SharedHistoryEntry) => ({
+          date: `${h.date} · T/C ${h.tc}`,
+          clinic: h.clinicName,
+        }))
+        setSharedHistory(mapped)
         Alert.alert('已解除連結', `您已解除與${name}的連結。\n\n系統將不再傳送任何資料給此診所。`)
       }},
     ])
@@ -94,9 +77,8 @@ export default function ClinicListScreen({ navigation }: any) {
                 <Switch
                   value={clinic.autoShare || false}
                   onValueChange={async (val) => {
-                    const updated = clinics.map(c => c.id === clinic.id ? { ...c, autoShare: val } : c)
-                    setClinics(updated)
-                    await AsyncStorage.setItem('clinics', JSON.stringify(updated))
+                    await setClinicAutoShare(clinic.id, val)
+                    setClinics(clinics.map(c => c.id === clinic.id ? { ...c, autoShare: val } : c))
                   }}
                   trackColor={{ true: colors.primary }}
                 />
