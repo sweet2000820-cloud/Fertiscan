@@ -39,7 +39,6 @@ export default function ProfileScreen({ navigation }: any) {
   const [varicocele, setVaricocele] = useState<boolean | null>(null)
   const [testicularHistory, setTesticularHistory] = useState<boolean | null>(null)
   const [endocrineDisease, setEndocrineDisease] = useState<boolean | null>(null)
-  const [hadSemenTest, setHadSemenTest] = useState<boolean | null>(null)
   const [occupationType, setOccupationType] = useState<string | null>(null)
   const [tryingToConceive, setTryingToConceive] = useState<string | null>(null)
 
@@ -68,7 +67,6 @@ export default function ProfileScreen({ navigation }: any) {
           if (data.varicocele !== undefined) setVaricocele(data.varicocele)
           if (data.testicularHistory !== undefined) setTesticularHistory(data.testicularHistory)
           if (data.endocrineDisease !== undefined) setEndocrineDisease(data.endocrineDisease)
-          if (data.hadSemenTest !== undefined) setHadSemenTest(data.hadSemenTest)
           if (data.occupationType) setOccupationType(data.occupationType)
           if (data.tryingToConceive) setTryingToConceive(data.tryingToConceive)
         }
@@ -102,7 +100,6 @@ export default function ProfileScreen({ navigation }: any) {
         varicocele,
         testicularHistory,
         endocrineDisease,
-        hadSemenTest,
         occupationType,
         tryingToConceive,
       }, { merge: true })
@@ -188,7 +185,7 @@ export default function ProfileScreen({ navigation }: any) {
           <Text style={styles.back}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.appbarTitle}>個人資料</Text>
-        <TouchableOpacity onPress={handleSave}>
+        <TouchableOpacity style={styles.saveBtnWrap} onPress={handleSave}>
           <Text style={styles.saveBtn}>儲存</Text>
         </TouchableOpacity>
       </View>
@@ -297,7 +294,6 @@ export default function ProfileScreen({ navigation }: any) {
           <YesNoRow label="精索靜脈曲張病史" value={varicocele} onChange={setVaricocele} />
           <YesNoRow label="隱睪症／睪丸手術病史" value={testicularHistory} onChange={setTesticularHistory} />
           <YesNoRow label="內分泌相關疾病" value={endocrineDisease} onChange={setEndocrineDisease} />
-          <YesNoRow label="曾做過正式精液檢查" value={hadSemenTest} onChange={setHadSemenTest} />
 
           <View style={styles.fieldRow}>
             <Text style={styles.fieldLabel}>職業型態</Text>
@@ -370,7 +366,7 @@ export default function ProfileScreen({ navigation }: any) {
           items={Array.from({ length: 81 }, (_, i) => String(140 + i))}
           unit=" cm"
           onConfirm={(val) => {
-            setHeight(val)
+              setHeight(val)
             setShowHeightPicker(false)
           }}
           onCancel={() => setShowHeightPicker(false)}
@@ -395,27 +391,37 @@ export default function ProfileScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46, flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
+  flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+  paddingTop: 10, paddingHorizontal: 18, paddingBottom: 0,
   },
-  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
-  appbarTitle: { flex: 1, fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
-  saveBtn: { fontSize: typography.sizes.md, color: colors.primary },
+  back: { fontSize: 40, color: colors.primary, marginRight: 6, paddingBottom: 4 },
+  appbarTitle: { flex: 1, fontSize: 22, fontWeight: '600', color: colors.gray900 },
+  saveBtnWrap: {
+  backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.primary,
+  paddingHorizontal: 20,
+  paddingVertical: 10,
+  borderRadius: 20,
+  },
+  saveBtn: { fontSize: typography.sizes.md, color: colors.primary, fontWeight: '600' },
   scroll: { flex: 1, padding: 18 },
-  avatarArea: { alignItems: 'center', paddingVertical: 16, gap: 8, marginBottom: 8 },
+  avatarArea: { alignItems: 'center', paddingVertical: 0, gap: 8, marginBottom: 8 },
   avatarBig: {
-    width: 68, height: 68, borderRadius: 34,
+    width: 80, height: 80, borderRadius:  40,
     backgroundColor: colors.primaryLight,
     alignItems: 'center', justifyContent: 'center',
     overflow: 'hidden',
   },
-  avatarText: { fontSize: 24, fontWeight: typography.weights.medium, color: colors.primary },
+  avatarText: { fontSize: 40, fontWeight: typography.weights.medium, color: colors.primary },
   avatarHint: { fontSize: typography.sizes.xs, color: colors.gray400 },
   sectionTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray500, marginBottom: 8 },
-  listCard: { borderWidth: 0.5, borderColor: colors.gray200, borderRadius: 10, paddingHorizontal: 14, marginBottom: 16 },
+  listCard: {
+    backgroundColor: colors.white,
+    borderWidth: 0.5, borderColor: colors.gray200,
+    borderRadius: 16, paddingHorizontal: 14, marginBottom: 16,
+  },
   fieldRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 10, borderBottomWidth: 0.5, borderBottomColor: colors.gray100,
+    paddingVertical: 11, borderBottomWidth: 0.5, borderBottomColor: colors.gray100,
   },
   fieldLabel: { fontSize: typography.sizes.md, color: colors.gray900 },
   fieldInput: { fontSize: typography.sizes.md, color: colors.gray900, minWidth: 80 },
@@ -425,9 +431,9 @@ const styles = StyleSheet.create({
   unit: { fontSize: typography.sizes.sm, color: colors.gray400 },
   optRow: { flexDirection: 'row', gap: 6 },
   optRowWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingBottom: 10, flex: 1, justifyContent: 'flex-end' },
-  opt: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, borderWidth: 0.5, borderColor: colors.gray200 },
+  opt: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 12, borderWidth: 0.5, borderColor: colors.gray200 },
   optSelected: { backgroundColor: colors.primaryLight, borderColor: colors.primary },
   optText: { fontSize: typography.sizes.sm, color: colors.gray500 },
-  optTextSelected: { color: colors.primary, fontWeight: typography.weights.medium },
+  optTextSelected: { color: colors.primary, fontWeight: '600' },
   arrow: { fontSize: typography.sizes.md, color: colors.gray400 },
 })

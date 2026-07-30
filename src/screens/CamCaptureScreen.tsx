@@ -57,7 +57,9 @@ async function takePicture() {
         })
 
         const result = await response.json()
-        
+
+        console.log(`第 ${i+1} 張結果:`, result.success ? 'success' : `失敗原因: ${result.error}`)
+
         if (result.success) {
           results.push(result.data)
         }

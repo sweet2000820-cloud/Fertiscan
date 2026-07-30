@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
 import { colors, typography } from '../theme'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import { saveRecord } from '../storage'
-import { getRecords, TestRecord } from '../storage'
 import { getInventory, setLastTestDate, setStrips as setStripsRemote } from '../inventory'
+import { getClinics, addSharedHistoryEntry } from '../clinics'
 
 export default function AnalysisScreen({ navigation, route }: any) {
   const [progress, setProgress] = useState(0)
@@ -104,19 +103,15 @@ export default function AnalysisScreen({ navigation, route }: any) {
               preTestSurvey: route?.params?.preTestSurvey,
             })
             await setLastTestDate(now.toISOString())
-            // 自動分享
-            const clinicsRaw = await AsyncStorage.getItem('clinics')
-            const clinics = clinicsRaw ? JSON.parse(clinicsRaw) : []
+            // 自動分享（改用 Firestore 版本的診所資料）
+            const clinics = await getClinics()
             for (const clinic of clinics) {
               if (clinic.autoShare) {
-                const histRaw = await AsyncStorage.getItem('sharedHistory')
-                const histExisting = histRaw ? JSON.parse(histRaw) : []
-                const newEntry = {
+                await addSharedHistoryEntry({
                   date, time, tc,
                   clinicName: clinic.name,
                   sharedAt: new Date().toISOString(),
-                }
-                await AsyncStorage.setItem('sharedHistory', JSON.stringify([newEntry, ...histExisting]))
+                })
               }
             }
             const newStrips = Math.max(0, currentStrips - 1)
@@ -136,6 +131,8 @@ export default function AnalysisScreen({ navigation, route }: any) {
           </TouchableOpacity>
         )}
 
+        <View style={{ height: 20 }} />
+
       </ScrollView>
     </View>
   )
@@ -144,24 +141,23 @@ export default function AnalysisScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46,
     justifyContent: 'center',
-    paddingHorizontal: 16,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.gray200,
+    paddingTop: 30,
+    paddingHorizontal: 18,
+    paddingBottom: 20,
   },
   appbarTitle: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.medium,
+    fontSize: 22,
+    fontWeight: '600',
     color: colors.gray900,
   },
-  scroll: { flex: 1, padding: 18 },
+  scroll: { flex: 1, paddingHorizontal: 18 },
   progressRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   hint: { fontSize: typography.sizes.sm, color: colors.gray400 },
   progressBg: { height: 4, backgroundColor: colors.gray200, borderRadius: 2, marginBottom: 4 },
   progressFill: { height: '100%', backgroundColor: colors.primary, borderRadius: 2 },
   pct: { fontSize: typography.sizes.sm, color: colors.primary, textAlign: 'center', marginBottom: 16 },
-  darkCard: { backgroundColor: '#0a0e0f', borderRadius: 10, padding: 12, marginBottom: 14 },
+  darkCard: { backgroundColor: '#0a0e0f', borderRadius: 18, padding: 14, marginBottom: 14 },
   darkLabel: { fontSize: typography.sizes.xs, color: '#4ade80', marginBottom: 10 },
   stepRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5 },
   stepIcon: {
@@ -174,8 +170,9 @@ const styles = StyleSheet.create({
   stepIconText: { fontSize: 9, color: '#555', fontWeight: typography.weights.medium },
   stepLabel: { fontSize: typography.sizes.xs, color: '#666' },
   listCard: {
+    backgroundColor: colors.white,
     borderWidth: 0.5, borderColor: colors.gray200,
-    borderRadius: 10, padding: 12, marginBottom: 14,
+    borderRadius: 18, padding: 14, marginBottom: 14,
   },
   sectionTitle: { fontSize: typography.sizes.sm, color: colors.gray500, marginBottom: 6 },
   tcValue: {
@@ -186,8 +183,8 @@ const styles = StyleSheet.create({
   dataRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
   dataValue: { fontSize: typography.sizes.sm, color: colors.gray900 },
   resultBtn: {
-    height: 42, borderRadius: 9, backgroundColor: colors.primary,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 20,
+    height: 48, borderRadius: 24, backgroundColor: colors.primary,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 8,
   },
   resultBtnText: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.white },
 })

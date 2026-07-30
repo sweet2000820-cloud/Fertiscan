@@ -1,216 +1,101 @@
 import { useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native'
+import { CameraView, useCameraPermissions } from 'expo-camera'
 import { colors, typography } from '../theme'
-import { setUserPlan } from '../plan'
-import { Ionicons } from '@expo/vector-icons'
 
-export default function PaymentScreen({ navigation, route }: any) {
-  const planType = route?.params?.planType || 'yearly'
-  const price = planType === 'yearly' ? 'NT$1,068 / 年' : 'NT$149 / 月'
-  const monthly = planType === 'yearly' ? 'NT$89 / 月' : 'NT$149 / 月'
+const { width, height } = Dimensions.get('window')
+const BOX_SIZE = 260
+const BOX_TOP = (height - BOX_SIZE) / 2 - 40
 
-  const [payMethod, setPayMethod] = useState<'credit' | 'apple' | 'google'>('credit')
-  const [cardNumber, setCardNumber] = useState('')
-  const [expiry, setExpiry] = useState('')
-  const [cvv, setCvv] = useState('')
-  const [name, setName] = useState('')
+export default function ClinicQRScreen({ navigation }: any) {
+  const [permission, requestPermission] = useCameraPermissions()
+  const [scanned, setScanned] = useState(false)
 
-  function formatCard(val: string) {
-    const clean = val.replace(/\D/g, '').slice(0, 16)
-    return clean.replace(/(.{4})/g, '$1 ').trim()
+  if (!permission) return <View style={styles.container} />
+
+  if (!permission.granted) {
+    return (
+      <View style={styles.permContainer}>
+        <Text style={styles.permText}>需要相機權限才能掃描診所 QR Code</Text>
+        <TouchableOpacity style={styles.permBtn} onPress={requestPermission}>
+          <Text style={styles.permBtnText}>授予相機權限</Text>
+        </TouchableOpacity>
+      </View>
+    )
   }
 
-  function formatExpiry(val: string) {
-    const clean = val.replace(/\D/g, '').slice(0, 4)
-    if (clean.length >= 3) return clean.slice(0, 2) + '/' + clean.slice(2)
-    return clean
+  function handleScan({ data }: { data: string }) {
+    if (scanned) return
+    setScanned(true)
+    navigation.navigate('Consent', { clinicName: data })
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.appbar}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.back}>‹</Text>
-        </TouchableOpacity>
-        <Text style={styles.appbarTitle}>付款資訊</Text>
+      <CameraView
+        style={StyleSheet.absoluteFill}
+        facing="back"
+        onBarcodeScanned={scanned ? undefined : handleScan}
+        barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+      />
+
+      <View style={[styles.mask, { top: 0, left: 0, right: 0, height: BOX_TOP }]} />
+      <View style={[styles.mask, { top: BOX_TOP + BOX_SIZE, left: 0, right: 0, bottom: 0 }]} />
+
+      <View style={[styles.row, { top: BOX_TOP, height: BOX_SIZE }]}>
+        <View style={[styles.mask, { position: 'absolute', top: 0, left: 0, bottom: 0, width: (width - BOX_SIZE) / 2 }]} />
+        <View style={styles.scanBox}>
+          <View style={[styles.corner, styles.cornerTL]} />
+          <View style={[styles.corner, styles.cornerTR]} />
+          <View style={[styles.corner, styles.cornerBL]} />
+          <View style={[styles.corner, styles.cornerBR]} />
+        </View>
+        <View style={[styles.mask, { position: 'absolute', top: 0, right: 0, bottom: 0, width: (width - BOX_SIZE) / 2 }]} />
       </View>
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-
-        {/* 訂單摘要 */}
-        <View style={styles.orderCard}>
-          <View style={styles.orderRow}>
-            <Text style={styles.orderLabel}>方案</Text>
-            <Text style={styles.orderValue}>FertiScan Pro · {planType === 'yearly' ? '年訂閱' : '月訂閱'}</Text>
-          </View>
-          <View style={styles.orderRow}>
-            <Text style={styles.orderLabel}>金額</Text>
-            <Text style={[styles.orderValue, { color: colors.primary, fontWeight: typography.weights.medium }]}>{price}</Text>
-          </View>
-          {planType === 'yearly' && (
-            <View style={styles.orderRow}>
-              <Text style={styles.orderLabel}>相當於</Text>
-              <Text style={styles.orderValue}>{monthly}</Text>
-            </View>
-          )}
-          <View style={[styles.orderRow, { borderBottomWidth: 0 }]}>
-            <Text style={styles.orderLabel}>試用期</Text>
-            <Text style={[styles.orderValue, { color: colors.success }]}>7 天免費試用</Text>
-          </View>
-        </View>
-
-        {/* 付款方式 */}
-        <Text style={styles.sectionTitle}>付款方式</Text>
-        <View style={styles.payMethodRow}>
-          {[
-            { id: 'credit', label: '信用卡', icon: 'card-outline' },
-            { id: 'apple', label: 'Apple Pay', icon: 'logo-apple' },
-            { id: 'google', label: 'Google Pay', icon: 'logo-google' },
-          ].map(m => (
-            <TouchableOpacity
-              key={m.id}
-              style={[styles.payMethodBtn, payMethod === m.id && styles.payMethodBtnSelected]}
-              onPress={() => setPayMethod(m.id as any)}
-            >
-              <Ionicons name={m.icon as any} size={18} color={payMethod === m.id ? colors.primary : colors.gray400} />
-              <Text style={[styles.payMethodText, payMethod === m.id && { color: colors.primary }]}>{m.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {payMethod === 'credit' && (
-          <View style={styles.cardForm}>
-            <Text style={styles.sectionTitle}>信用卡資訊</Text>
-            <View style={styles.field}>
-              <Text style={styles.label}>持卡人姓名</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="姓名（與卡面相同）"
-                placeholderTextColor={colors.gray400}
-                value={name}
-                onChangeText={setName}
-              />
-            </View>
-            <View style={styles.field}>
-              <Text style={styles.label}>卡號</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="1234 5678 9012 3456"
-                placeholderTextColor={colors.gray400}
-                keyboardType="number-pad"
-                value={cardNumber}
-                onChangeText={v => setCardNumber(formatCard(v))}
-                maxLength={19}
-              />
-            </View>
-            <View style={styles.fieldRow}>
-              <View style={[styles.field, { flex: 1 }]}>
-                <Text style={styles.label}>有效期限</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="MM/YY"
-                  placeholderTextColor={colors.gray400}
-                  keyboardType="number-pad"
-                  value={expiry}
-                  onChangeText={v => setExpiry(formatExpiry(v))}
-                  maxLength={5}
-                />
-              </View>
-              <View style={[styles.field, { flex: 1 }]}>
-                <Text style={styles.label}>CVV</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="123"
-                  placeholderTextColor={colors.gray400}
-                  keyboardType="number-pad"
-                  secureTextEntry
-                  value={cvv}
-                  onChangeText={setCvv}
-                  maxLength={3}
-                />
-              </View>
-            </View>
-          </View>
-        )}
-
-        {(payMethod === 'apple' || payMethod === 'google') && (
-          <View style={styles.tealCard}>
-            <Text style={styles.tealText}>點擊下方按鈕將跳轉至 {payMethod === 'apple' ? 'Apple Pay' : 'Google Pay'} 完成付款。</Text>
-          </View>
-        )}
-
-        <View style={styles.secureRow}>
-          <Ionicons name="lock-closed-outline" size={14} color={colors.gray400} />
-          <Text style={styles.secureText}>所有付款資訊均經過 256-bit SSL 加密保護</Text>
-        </View>
-
-        <TouchableOpacity
-          style={styles.ctaBtn}
-          onPress={() => {
-            Alert.alert('即將開放', '線上付款功能即將上線，敬請期待！\n\n（測試用：點確認直接升級）', [
-              { text: '取消', style: 'cancel' },
-              { text: '確認（測試）', onPress: async () => {
-              await setUserPlan('pro', planType)
-              Alert.alert('升級成功！', '您已成功升級為 Pro 版！', [
-                { text: '太好了！', onPress: () => navigation.navigate('Main') }
-              ])
-            }}
-            ])
-          }}
-        >
-          <Text style={styles.ctaBtnText}>確認付款 · {price}</Text>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={styles.backBtn}>‹ 返回</Text>
         </TouchableOpacity>
+        <Text style={styles.title}>掃描診所 QR Code</Text>
+        <View style={{ width: 40 }} />
+      </View>
 
-        <Text style={styles.hint}>7 天免費試用，到期前取消不收費</Text>
-
-        <View style={{ height: 30 }} />
-      </ScrollView>
+      <View style={styles.footer}>
+        <Text style={styles.hint}>將診所提供的 QR Code 對準框內</Text>
+        {scanned && (
+          <TouchableOpacity style={styles.resetBtn} onPress={() => setScanned(false)}>
+            <Text style={styles.resetBtnText}>重新掃描</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.white },
-  appbar: {
-    height: 46, flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
+  container: { flex: 1, backgroundColor: '#000' },
+  permContainer: { flex: 1, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  permText: { color: '#fff', fontSize: typography.sizes.md, textAlign: 'center', marginBottom: 20 },
+  permBtn: { backgroundColor: colors.primary, paddingHorizontal: 26, paddingVertical: 12, borderRadius: 22 },
+  permBtnText: { color: '#fff', fontSize: typography.sizes.md, fontWeight: typography.weights.medium },
+  mask: { position: 'absolute', backgroundColor: 'rgba(0,0,0,0.6)' },
+  row: { position: 'absolute', left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  scanBox: { width: BOX_SIZE, height: BOX_SIZE },
+  corner: { position: 'absolute', width: 24, height: 24, borderColor: '#4ade80' },
+  cornerTL: { top: 0, left: 0, borderTopWidth: 3, borderLeftWidth: 3, borderTopLeftRadius: 8 },
+  cornerTR: { top: 0, right: 0, borderTopWidth: 3, borderRightWidth: 3, borderTopRightRadius: 8 },
+  cornerBL: { bottom: 0, left: 0, borderBottomWidth: 3, borderLeftWidth: 3, borderBottomLeftRadius: 8 },
+  cornerBR: { bottom: 0, right: 0, borderBottomWidth: 3, borderRightWidth: 3, borderBottomRightRadius: 8 },
+  header: {
+    position: 'absolute', top: 0, left: 0, right: 0,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    padding: 14, paddingTop: 60,
   },
-  back: { fontSize: 28, color: colors.primary, marginRight: 6 },
-  appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
-  scroll: { flex: 1, padding: 18 },
-  orderCard: { borderWidth: 0.5, borderColor: colors.gray200, borderRadius: 10, paddingHorizontal: 14, marginBottom: 16 },
-  orderRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 10, borderBottomWidth: 0.5, borderBottomColor: colors.gray100,
-  },
-  orderLabel: { fontSize: typography.sizes.sm, color: colors.gray400 },
-  orderValue: { fontSize: typography.sizes.sm, color: colors.gray900 },
-  sectionTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray500, marginBottom: 8 },
-  payMethodRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  payMethodBtn: {
-    flex: 1, height: 46, borderRadius: 9,
-    borderWidth: 1, borderColor: colors.gray200,
-    alignItems: 'center', justifyContent: 'center', gap: 4,
-  },
-  payMethodBtnSelected: { borderWidth: 1.5, borderColor: colors.primary, backgroundColor: colors.primaryLight },
-  payMethodText: { fontSize: typography.sizes.xs, color: colors.gray400 },
-  cardForm: { marginBottom: 16 },
-  field: { marginBottom: 10 },
-  fieldRow: { flexDirection: 'row', gap: 10 },
-  label: { fontSize: typography.sizes.xs, color: colors.gray500, fontWeight: typography.weights.medium, marginBottom: 4 },
-  input: {
-    height: 40, borderWidth: 0.5, borderColor: colors.gray300,
-    borderRadius: 8, paddingHorizontal: 12,
-    fontSize: typography.sizes.md, color: colors.gray900,
-  },
-  tealCard: { backgroundColor: colors.primaryLight, borderRadius: 10, padding: 12, marginBottom: 16 },
-  tealText: { fontSize: typography.sizes.sm, color: '#0d7a8f', lineHeight: 18 },
-  secureRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 16 },
-  secureText: { fontSize: typography.sizes.xs, color: colors.gray400 },
-  ctaBtn: {
-    height: 42, borderRadius: 9, backgroundColor: colors.primary,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 8,
-  },
-  ctaBtnText: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: '#fff' },
-  hint: { fontSize: typography.sizes.xs, color: colors.gray400, textAlign: 'center' },
+  backBtn: { fontSize: typography.sizes.sm, color: 'rgba(255,255,255,0.85)' },
+  title: { fontSize: typography.sizes.md, fontWeight: '600', color: '#fff' },
+  footer: { position: 'absolute', bottom: 80, left: 0, right: 0, alignItems: 'center', gap: 16 },
+  hint: { color: 'rgba(255,255,255,0.7)', fontSize: typography.sizes.sm },
+  resetBtn: { backgroundColor: colors.primary, paddingHorizontal: 26, paddingVertical: 12, borderRadius: 22 },
+  resetBtnText: { color: '#fff', fontSize: typography.sizes.md, fontWeight: typography.weights.medium },
 })

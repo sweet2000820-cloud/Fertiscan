@@ -55,7 +55,7 @@ export default function ShareRecordScreen({ navigation }: any) {
         ) : clinics.map(clinic => (
           <TouchableOpacity
             key={clinic.id}
-            style={[styles.clinicRow, selectedClinic?.id === clinic.id && { backgroundColor: colors.primaryLight, borderRadius: 8, padding: 6 }]}
+            style={[styles.clinicRow, selectedClinic?.id === clinic.id && { backgroundColor: colors.primaryLight, borderRadius: 14, padding: 8 }]}
             onPress={async () => {
             setSelectedClinic(clinic)
             setSelected([])
@@ -77,7 +77,7 @@ export default function ShareRecordScreen({ navigation }: any) {
                 <Text style={styles.connectedText}>傳送對象</Text>
               </View>
             ) : (
-              <View style={[styles.connectedBadge, { backgroundColor: colors.gray100 }]}>
+              <View style={[styles.connectedBadge, { backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200 }]}>
                 <Text style={[styles.connectedText, { color: colors.gray400 }]}>點擊選擇</Text>
               </View>
             )}
@@ -192,57 +192,61 @@ export default function ShareRecordScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46, flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingTop: 10, paddingHorizontal: 18, paddingBottom: 20,
   },
-  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
-  appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
-  scroll: { flex: 1, padding: 18 },
+  back: { fontSize: 40, color: colors.primary, marginRight: 6, paddingBottom: 4 },
+  appbarTitle: { flex: 1, fontSize: 22, fontWeight: '600', color: colors.gray900 },
+  scroll: { flex: 1, paddingHorizontal: 18 },
   clinicRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },
   clinicIcon: {
-    width: 38, height: 38, borderRadius: 9,
+    width: 40, height: 40, borderRadius: 20,
     backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center',
   },
   clinicIconText: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.primary },
   clinicName: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
   clinicSub: { fontSize: typography.sizes.xs, color: colors.gray400 },
-  connectedBadge: { backgroundColor: colors.successLight, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  connectedBadge: { backgroundColor: colors.successLight, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
   connectedText: { fontSize: typography.sizes.xs, color: colors.success, fontWeight: typography.weights.medium },
   divider: { height: 0.5, backgroundColor: colors.gray200, marginVertical: 12 },
   sectionTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray500, marginBottom: 8 },
   recordRow: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    padding: 10, borderRadius: 8, borderWidth: 0.5,
+    padding: 12, borderRadius: 16, borderWidth: 0.5,
     borderColor: colors.gray200, marginBottom: 8,
+    backgroundColor: colors.white,
   },
   recordRowSelected: { borderWidth: 1.5, borderColor: colors.primary, backgroundColor: colors.primaryLight },
   checkbox: {
-    width: 15, height: 15, borderRadius: 3,
+    width: 18, height: 18, borderRadius: 9,
     borderWidth: 1, borderColor: colors.gray300,
     alignItems: 'center', justifyContent: 'center',
   },
   checkboxDone: { backgroundColor: colors.primary, borderColor: colors.primary },
-  checkmark: { fontSize: 9, color: '#fff' },
+  checkmark: { fontSize: 10, color: '#fff' },
   recordDate: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
   recordSub: { fontSize: typography.sizes.xs, color: colors.gray400, marginTop: 2 },
-  latestBadge: { backgroundColor: colors.warningLight, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  latestBadge: { backgroundColor: colors.warningLight, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
   latestText: { fontSize: typography.sizes.xs, color: colors.warning, fontWeight: typography.weights.medium },
-  card: { backgroundColor: colors.gray100, borderRadius: 10, padding: 12, marginBottom: 14 },
+  card: {
+    backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
+    borderRadius: 16, padding: 14, marginBottom: 14,
+  },
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
   infoLabel: { fontSize: typography.sizes.sm, color: colors.gray500 },
   infoValue: { fontSize: typography.sizes.sm },
   btnPrimary: {
-    height: 42, borderRadius: 9, backgroundColor: colors.primary,
+    height: 48, borderRadius: 24, backgroundColor: colors.primary,
     alignItems: 'center', justifyContent: 'center', marginBottom: 8,
   },
   btnPrimaryText: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: '#fff' },
   btnSecondary: {
-    height: 42, borderRadius: 9, borderWidth: 1.5, borderColor: colors.primary,
+    height: 46, borderRadius: 23, borderWidth: 1.5, borderColor: colors.primary,
     alignItems: 'center', justifyContent: 'center', marginBottom: 8,
   },
   btnSecondaryText: { fontSize: typography.sizes.md, color: colors.primary },
   btnGray: {
-    height: 36, borderRadius: 9, backgroundColor: colors.gray100,
+    height: 40, borderRadius: 20, backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
     alignItems: 'center', justifyContent: 'center', marginBottom: 8,
   },
   btnGrayText: { fontSize: typography.sizes.sm, color: colors.gray500 },

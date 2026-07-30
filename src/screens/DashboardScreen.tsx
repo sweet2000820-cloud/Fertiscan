@@ -1,5 +1,4 @@
 import { colors, typography } from '../theme'
-import Button from '../components/Button'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native'
 import { useEffect, useState } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -9,6 +8,7 @@ import { getInventory, setStrips as setStripsRemote } from '../inventory'
 import { getRecords, TestRecord } from '../storage'
 import { useFocusEffect } from '@react-navigation/native'
 import { useCallback } from 'react'
+import { Ionicons } from '@expo/vector-icons'
 
 
 export default function DashboardScreen({ navigation }: any) {
@@ -30,7 +30,7 @@ export default function DashboardScreen({ navigation }: any) {
           }
         })
       }
-            getInventory().then(({ strips: n, lotNumber, lastTestDate }) => {
+      getInventory().then(({ strips: n, lotNumber, lastTestDate }) => {
         if (lastTestDate) {
           const last = new Date(lastTestDate)
           const today = new Date()
@@ -51,7 +51,7 @@ export default function DashboardScreen({ navigation }: any) {
             if (!shown) {
               AsyncStorage.setItem('onboardingShown', '1')
               Alert.alert(
-                '歡迎使用 FertiScan 👋',
+                '歡迎使用 iMotile 👋',
                 '開始檢測前，請先前往「校準」頁面設定試紙批號，確保結果準確。',
                 [
                   { text: '稍後再說', style: 'cancel' },
@@ -70,17 +70,9 @@ export default function DashboardScreen({ navigation }: any) {
 
   function getStatusColor(status: string) {
     switch (status) {
-      case '正常': return colors.primary
+      case '正常': return colors.success
       case '邊緣': return colors.warning
       default: return colors.danger
-    }
-  }
-
-  function getStatusBg(status: string) {
-    switch (status) {
-      case '正常': return colors.successLight
-      case '邊緣': return colors.warningLight
-      default: return colors.dangerLight
     }
   }
 
@@ -105,67 +97,64 @@ export default function DashboardScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.appbar}>
-        <Text style={styles.appbarTitle}>FertiScan</Text>
+      <View style={styles.brandBar}>
+        <Image source={require('../../assets/logo.png')} style={styles.brandLogo} resizeMode="contain" />
+      </View>
+
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.greetingSmall}>
+            {new Date().getHours() < 12 ? '早安' : new Date().getHours() < 18 ? '午安' : '晚安'}
+          </Text>
+          <Text style={styles.greetingName}>{userName || '您'}</Text>
+        </View>
         <TouchableOpacity style={styles.avatar} onPress={() => navigation.navigate('Profile')}>
           {avatar ? (
-            <Image source={{ uri: avatar }} style={{ width: 40, height: 40, borderRadius: 20 }} />
+            <Image source={{ uri: avatar }} style={{ width: 52, height: 52, borderRadius: 26 }} />
           ) : (
-            <Text style={styles.avatarText}>{userName ? userName.slice(0, 1) : '?'}</Text>
+            <Ionicons name="person" size={26} color={colors.primary} />
           )}
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        
-        <Text style={styles.greeting}>
-          {(() => {
-            const h = new Date().getHours()
-            const displayName = userName || '您'
-            if (h < 12) return `早安，${displayName}`
-            if (h < 18) return `午安，${displayName}`
-            return `晚安，${displayName}`
-          })()}
-        </Text>
 
         <View style={styles.tealCard}>
-          <Text style={styles.cardTitle}>近 {Math.min(displayRecords.length, 4)} 次 T/C 比值趨勢</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 80, gap: 6, marginBottom: 4 }}>
-            {displayRecords.slice(0, 4).reverse().map((r, i, arr) => {
-              const h = Math.max(8, parseFloat(r.tc) * 50)
-              const color = r.status === '正常' ? colors.primary : r.status === '邊緣' ? '#EF9F27' : colors.danger
-              const isLast = i === arr.length - 1
-              return (
-                <View key={i} style={{ flex: 1, alignItems: 'stretch', gap: 3 }}>
-                  <View style={{ width: '100%', height: h, backgroundColor: color, borderRadius: 2 }} />
-                  <Text style={{ fontSize: 8, color: isLast ? colors.warning : colors.gray400 }}>
-                    {isLast ? '最近' : r.date.slice(5, 7) + '/' + r.date.slice(8, 10)}
-                  </Text>
-                </View>
-              )
-            })}
+          <Text style={styles.cardTitle}>近 {Math.min(displayRecords.length, 3)} 次 T/C 比值趨勢</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 60, gap: 10, marginBottom: 8, paddingHorizontal: 12 }}>
+            {displayRecords.slice(0, 3).reverse().map((r, i) => {
+            const h = Math.max(10, parseFloat(r.tc) * 55)
+            return (
+              <View key={i} style={{ flex: 1, height: '100%', justifyContent: 'flex-end' }}>
+                <View style={{ width: '100%', height: h, backgroundColor: getStatusColor(r.status), borderRadius: 8 }} />
+              </View>
+            )
+          })}
           </View>
-          <View style={styles.divider} />
           <View style={styles.row}>
-            <Text style={styles.hint}>平均 T/C 比值</Text>
+            <Text style={styles.tealHint}>平均 T/C 比值</Text>
             <Text style={styles.avgValue}>
-              {(displayRecords.reduce((s, r) => s + parseFloat(r.tc), 0) / displayRecords.length).toFixed(2)}
+              {displayRecords.length > 0
+                ? (displayRecords.reduce((s, r) => s + parseFloat(r.tc), 0) / displayRecords.length).toFixed(2)
+                : '—'}
             </Text>
           </View>
         </View>
 
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
+            <Ionicons name="calendar-outline" size={18} color={colors.primary} />
             <Text style={styles.hint}>上次檢測</Text>
             <Text style={styles.statValue}>{daysSince}</Text>
           </View>
           <TouchableOpacity style={styles.statCard} onPress={handleStripsPress}>
+            <Ionicons name="layers-outline" size={18} color={colors.primary} />
             <Text style={styles.hint}>試紙剩餘</Text>
-            <Text style={[styles.statValue, { color: strips <= 1 ? colors.danger : colors.primary }]}>{strips} 片</Text>
+            <Text style={[styles.statValue, { color: strips <= 1 ? colors.danger : colors.gray900 }]}>{strips} 片</Text>
           </TouchableOpacity>
         </View>
 
-        <Button title="開始新一次檢測" onPress={async () => {
+        <TouchableOpacity style={styles.ctaBtn} onPress={async () => {
           const { lotNumber } = await getInventory()
           if (!lotNumber) {
             Alert.alert('尚未設定批號', '請先前往「校準」頁面設定試紙批號，才能開始檢測。', [
@@ -175,25 +164,27 @@ export default function DashboardScreen({ navigation }: any) {
             return
           }
           navigation.navigate('PreCheck')
-        }} />
+        }}>
+          <Ionicons name="scan-outline" size={17} color={colors.white} />
+          <Text style={styles.ctaBtnText}>開始新一次檢測</Text>
+        </TouchableOpacity>
 
-        <View style={styles.divider} />
         <Text style={styles.sectionTitle}>最近紀錄</Text>
 
         {displayRecords.map((r, i) => (
-          <TouchableOpacity key={i} style={styles.historyRow} onPress={() => navigation.navigate('ReportOverview', { record: r })}>
+          <TouchableOpacity key={i} style={styles.historyCard} onPress={() => navigation.navigate('ReportOverview', { record: r })}>
             <View>
               <Text style={styles.historyDate}>{r.date}</Text>
               <Text style={styles.hint}>{r.time}</Text>
             </View>
             <View style={styles.historyRight}>
               <Text style={[styles.tcValue, { color: getStatusColor(r.status) }]}>T/C {r.tc}</Text>
-              <View style={[styles.badge, { backgroundColor: getStatusBg(r.status) }]}>
-                <Text style={[styles.badgeText, { color: getStatusColor(r.status) }]}>{r.status}</Text>
-              </View>
+              <Text style={[styles.statusText, { color: getStatusColor(r.status) }]}>{r.status}</Text>
             </View>
           </TouchableOpacity>
         ))}
+
+        <View style={{ height: 90 }} />
 
       </ScrollView>
 
@@ -211,37 +202,56 @@ export default function DashboardScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
-  appbar: {
-    height: 56, flexDirection: 'row', alignItems: 'center',
-    paddingTop: 10,
-    paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
+  brandBar: {
+    alignItems: 'center',
+    paddingTop: 20,
   },
-  appbarTitle: { flex: 1, fontSize: typography.sizes.lg, fontWeight: typography.weights.medium, color: colors.primary },
-  avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.primary },
-  scroll: { flex: 1, padding: 18 },
-  greeting: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900, marginBottom: 10 },
-  tealCard: { backgroundColor: colors.primaryLight, borderRadius: 10, padding: 12, marginBottom: 10 },
-  cardTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.primary, marginBottom: 8 },
-  divider: { height: 0.5, backgroundColor: colors.gray200, marginVertical: 8 },
-  row: { flexDirection: 'row', justifyContent: 'space-between' },
-  hint: { fontSize: typography.sizes.sm, color: colors.gray400 },
-  avgValue: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.primary },
-  statsRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
-  statCard: { flex: 1, backgroundColor: colors.gray100, borderRadius: 10, padding: 12 },
-  statValue: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900, marginTop: 3 },
-  sectionTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray500, marginBottom: 6 },
-  historyRow: {
+  brandLogo: {
+    width: 200,
+    height: 60,
+  },
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'
+    , paddingHorizontal: 30, paddingBottom: 6,
+  },
+  greetingSmall: { fontSize: typography.sizes.md, color: colors.gray500 },
+  greetingName: { fontSize: 28, fontWeight: typography.weights.medium, color: colors.gray900, marginTop: 2 },
+  avatar: {
+    width: 52, height: 52, borderRadius: 26,
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  scroll: { flex: 1, paddingHorizontal: 18 },
+  tealCard: { backgroundColor: colors.primaryLight, borderRadius: 20, padding: 16, marginTop: 6, marginBottom: 10 },
+  cardTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.primary, marginBottom: 10 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+  tealHint: { fontSize: typography.sizes.sm, color: colors.primary },
+  hint: { fontSize: typography.sizes.sm, color: colors.gray500, marginTop: 4 },
+  avgValue: { fontSize: typography.sizes.lg, fontWeight: typography.weights.medium, color: colors.primary },
+  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
+  statCard: {
+    flex: 1, backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
+    borderRadius: 18, padding: 12, alignItems: 'center',
+  },
+  statValue: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900, marginTop: 2 },
+  ctaBtn: {
+    height: 48, borderRadius: 24, backgroundColor: colors.primary,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    marginBottom: 16,
+  },
+  ctaBtnText: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.white },
+  sectionTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray500, marginBottom: 8 },
+  historyCard: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 9, borderBottomWidth: 0.5, borderBottomColor: colors.gray100,
+    backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
+    borderRadius: 16, padding: 12, marginBottom: 8,
   },
-  historyDate: { fontSize: typography.sizes.md, color: colors.gray500 },
-  historyRight: { alignItems: 'flex-end', gap: 3 },
+  historyDate: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
+  historyRight: { alignItems: 'flex-end' },
   tcValue: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium },
-  badge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 4 },
-  badgeText: { fontSize: typography.sizes.xs, fontWeight: typography.weights.medium },
+  statusText: { fontSize: typography.sizes.xs, marginTop: 2 },
   fab: {
-    position: 'absolute', bottom: 50, right: 40,
+    position: 'absolute', bottom: 40, right: 40,
     width: 60, height: 60,
     backgroundColor: 'transparent',
   },
@@ -249,7 +259,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 75,
     right: 0,
-    backgroundColor: '#fff',
+    backgroundColor: colors.white,
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 6,

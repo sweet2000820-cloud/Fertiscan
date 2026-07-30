@@ -124,6 +124,8 @@ export default function ClinicListScreen({ navigation }: any) {
         </View>
         )}
 
+        <View style={{ height: 20 }} />
+
       </ScrollView>
     </View>
   )
@@ -132,29 +134,34 @@ export default function ClinicListScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46, flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingTop: 10, paddingHorizontal: 18, paddingBottom: 10,
   },
-  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
-  appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
-  scroll: { flex: 1, padding: 18 },
+  back: { fontSize: 40, color: colors.primary, marginRight: 6, paddingBottom: 4  },
+  appbarTitle: { flex: 1, fontSize: 22, fontWeight: '600', color: colors.gray900 },
+  scroll: { flex: 1, paddingHorizontal: 18 },
   sectionTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray500, marginBottom: 8 },
   emptyCard: {
-    borderWidth: 0.5, borderColor: colors.gray200, borderRadius: 10,
+    backgroundColor: colors.white,
+    borderWidth: 0.5, borderColor: colors.gray200, borderRadius: 18,
     padding: 24, marginBottom: 16, alignItems: 'center', gap: 6,
   },
   emptyText: { fontSize: typography.sizes.md, color: colors.gray500 },
   emptyHint: { fontSize: typography.sizes.sm, color: colors.gray400 },
-  listCard: { borderWidth: 0.5, borderColor: colors.gray200, borderRadius: 10, padding: 12, marginBottom: 16 },
+  listCard: {
+    backgroundColor: colors.white,
+    borderWidth: 0.5, borderColor: colors.gray200,
+    borderRadius: 18, padding: 14, marginBottom: 16,
+  },
   clinicHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   clinicIcon: {
-    width: 42, height: 42, borderRadius: 10,
+    width: 42, height: 42, borderRadius: 21,
     backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center',
   },
   clinicIconText: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.primary },
   clinicName: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
   clinicSub: { fontSize: typography.sizes.xs, color: colors.gray400, marginTop: 2 },
-  connectedBadge: { backgroundColor: colors.successLight, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  connectedBadge: { backgroundColor: colors.successLight, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
   connectedBadgeText: { fontSize: typography.sizes.xs, color: colors.success, fontWeight: typography.weights.medium },
   divider: { height: 0.5, backgroundColor: colors.gray200, marginBottom: 10 },
   shareRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
@@ -162,23 +169,23 @@ const styles = StyleSheet.create({
   shareValue: { fontSize: typography.sizes.sm, color: colors.gray900 },
   btnRow: { flexDirection: 'row', gap: 8 },
   btnSecondary: {
-    flex: 1, height: 32, borderRadius: 8,
+    flex: 1, height: 32, borderRadius: 16,
     borderWidth: 1.5, borderColor: colors.primary,
     alignItems: 'center', justifyContent: 'center',
   },
   btnSecondaryText: { fontSize: typography.sizes.xs, color: colors.primary },
   btnRed: {
-    flex: 1, height: 32, borderRadius: 8,
+    flex: 1, height: 32, borderRadius: 16,
     borderWidth: 1.5, borderColor: colors.danger,
     alignItems: 'center', justifyContent: 'center',
   },
   btnRedText: { fontSize: typography.sizes.xs, color: colors.danger },
   addBtn: {
-    height: 42, borderRadius: 9, backgroundColor: colors.primary,
+    height: 46, borderRadius: 23, backgroundColor: colors.primary,
     alignItems: 'center', justifyContent: 'center', marginBottom: 16,
   },
   addBtnText: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: '#fff' },
-  tealCard: { backgroundColor: colors.primaryLight, borderRadius: 10, padding: 12, marginBottom: 16 },
+  tealCard: { backgroundColor: colors.primaryLight, borderRadius: 16, padding: 14, marginBottom: 16 },
   tealTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.primary, marginBottom: 4 },
   tealText: { fontSize: typography.sizes.xs, color: '#0d7a8f', lineHeight: 18 },
   historyRow: {

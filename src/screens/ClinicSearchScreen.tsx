@@ -31,8 +31,8 @@ export default function ClinicSearchScreen({ navigation }: any) {
   const [locating, setLocating] = useState(false)
 
   useEffect(() => {
-  getClinics().then(list => setLinkedNames(list.map(c => c.name)))
-}, [])
+    getClinics().then(list => setLinkedNames(list.map(c => c.name)))
+  }, [])
 
   async function handleLocate() {
     setLocating(true)
@@ -198,56 +198,61 @@ export default function ClinicSearchScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46, flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingTop:10, paddingHorizontal: 18, paddingBottom: 20,
   },
-  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
-  appbarTitle: { flex: 1, fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
+  back: { fontSize: 40, color: colors.primary, marginRight: 6, paddingBottom: 4 },
+  appbarTitle: { flex: 1, fontSize: 22, fontWeight: '600', color: colors.gray900 },
   locateBtn: { padding: 4 },
-  searchArea: { padding: 14, borderBottomWidth: 0.5, borderBottomColor: colors.gray200 },
+  searchArea: { paddingHorizontal: 18, paddingBottom: 14 },
   searchBox: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: colors.gray100, borderRadius: 10,
-    paddingHorizontal: 12, height: 40, gap: 8,
+    backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200, borderRadius: 20,
+    paddingHorizontal: 14, height: 42, gap: 8,
   },
   searchInput: { flex: 1, fontSize: typography.sizes.md, color: colors.gray900 },
   locationBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: colors.primaryLight, paddingHorizontal: 16, paddingVertical: 8,
+    backgroundColor: colors.primaryLight, marginHorizontal: 18, borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 8, marginBottom: 10,
   },
   locationText: { fontSize: typography.sizes.xs, color: colors.primary },
-  scroll: { flex: 1, padding: 16 },
+  scroll: { flex: 1, paddingHorizontal: 18 },
   hint: { fontSize: typography.sizes.sm, color: colors.gray400, marginBottom: 10 },
   locateTip: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: colors.primaryLight, borderRadius: 8,
-    padding: 10, marginBottom: 12,
+    backgroundColor: colors.primaryLight, borderRadius: 16,
+    padding: 12, marginBottom: 12,
   },
   locateTipText: { fontSize: typography.sizes.sm, color: colors.primary },
   emptyArea: { alignItems: 'center', paddingVertical: 40, gap: 6 },
   emptyText: { fontSize: typography.sizes.md, color: colors.gray500 },
-  listCard: { borderWidth: 0.5, borderColor: colors.gray200, borderRadius: 10, overflow: 'hidden' },
+  listCard: {
+    backgroundColor: colors.white,
+    borderWidth: 0.5, borderColor: colors.gray200,
+    borderRadius: 18, overflow: 'hidden',
+  },
   clinicRow: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     padding: 12, borderBottomWidth: 0.5, borderBottomColor: colors.gray100,
   },
   clinicRowSelected: { backgroundColor: colors.primaryLight },
   clinicIcon: {
-    width: 40, height: 40, borderRadius: 10,
+    width: 40, height: 40, borderRadius: 20,
     backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center',
   },
   clinicIconText: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.primary },
   clinicNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
   clinicName: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
-  verifiedBadge: { backgroundColor: colors.successLight, paddingHorizontal: 5, paddingVertical: 1, borderRadius: 3 },
+  verifiedBadge: { backgroundColor: colors.successLight, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 },
   verifiedText: { fontSize: 10, color: colors.success, fontWeight: typography.weights.medium },
   clinicSub: { fontSize: typography.sizes.xs, color: colors.gray400, flex: 1 },
   clinicSubRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 },
   distanceText: { fontSize: typography.sizes.xs, color: colors.primary },
   detailBtn: { fontSize: 14, color: colors.primary, fontWeight: '500' },
-  footer: { padding: 14, borderTopWidth: 0.5, borderTopColor: colors.gray200 },
+  footer: { padding: 14, paddingBottom: 20 },
   confirmBtn: {
-    height: 42, borderRadius: 9, backgroundColor: colors.primary,
+    height: 48, borderRadius: 24, backgroundColor: colors.primary,
     alignItems: 'center', justifyContent: 'center',
   },
   confirmBtnText: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: '#fff' },

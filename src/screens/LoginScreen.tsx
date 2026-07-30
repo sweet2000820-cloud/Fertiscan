@@ -40,7 +40,7 @@ export default function LoginScreen({ onLogin, navigation }: any) {
           <View style={styles.logoBox}>
             <Text style={styles.logoIcon}>⊞</Text>
           </View>
-          <Text style={styles.appName}>FertiScan</Text>
+          <Text style={styles.appName}>iMotile</Text>
           <Text style={styles.subtitle}>生殖功能試紙光學定量</Text>
         </View>
 

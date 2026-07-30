@@ -3,20 +3,13 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'rea
 import { colors, typography } from '../theme'
 import { getRecords, TestRecord } from '../storage'
 import { Ionicons } from '@expo/vector-icons'
+import Svg, { Polyline, Circle, Text as SvgText, Line } from 'react-native-svg'
 
 function getStatusColor(status: string) {
   switch (status) {
-    case '正常': return colors.primary
+    case '正常': return colors.success
     case '邊緣': return colors.warning
     default: return colors.danger
-  }
-}
-
-function getStatusBg(status: string) {
-  switch (status) {
-    case '正常': return colors.successLight
-    case '邊緣': return colors.warningLight
-    default: return colors.dangerLight
   }
 }
 
@@ -34,6 +27,36 @@ export default function HistoryScreen({ navigation }: any) {
   const avg = records.length > 0 ? (records.reduce((s, r) => s + parseFloat(r.tc), 0) / records.length).toFixed(2) : '—'
   const max = records.length > 0 ? Math.max(...records.map(r => parseFloat(r.tc))).toFixed(2) : '—'
   const min = records.length > 0 ? Math.min(...records.map(r => parseFloat(r.tc))).toFixed(2) : '—'
+
+  const chartRecords = records.slice(0, 5).reverse()
+  const plotLeft = 5
+  const plotRight = 292
+  const plotTop = 20
+  const plotBottom = 120
+
+
+  const dataMax = chartRecords.length > 0
+    ? Math.max(...chartRecords.map(r => parseFloat(r.tc)), 0.85)
+    : 0.85
+  const maxScale = Math.max(1.0, dataMax * 1.1)
+
+  function yFor(v: number) {
+    return Math.round(plotBottom - (Math.min(v, maxScale) / maxScale) * (plotBottom - plotTop))
+  }
+
+  const chartPoints = chartRecords.map((r, i) => {
+    const x = chartRecords.length > 1
+      ? Math.round(plotLeft + (i / (chartRecords.length - 1)) * (plotRight - plotLeft))
+      : Math.round((plotLeft + plotRight) / 2)
+    const y = yFor(parseFloat(r.tc))
+    return { x, y }
+  })
+  const polylinePoints = chartPoints.map(p => `${p.x},${p.y}`).join(' ')
+
+  const gridY0 = yFor(0)
+  const gridY05 = yFor(0.5)
+  const gridY10 = yFor(1.0)
+  const gridY085 = yFor(0.85)
 
   function toggleSelect(i: number) {
     setSelected(prev => prev.includes(i) ? prev.filter(s => s !== i) : [...prev, i])
@@ -67,25 +90,75 @@ export default function HistoryScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <View style={styles.appbar}>
-        <Text style={styles.appbarTitle}>歷史紀錄</Text>
+        <Text style={styles.appbarTitle}>紀錄</Text>
       </View>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>T/C 比值趨勢（近 {Math.min(records.length, 5)} 次）</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 100, gap: 6, marginBottom: 4 }}>
-            {records.slice(0, 5).reverse().map((r, i) => {
-              const h = Math.max(8, parseFloat(r.tc) * 70)
-              const color = r.status === '正常' ? colors.primary : r.status === '邊緣' ? '#EF9F27' : colors.danger
-              return (
-                <View key={i} style={{ flex: 1, alignItems: 'stretch', gap: 3 }}>
-                  <View style={{ width: '100%', height: h, backgroundColor: color, borderRadius: 2 }} />
-                  <Text style={{ fontSize: 8, color: colors.gray400, textAlign: 'center' }}>{r.date.slice(5, 7) + '/' + r.date.slice(8, 10)}</Text>
-                </View>
-              )
-            })}
-          </View>
+          {chartRecords.length > 0 ? (
+            <Svg width="100%" height={140} viewBox="0 0 300 140">
+
+              <Line x1={plotLeft} y1={gridY0} x2={plotRight} y2={gridY0} stroke={colors.primary} strokeWidth={0.5} opacity={0.25} />
+              <Line x1={plotLeft} y1={gridY05} x2={plotRight} y2={gridY05} stroke={colors.primary} strokeWidth={0.5} opacity={0.25} />
+              <Line x1={plotLeft} y1={gridY10} x2={plotRight} y2={gridY10} stroke={colors.primary} strokeWidth={0.5} opacity={0.25} />
+              <Line x1={plotLeft} y1={gridY085} x2={plotRight} y2={gridY085} stroke={colors.success} strokeWidth={1} strokeDasharray="3,3" opacity={0.7} />
+
+              <SvgText x={-9} y={gridY0 + 3} fontSize={10} fill={colors.gray400}>0</SvgText>
+              <SvgText x={-15} y={gridY05 + 3} fontSize={10} fill={colors.gray400}>0.5</SvgText>
+              <SvgText x={-15} y={gridY10 + 3} fontSize={10} fill={colors.gray400}>1.0</SvgText>
+
+              <Line x1={plotLeft} y1={plotTop - 6} x2={plotLeft} y2={plotBottom} stroke={colors.primary} strokeWidth={0.6} opacity={0.4} />
+
+              <Polyline
+                points={polylinePoints}
+                fill="none"
+                stroke={colors.primary}
+                strokeWidth={2.2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {chartPoints.map((p, i) => (
+                <Circle key={`dot-${i}`} cx={p.x} cy={p.y} r={4} fill={getStatusColor(chartRecords[i].status)} />
+              ))}
+              {chartPoints.map((p, i) => {
+                const valText = String(chartRecords[i].tc)
+                const valX = i === 0-2 ? p.x : i === chartPoints.length + 1 ? p.x - valText.length * 6 : p.x - (valText.length * 6) / 2
+                return (
+                  <SvgText
+                    key={`val-${i}`}
+                    x={valX}
+                    y={Math.max(10, p.y - 9)}
+                    fontSize={10}
+                    fontWeight="600"
+                    fill={getStatusColor(chartRecords[i].status)}
+                  >
+                    {valText}
+                  </SvgText>
+                )
+              })}
+              {chartPoints.map((p, i) => {
+                const dateText = `${chartRecords[i].date.slice(5, 7)}/${chartRecords[i].date.slice(8, 10)}`
+                const dateX = i === 0-2 ? p.x : i === chartPoints.length + 1 ? p.x - 22 : p.x - 11
+                return (
+                  <SvgText
+                    key={`date-${i}`}
+                    x={dateX}
+                    y={140}
+                    fontSize={10}
+                    fill={colors.primary}
+                  >
+                    {dateText}
+                  </SvgText>
+                )
+              })}
+            </Svg>
+          ) : (
+            <View style={{ height: 140, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={styles.hint}>尚無資料</Text>
+            </View>
+          )}
           <View style={styles.divider} />
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
@@ -103,7 +176,7 @@ export default function HistoryScreen({ navigation }: any) {
           </View>
         </View>
 
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <Text style={styles.sectionTitle}>所有紀錄</Text>
           <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
             {selectMode && (
@@ -131,11 +204,14 @@ export default function HistoryScreen({ navigation }: any) {
             <Text style={styles.emptyHint}>完成第一次檢測後將顯示於此</Text>
           </View>
         ) : (
-          <View style={styles.listCard}>
+          <View style={{ gap: 8 }}>
             {records.map((r, i) => (
               <TouchableOpacity
                 key={i}
-                style={[styles.row, i === records.length - 1 && { borderBottomWidth: 0, borderRadius: 10 }, selectMode && selected.includes(i) && { backgroundColor: colors.primaryLight, marginHorizontal: -14, paddingHorizontal: 14 }]}
+                style={[
+                  styles.row,
+                  selectMode && selected.includes(i) && { borderColor: colors.primary, borderWidth: 1.5 },
+                ]}
                 onPress={() => {
                   if (selectMode) {
                     toggleSelect(i)
@@ -149,15 +225,14 @@ export default function HistoryScreen({ navigation }: any) {
                     {selected.includes(i) && <Text style={styles.checkmark}>✓</Text>}
                   </View>
                 )}
+                <View style={[styles.statusBar, { backgroundColor: getStatusColor(r.status) }]} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.date}>{r.date}</Text>
                   <Text style={styles.hint}>{r.time} · {r.lot}</Text>
                 </View>
                 <View style={styles.right}>
-                  <Text style={[styles.tc, { color: getStatusColor(r.status) }]}>{r.tc}</Text>
-                  <View style={[styles.badge, { backgroundColor: getStatusBg(r.status) }]}>
-                    <Text style={[styles.badgeText, { color: getStatusColor(r.status) }]}>{r.status}</Text>
-                  </View>
+                  <Text style={[styles.tc, { color: getStatusColor(r.status) }]}>T/C {r.tc}</Text>
+                  <Text style={[styles.statusText, { color: getStatusColor(r.status) }]}>{r.status}</Text>
                 </View>
               </TouchableOpacity>
             ))}
@@ -187,29 +262,28 @@ export default function HistoryScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
+    paddingTop: 30, paddingHorizontal: 18, paddingBottom: 20,
   },
-  appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
-  selectBtn: { fontSize: typography.sizes.sm, color: colors.primary },
-  scroll: { flex: 1, padding: 18 },
-  card: { backgroundColor: colors.gray100, borderRadius: 10, padding: 12, marginBottom: 14 },
-  sectionTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray500, marginBottom: 8 },
-  divider: { height: 0.5, backgroundColor: colors.gray200, marginVertical: 8 },
+  appbarTitle: { fontSize: 22, fontWeight: '600', color: colors.gray900 },
+  scroll: { flex: 1, paddingHorizontal: 18 },
+  card: { backgroundColor: colors.primaryLight, borderRadius: 20, padding: 16, marginBottom: 16 },
+  sectionTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.primary, marginBottom: 10 },
+  axisLabel: { fontSize: 8, color: colors.primary },
+  divider: { height: 0.5, backgroundColor: colors.primary, opacity: 0.2, marginVertical: 10 },
   statsRow: { flexDirection: 'row' },
   statItem: { flex: 1, alignItems: 'center' },
   hint: { fontSize: typography.sizes.sm, color: colors.gray400 },
   statValue: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, marginTop: 2 },
-  listCard: { borderWidth: 0.5, borderColor: colors.gray200, borderRadius: 10, paddingHorizontal: 14 },
   row: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 10, borderBottomWidth: 0.5, borderBottomColor: colors.gray100, gap: 8,
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
+    borderRadius: 16, padding: 12,
   },
-  date: { fontSize: typography.sizes.md, color: colors.gray500 },
-  right: { alignItems: 'flex-end', gap: 4 },
+  statusBar: { width: 4, height: 32, borderRadius: 2 },
+  date: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
+  right: { alignItems: 'flex-end' },
   tc: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium },
-  badge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 4 },
-  badgeText: { fontSize: typography.sizes.xs, fontWeight: typography.weights.medium },
+  statusText: { fontSize: typography.sizes.xs, marginTop: 2 },
   emptyCard: { alignItems: 'center', paddingVertical: 40, gap: 6 },
   emptyText: { fontSize: typography.sizes.md, color: colors.gray500 },
   emptyHint: { fontSize: typography.sizes.sm, color: colors.gray400 },
@@ -229,7 +303,7 @@ const styles = StyleSheet.create({
   selectedCount: { fontSize: typography.sizes.sm, color: colors.gray500 },
   exportBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 9,
+    backgroundColor: colors.primary, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20,
   },
   exportBtnText: { fontSize: typography.sizes.sm, color: '#fff', fontWeight: typography.weights.medium },
   selectModeBtn: {

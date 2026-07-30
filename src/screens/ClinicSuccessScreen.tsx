@@ -1,11 +1,8 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { colors, typography } from '../theme'
 
-import AsyncStorage from '@react-native-async-storage/async-storage'
-
 export default function ClinicSuccessScreen({ navigation, route }: any) {
   const clinicName = route?.params?.clinicName || '台北生殖醫學中心'
-  console.log('ClinicSuccess rendering, clinicName:', clinicName)
   return (
     <View style={styles.container}>
       <View style={styles.content}>
@@ -47,14 +44,14 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   successIcon: {
-    width: 68, height: 68, borderRadius: 34,
+    width: 72, height: 72, borderRadius: 36,
     backgroundColor: colors.successLight,
     alignItems: 'center', justifyContent: 'center',
-    marginBottom: 14,
+    marginBottom: 16,
   },
-  checkmark: { fontSize: 28, color: colors.success },
+  checkmark: { fontSize: 30, color: colors.success },
   title: {
-    fontSize: 17, fontWeight: typography.weights.medium,
+    fontSize: 18, fontWeight: '600',
     color: colors.success, marginBottom: 6,
   },
   sub: {
@@ -62,8 +59,8 @@ const styles = StyleSheet.create({
     textAlign: 'center', lineHeight: 22, marginBottom: 20,
   },
   summaryCard: {
-    backgroundColor: colors.gray100, borderRadius: 10,
-    padding: 12, width: '100%', marginBottom: 20,
+    backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200, borderRadius: 18,
+    padding: 14, width: '100%', marginBottom: 20,
   },
   summaryTitle: {
     fontSize: typography.sizes.sm, fontWeight: typography.weights.medium,
@@ -72,14 +69,14 @@ const styles = StyleSheet.create({
   summaryItem: { fontSize: typography.sizes.sm, color: colors.gray500, lineHeight: 22 },
   summaryItemOff: { fontSize: typography.sizes.sm, color: colors.gray400, lineHeight: 22 },
   btnPrimary: {
-    width: '100%', height: 42, borderRadius: 9,
+    width: '100%', height: 48, borderRadius: 24,
     backgroundColor: colors.primary,
     alignItems: 'center', justifyContent: 'center', marginBottom: 8,
   },
   btnPrimaryText: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: '#fff' },
   btnGray: {
-    width: '100%', height: 36, borderRadius: 9,
-    backgroundColor: colors.gray100,
+    width: '100%', height: 40, borderRadius: 20,
+    backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
     alignItems: 'center', justifyContent: 'center',
   },
   btnGrayText: { fontSize: typography.sizes.sm, color: colors.gray500 },

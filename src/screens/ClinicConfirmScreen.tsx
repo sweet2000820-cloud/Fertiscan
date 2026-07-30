@@ -27,7 +27,7 @@ export default function ClinicConfirmScreen({ navigation, route }: any) {
           </View>
           <Text style={styles.clinicName}>{clinicName}</Text>
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>FertiScan 合作診所</Text>
+            <Text style={styles.badgeText}>iMotile 合作診所</Text>
           </View>
         </View>
 
@@ -102,26 +102,27 @@ export default function ClinicConfirmScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46, flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingTop: 10, paddingHorizontal: 18, paddingBottom: 20,
   },
-  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
-  appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
-  scroll: { flex: 1, padding: 18 },
+  back: { fontSize: 40, color: colors.primary, marginRight: 6, paddingBottom: 4  },
+  appbarTitle: { flex: 1, fontSize: 22, fontWeight: '600', color: colors.gray900 },
+  scroll: { flex: 1, paddingHorizontal: 18 },
   clinicArea: { alignItems: 'center', paddingVertical: 16, gap: 6, marginBottom: 10 },
   clinicIcon: {
-    width: 60, height: 60, borderRadius: 14,
+    width: 64, height: 64, borderRadius: 32,
     backgroundColor: colors.primaryLight,
     alignItems: 'center', justifyContent: 'center', marginBottom: 4,
   },
   clinicIconText: { fontSize: 16, fontWeight: typography.weights.medium, color: colors.primary },
   clinicName: { fontSize: 16, fontWeight: typography.weights.medium, color: colors.gray900 },
-  clinicSub: { fontSize: typography.sizes.xs, color: colors.gray400 },
-  badge: { backgroundColor: colors.successLight, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 6 },
+  clinicSub: { fontSize: typography.sizes.md, color: colors.gray400 },
+  badge: { backgroundColor: colors.successLight, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 10 },
   badgeText: { fontSize: typography.sizes.xs, color: colors.success, fontWeight: typography.weights.medium },
   listCard: {
+    backgroundColor: colors.white,
     borderWidth: 0.5, borderColor: colors.gray200,
-    borderRadius: 10, padding: 12, marginBottom: 14,
+    borderRadius: 18, padding: 14, marginBottom: 14,
   },
   sectionTitle: {
     fontSize: typography.sizes.sm, fontWeight: typography.weights.medium,
@@ -133,15 +134,15 @@ const styles = StyleSheet.create({
   },
   rowLabel: { fontSize: typography.sizes.md, color: colors.gray900 },
   rowSub: { fontSize: typography.sizes.xs, color: colors.gray400, marginTop: 2 },
-  tealCard: { backgroundColor: colors.primaryLight, borderRadius: 10, padding: 12, marginBottom: 14 },
+  tealCard: { backgroundColor: colors.primaryLight, borderRadius: 16, padding: 14, marginBottom: 14 },
   tealText: { fontSize: typography.sizes.xs, color: '#0d7a8f', lineHeight: 18 },
   ctaBtn: {
-    height: 42, borderRadius: 9, backgroundColor: colors.primary,
+    height: 48, borderRadius: 24, backgroundColor: colors.primary,
     alignItems: 'center', justifyContent: 'center', marginBottom: 8,
   },
   ctaBtnText: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: '#fff' },
   cancelBtn: {
-    height: 36, borderRadius: 9, backgroundColor: colors.gray100,
+    height: 40, borderRadius: 20, backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
     alignItems: 'center', justifyContent: 'center',
   },
   cancelBtnText: { fontSize: typography.sizes.sm, color: colors.gray500 },

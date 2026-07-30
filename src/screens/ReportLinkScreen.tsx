@@ -53,7 +53,7 @@ export default function ReportLinkScreen({ navigation, route }: any) {
         </style>
       </head>
       <body>
-        <h1>FertiScan 檢測報告</h1>
+        <h1>iMotile 檢測報告</h1>
         <p class="subtitle">使用者：${maskedName} · 共 ${records.length} 筆紀錄 · 產生時間：${new Date().toLocaleDateString('zh-TW')}</p>
         <div class="section">
           <div class="section-title">檢測紀錄明細</div>
@@ -83,17 +83,17 @@ export default function ReportLinkScreen({ navigation, route }: any) {
           }).join('')}
         </div>
         <div class="footer">
-          本報告由 FertiScan App 自動生成，僅供初步參考，不構成醫療診斷。如有疑慮請諮詢生殖科醫師。
+          本報告由 iMotile App 自動生成，僅供初步參考，不構成醫療診斷。如有疑慮請諮詢生殖科醫師。
         </div>
       </body>
       </html>
     `
     try {
       const { uri } = await Print.printToFileAsync({ html })
-      const fileName = `FertiScan_報告_${new Date().toLocaleDateString('zh-TW').replace(/\//g, '-')}.pdf`
+      const fileName = `iMotile_報告_${new Date().toLocaleDateString('zh-TW').replace(/\//g, '-')}.pdf`
       const newUri = `${FileSystem.documentDirectory}${fileName}`
       await FileSystem.moveAsync({ from: uri, to: newUri })
-      await Sharing.shareAsync(newUri, { mimeType: 'application/pdf', dialogTitle: '分享 FertiScan 報告' })
+      await Sharing.shareAsync(newUri, { mimeType: 'application/pdf', dialogTitle: '分享 iMotile 報告' })
      } catch (e: any) {
       Alert.alert('匯出失敗', e?.message || '請再試一次')
      }
@@ -111,7 +111,7 @@ export default function ReportLinkScreen({ navigation, route }: any) {
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
         <View style={styles.listCard}>
-          <Text style={styles.reportTitle}>FertiScan 檢測報告</Text>
+          <Text style={styles.reportTitle}>iMotile 檢測報告</Text>
           <Text style={[styles.hint, { marginBottom: 8 }]}>共 {records.length} 筆紀錄 · 匿名 ID: FS-4A2C</Text>
           {records.map((r: any, i: number) => (
             <View key={i} style={[styles.recordRow, i < records.length - 1 && { marginBottom: 8 }]}>
@@ -135,12 +135,12 @@ export default function ReportLinkScreen({ navigation, route }: any) {
         <Text style={styles.sectionTitle}>分享連結</Text>
         <View style={styles.linkBox}>
           <View style={styles.linkUrl}>
-            <Text style={styles.linkText}>fertiscan.app/r/FS-4A2C-x8kqp</Text>
+            <Text style={styles.linkText}>imotile.app/r/FS-4A2C-x8kqp</Text>
           </View>
           <TouchableOpacity
             style={styles.linkBtn}
             onPress={async () => {
-              await Clipboard.setStringAsync('fertiscan.app/r/FS-4A2C-x8kqp')
+              await Clipboard.setStringAsync('imotile.app/r/FS-4A2C-x8kqp')
               Alert.alert('已複製', '連結已複製到剪貼簿')
             }}
           >
@@ -150,26 +150,26 @@ export default function ReportLinkScreen({ navigation, route }: any) {
 
         <Text style={styles.sectionTitle}>快速傳送管道</Text>
         <View style={styles.channelRow}>
-          <TouchableOpacity style={styles.channel} onPress={() => Linking.openURL('https://line.me/R/share?text=fertiscan.app/r/FS-4A2C-x8kqp')}>
+          <TouchableOpacity style={styles.channel} onPress={() => Linking.openURL('https://line.me/R/share?text=imotile.app/r/FS-4A2C-x8kqp')}>
             <View style={[styles.channelIcon, { backgroundColor: '#06C755' }]}>
               <Text style={styles.channelIconText}>L</Text>
             </View>
             <Text style={styles.channelName}>LINE</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.channel} onPress={() => Linking.openURL('mailto:?subject=FertiScan%20檢測報告&body=fertiscan.app/r/FS-4A2C-x8kqp')}>
+          <TouchableOpacity style={styles.channel} onPress={() => Linking.openURL('mailto:?subject=iMotile%20檢測報告&body=imotile.app/r/FS-4A2C-x8kqp')}>
             <View style={[styles.channelIcon, { backgroundColor: colors.primary }]}>
               <Text style={styles.channelIconText}>✉</Text>
             </View>
             <Text style={styles.channelName}>Email</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.channel} onPress={() => Linking.openURL('sms:?body=fertiscan.app/r/FS-4A2C-x8kqp')}>
+          <TouchableOpacity style={styles.channel} onPress={() => Linking.openURL('sms:?body=imotile.app/r/FS-4A2C-x8kqp')}>
             <View style={[styles.channelIcon, { backgroundColor: '#4B9EFF' }]}>
               <Text style={styles.channelIconText}>💬</Text>
             </View>
             <Text style={styles.channelName}>訊息</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.channel} onPress={() => Share.share({ message: '我的 FertiScan 檢測報告：fertiscan.app/r/FS-4A2C-x8kqp' })}>
-            <View style={[styles.channelIcon, { backgroundColor: colors.gray100 }]}>
+          <TouchableOpacity style={styles.channel} onPress={() => Share.share({ message: '我的 iMotile 檢測報告：imotile.app/r/FS-4A2C-x8kqp' })}>
+            <View style={[styles.channelIcon, { backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200 }]}>
               <Text style={[styles.channelIconText, { color: colors.gray500 }]}>···</Text>
             </View>
             <Text style={styles.channelName}>更多</Text>
@@ -241,48 +241,54 @@ export default function ReportLinkScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46, flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingTop: 10, paddingHorizontal: 18, paddingBottom: 20,
   },
-  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
-  appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
-  scroll: { flex: 1, padding: 18 },
-  listCard: { borderWidth: 0.5, borderColor: colors.gray200, borderRadius: 10, padding: 12, marginBottom: 14 },
+  back: { fontSize: 40, color: colors.primary, marginRight: 6, paddingBottom: 4  },
+  appbarTitle: { flex: 1, fontSize: 22, fontWeight: '600', color: colors.gray900 },
+  scroll: { flex: 1, paddingHorizontal: 18 },
+  listCard: {
+    backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
+    borderRadius: 18, padding: 14, marginBottom: 14,
+  },
   reportTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
   hint: { fontSize: typography.sizes.xs, color: colors.gray400, marginTop: 2 },
   sectionTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray500, marginBottom: 8 },
-  linkBox: { borderWidth: 1.5, borderColor: colors.primary, borderRadius: 10, overflow: 'hidden', marginBottom: 14 },
-  linkUrl: { backgroundColor: colors.primaryLight, padding: 10 },
+  linkBox: { borderWidth: 1.5, borderColor: colors.primary, borderRadius: 16, overflow: 'hidden', marginBottom: 14 },
+  linkUrl: { backgroundColor: colors.primaryLight, padding: 12 },
   linkText: { fontSize: typography.sizes.xs, color: colors.primary, fontFamily: 'monospace' },
-  linkBtn: { height: 38, alignItems: 'center', justifyContent: 'center' },
+  linkBtn: { height: 40, alignItems: 'center', justifyContent: 'center' },
   linkBtnText: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.primary },
   channelRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
   channel: { flex: 1, alignItems: 'center', gap: 4 },
-  channelIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  channelIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   channelIconText: { fontSize: 18, color: '#fff' },
   channelName: { fontSize: typography.sizes.xs, color: colors.gray500 },
   row: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 10, borderBottomWidth: 0.5, borderBottomColor: colors.gray100,
+    paddingVertical: 11, borderBottomWidth: 0.5, borderBottomColor: colors.gray100,
   },
   rowLabel: { fontSize: typography.sizes.md, color: colors.gray900 },
   expiryValue: { fontSize: typography.sizes.md, color: colors.primary, fontWeight: typography.weights.medium },
   pdfBtn: {
-    height: 42, borderRadius: 9,
+    height: 46, borderRadius: 23,
     borderWidth: 1.5, borderColor: colors.primary,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 6, marginBottom: 8,
   },
   pdfBtnText: { fontSize: typography.sizes.md, color: colors.primary, fontWeight: typography.weights.medium },
-  proBadge: { backgroundColor: colors.primary, paddingHorizontal: 5, paddingVertical: 1, borderRadius: 3 },
+  proBadge: { backgroundColor: colors.primary, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
   proBadgeText: { fontSize: 9, color: '#fff', fontWeight: typography.weights.medium },
   btnRow: { flexDirection: 'row', gap: 8 },
-  btnGray: { flex: 1, height: 36, borderRadius: 9, backgroundColor: colors.gray100, alignItems: 'center', justifyContent: 'center' },
+  btnGray: {
+    flex: 1, height: 44, borderRadius: 22, backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
+    alignItems: 'center', justifyContent: 'center',
+  },
   btnGrayText: { fontSize: typography.sizes.sm, color: colors.gray500 },
-  btnPrimary: { flex: 1, height: 36, borderRadius: 9, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  btnPrimary: { flex: 1, height: 44, borderRadius: 22, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   btnPrimaryText: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: '#fff' },
   recordRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   recordDate: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray900 },
-  badge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 4 },
+  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
   badgeText: { fontSize: typography.sizes.xs, fontWeight: typography.weights.medium },
 })

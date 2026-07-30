@@ -131,7 +131,7 @@ export default function PreQuestionnaireScreen({ navigation, route }: any) {
     }
     const freqIndex = step - 1 - yesNoQuestions.length
     const freqConfigs = [
-      { q: '最近是否有泡三溫暖/熱水澡/久坐？', opts: heatExposureOpts, selected: heatExposure, setter: setHeatExposure },
+      { q: '最近是否有泡溫泉/三溫暖/熱水澡/久坐？', opts: heatExposureOpts, selected: heatExposure, setter: setHeatExposure },
       { q: '昨晚睡眠時數？', opts: sleepHoursOpts, selected: sleepHours, setter: setSleepHours },
       { q: '最近整體壓力狀況？', opts: stressOpts, selected: stressLevel, setter: setStressLevel },
     ]
@@ -202,6 +202,8 @@ export default function PreQuestionnaireScreen({ navigation, route }: any) {
           onCancel={() => setShowAbstinencePicker(false)}
         />
 
+        <View style={{ height: 20 }} />
+
       </ScrollView>
     </View>
   )
@@ -210,20 +212,19 @@ export default function PreQuestionnaireScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.gray200,
+    paddingTop: 10,
+    paddingHorizontal: 18,
+    paddingBottom: 10,
   },
-  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
+  back: { fontSize: 40, color: colors.primary, marginRight: 6, paddingBottom: 4 },
   appbarTitle: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.medium,
+    fontSize: 22,
+    fontWeight: '600',
     color: colors.gray900,
   },
-  scroll: { flex: 1, padding: 18 },
+  scroll: { flex: 1, paddingHorizontal: 18 },
   progressRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -249,22 +250,22 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   numInput: {
-  height: 46,
-  borderWidth: 0.5,
-  borderColor: colors.gray300,
-  borderRadius: 8,
-  paddingHorizontal: 14,
-  justifyContent: 'center',
-  marginTop: 16,
-  marginBottom: 24,
+    height: 48,
+    borderWidth: 0.5,
+    borderColor: colors.gray300,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    justifyContent: 'center',
+    marginTop: 16,
+    marginBottom: 24,
   },
   optionList: { gap: 10, marginTop: 16, marginBottom: 20 },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    padding: 12,
-    borderRadius: 9,
+    padding: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.gray200,
     backgroundColor: colors.white,
@@ -288,8 +289,8 @@ const styles = StyleSheet.create({
   optionText: { fontSize: typography.sizes.md, color: colors.gray900 },
   optionTextSelected: { color: colors.primary, fontWeight: typography.weights.medium },
   nextBtn: {
-    height: 42,
-    borderRadius: 9,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',

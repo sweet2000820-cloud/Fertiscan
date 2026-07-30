@@ -59,7 +59,7 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
         </style>
       </head>
       <body>
-        <h1>FertiScan 檢測報告</h1>
+        <h1>iMotile 檢測報告</h1>
         <p class="subtitle">${record.date} · ${record.time}</p>
         <div class="section">
           <div class="section-title">T/C 比值結果</div>
@@ -94,7 +94,7 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
           </p>
         </div>
         <div class="footer">
-          本報告由 FertiScan App 自動生成，僅供初步參考，不構成醫療診斷。<br/>
+          本報告由 iMotile App 自動生成，僅供初步參考，不構成醫療診斷。<br/>
           如有疑慮請諮詢生殖科醫師。
         </div>
       </body>
@@ -102,7 +102,7 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
     `
     try {
       const { uri } = await Print.printToFileAsync({ html })
-      await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: '分享 FertiScan 報告' })
+      await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: '分享 iMotile  報告' })
     } catch (e) {
       Alert.alert('匯出失敗', '請再試一次')
     }
@@ -264,18 +264,21 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46, flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingTop: 10, paddingHorizontal: 18, paddingBottom: 20,
   },
-  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
-  appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
-  scroll: { flex: 1, padding: 18 },
+  back: { fontSize: 40, color: colors.primary, marginRight: 6, paddingBottom: 4 },
+  appbarTitle: { flex: 1, fontSize: 22, fontWeight: '600', color: colors.gray900 },
+  scroll: { flex: 1, paddingHorizontal: 18 },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 },
   hint: { fontSize: typography.sizes.sm, color: colors.gray400 },
   title: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900, marginTop: 2 },
-  badge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 4 },
-  badgeText: { fontSize: typography.sizes.xs, fontWeight: typography.weights.medium },
-  gaugeCard: { backgroundColor: colors.gray100, borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 14 },
+  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
+  badgeText: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium },
+  gaugeCard: {
+    backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
+    borderRadius: 18, padding: 16, alignItems: 'center', marginBottom: 14,
+  },
   gaugeCenter: { alignItems: 'center', marginVertical: 12 },
   gaugeNum: { fontSize: 36, fontWeight: typography.weights.medium },
   gaugeUnit: { fontSize: typography.sizes.sm, color: colors.gray400, marginTop: 2 },
@@ -283,7 +286,10 @@ const styles = StyleSheet.create({
   scaleNeedle: { position: 'absolute', top: -4, width: 2.5, height: 16, backgroundColor: colors.gray900, borderRadius: 1.5 },
   scaleLabels: { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
   scaleLabel: { fontSize: typography.sizes.xs },
-  listCard: { borderWidth: 0.5, borderColor: colors.gray200, borderRadius: 10, padding: 12, marginBottom: 14 },
+  listCard: {
+    backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
+    borderRadius: 18, padding: 14, marginBottom: 14,
+  },
   sectionTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray500, marginBottom: 10 },
   signalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
   signalValue: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium },
@@ -292,31 +298,37 @@ const styles = StyleSheet.create({
   divider: { height: 0.5, backgroundColor: colors.gray200, marginVertical: 8 },
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
   infoValue: { fontSize: typography.sizes.sm, color: colors.gray900 },
-  card: { backgroundColor: colors.gray100, borderRadius: 10, padding: 12, marginBottom: 14 },
+  card: {
+    backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
+    borderRadius: 18, padding: 14, marginBottom: 14,
+  },
   debugImage: {
     width: '100%',
     height: 220,
-    borderRadius: 8,
+    borderRadius: 14,
     backgroundColor: colors.gray200,
   },
-  qcRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5, borderBottomWidth: 0.5, borderBottomColor: colors.gray200 },
-  warnCard: { borderRadius: 10, padding: 12, marginBottom: 14 },
+  qcRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5, borderBottomWidth: 0.5, borderBottomColor: colors.gray100 },
+  warnCard: { borderRadius: 16, padding: 14, marginBottom: 14 },
   warnTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, marginBottom: 4 },
   warnText: { fontSize: typography.sizes.sm, lineHeight: 18 },
   btnRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
-  btnSecondary: { flex: 1, height: 36, borderRadius: 9, borderWidth: 1.5, borderColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  btnSecondary: { flex: 1, height: 44, borderRadius: 22, borderWidth: 1.5, borderColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   btnSecondaryText: { fontSize: typography.sizes.sm, color: colors.primary },
-  btnPrimary: { flex: 1, height: 36, borderRadius: 9, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  btnPrimary: { flex: 1, height: 44, borderRadius: 22, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   btnPrimaryText: { fontSize: typography.sizes.sm, color: colors.white, fontWeight: typography.weights.medium },
-  btnGray: { height: 36, borderRadius: 9, backgroundColor: colors.gray100, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  btnGray: {
+    height: 40, borderRadius: 20, backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 8,
+  },
   btnGrayText: { fontSize: typography.sizes.sm, color: colors.gray500 },
   aiBtn: {
-    height: 42, borderRadius: 9,
+    height: 46, borderRadius: 23,
     borderWidth: 1.5, borderColor: colors.primary,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 6, marginBottom: 8,
   },
   aiBtnText: { fontSize: typography.sizes.md, color: colors.primary, fontWeight: typography.weights.medium },
-  proBadge: { backgroundColor: colors.primary, paddingHorizontal: 5, paddingVertical: 1, borderRadius: 3 },
+  proBadge: { backgroundColor: colors.primary, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
   proBadgeText: { fontSize: 9, color: '#fff', fontWeight: typography.weights.medium },
 })

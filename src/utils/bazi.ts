@@ -90,6 +90,21 @@ const luckyColors = ['白色', '黑色', '藍色', '紅色', '黃色', '綠色',
 const activities = ['靜心閱讀', '規律運動', '早睡早起', '整理環境', '與朋友聚會', '嘗試新事物', '獨處沉澱', '學習新知', '外出踏青', '規劃未來', '整理財務']
 const cautions = ['過度勞累', '衝動決策', '熬夜晚睡', '情緒起伏', '飲食過量', '爭執口角', '過度社交', '拖延事務', '過度消費', '固執己見', '忽略健康']
 
+// 幸運色對應的實際色碼，用於畫面上顯示色塊
+export const luckyColorHex: Record<string, string> = {
+  '白色': '#F5F5F0',
+  '黑色': '#2B2B2B',
+  '藍色': '#3B7DBF',
+  '紅色': '#D9534F',
+  '黃色': '#E8C547',
+  '綠色': '#4A9D5C',
+  '金色': '#C0A062',
+  '紫色': '#8E6FB3',
+  '橘色': '#E08B3D',
+  '銀色': '#C0C0C0',
+  '粉色': '#E8A0B4',
+}
+
 function seedFromDateAndElement(dateStr: string, element: string): number {
   const str = dateStr + element
   let hash = 0
@@ -158,9 +173,19 @@ export function getDailyFortune(element: string, dateStr: string) {
     advice = `本月${element}氣較為主導，行事精力旺盛，但也需注意勿過度飲酒應酬或熬夜社交，以免耗損根本。`
   }
 
+  // 用日期+五行算出的種子，挑出當日專屬的宜/忌/幸運色
+  // 讓同一個五行屬性的人，在同一個月的不同天，也能看到不一樣的內容
+  const seed = seedFromDateAndElement(dateStr, element)
+  const todayActivity = activities[seed % activities.length]
+  const todayCaution = cautions[Math.floor(seed / activities.length) % cautions.length]
+  const todayLuckyColor = luckyColors[Math.floor(seed / (activities.length * cautions.length)) % luckyColors.length]
+
   return {
     date: dateStr,
     luckyColor: color,
+    todayLuckyColor,
+    todayActivity,
+    todayCaution,
     relation,
     text: `本命屬${element}，本月與時令為「${relation}」之勢。${advice}`,
   }

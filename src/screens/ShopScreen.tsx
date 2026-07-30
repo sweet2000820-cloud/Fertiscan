@@ -13,7 +13,7 @@ export default function ShopScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-        <View style={styles.appbar}>
+      <View style={styles.appbar}>
         <Text style={styles.appbarTitle}>購買試紙</Text>
       </View>
 
@@ -22,37 +22,37 @@ export default function ShopScreen({ navigation }: any) {
         {/* 商品卡片 */}
         <View style={styles.productCard}>
           <View style={styles.productImg}>
-          <Svg width="120" height="120" viewBox="190 60 300 270">
-            <Rect x="190" y="60" width="300" height="270" rx="12" fill="#5BC8D8"/>
-            <Rect x="190" y="60" width="300" height="70" rx="12" fill="#3ABCCE"/>
-            <Rect x="190" y="108" width="300" height="22" fill="#3ABCCE"/>
-            <Rect x="190" y="60" width="18" height="270" rx="4" fill="rgba(255,255,255,0.15)"/>
-            <Rect x="210" y="135" width="260" height="140" rx="8" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.5)" strokeWidth="1"/>
-            <SvgText x="340" y="105" fontFamily="sans-serif" fontSize="30" fontWeight="700" fill="white" textAnchor="middle" letterSpacing="3">FertiScan</SvgText>
-            <Line x1="220" y1="120" x2="460" y2="120" stroke="rgba(255,255,255,0.5)" strokeWidth="0.8"/>
-            <G transform="translate(270, 152)">
-              <Rect x="0" y="0" width="18" height="50" rx="9" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1"/>
-              <Rect x="4" y="30" width="10" height="18" rx="5" fill="#00C896"/>
-              <Rect x="26" y="0" width="18" height="50" rx="9" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1"/>
-              <Rect x="30" y="26" width="10" height="22" rx="5" fill="#00C896"/>
-              <Rect x="52" y="0" width="18" height="50" rx="9" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1"/>
-              <Rect x="56" y="32" width="10" height="16" rx="5" fill="#00C896"/>
-              <Rect x="78" y="0" width="18" height="50" rx="9" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1"/>
-              <Rect x="82" y="28" width="10" height="20" rx="5" fill="#00C896"/>
-              <Rect x="104" y="0" width="18" height="50" rx="9" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1"/>
-              <Rect x="108" y="30" width="10" height="18" rx="5" fill="#00C896"/>
-              <Rect x="130" y="0" width="18" height="50" rx="9" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1"/>
-              <Rect x="134" y="26" width="10" height="22" rx="5" fill="#00C896"/>
-            </G>
-            <SvgText x="340" y="228" fontFamily="sans-serif" fontSize="20" fill="white" textAnchor="middle" fontWeight="500">精子活力檢測試紙</SvgText>
-            <Line x1="220" y1="242" x2="460" y2="242" stroke="rgba(255,255,255,0.3)" strokeWidth="0.8"/>
-            <SvgText x="340" y="268" fontFamily="sans-serif" fontSize="18" fill="rgba(255,255,255,0.85)" textAnchor="middle">搭配 FertiScan App 使用</SvgText>
-            <Rect x="308" y="282" width="64" height="28" rx="14" fill="white"/>
-            <SvgText x="340" y="301" fontFamily="sans-serif" fontSize="18" fontWeight="700" fill="#0A5C6B" textAnchor="middle">6 入裝</SvgText>
-          </Svg>
-        </View>
+            <Svg width="150" height="150" viewBox="190 60 300 270">
+              <Rect x="190" y="60" width="300" height="270" rx="12" fill="#5BC8D8"/>
+              <Rect x="190" y="60" width="300" height="70" rx="12" fill="#3ABCCE"/>
+              <Rect x="190" y="108" width="300" height="22" fill="#3ABCCE"/>
+              <Rect x="190" y="60" width="18" height="270" rx="4" fill="rgba(255,255,255,0.15)"/>
+              <Rect x="210" y="135" width="260" height="140" rx="8" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.5)" strokeWidth="1"/>
+              <SvgText x="340" y="105" fontFamily="sans-serif" fontSize="30" fontWeight="700" fill="white" textAnchor="middle" letterSpacing="3">iMotile</SvgText>
+              <Line x1="220" y1="120" x2="460" y2="120" stroke="rgba(255,255,255,0.5)" strokeWidth="0.8"/>
+              <G transform="translate(270, 152)">
+                <Rect x="0" y="0" width="18" height="50" rx="9" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1"/>
+                <Rect x="4" y="30" width="10" height="18" rx="5" fill="#00C896"/>
+                <Rect x="26" y="0" width="18" height="50" rx="9" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1"/>
+                <Rect x="30" y="26" width="10" height="22" rx="5" fill="#00C896"/>
+                <Rect x="52" y="0" width="18" height="50" rx="9" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1"/>
+                <Rect x="56" y="32" width="10" height="16" rx="5" fill="#00C896"/>
+                <Rect x="78" y="0" width="18" height="50" rx="9" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1"/>
+                <Rect x="82" y="28" width="10" height="20" rx="5" fill="#00C896"/>
+                <Rect x="104" y="0" width="18" height="50" rx="9" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1"/>
+                <Rect x="108" y="30" width="10" height="18" rx="5" fill="#00C896"/>
+                <Rect x="130" y="0" width="18" height="50" rx="9" fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth="1"/>
+                <Rect x="134" y="26" width="10" height="22" rx="5" fill="#00C896"/>
+              </G>
+              <SvgText x="340" y="228" fontFamily="sans-serif" fontSize="20" fill="white" textAnchor="middle" fontWeight="500">精子活力檢測試紙</SvgText>
+              <Line x1="220" y1="242" x2="460" y2="242" stroke="rgba(255,255,255,0.3)" strokeWidth="0.8"/>
+              <SvgText x="340" y="268" fontFamily="sans-serif" fontSize="18" fill="rgba(255,255,255,0.85)" textAnchor="middle">搭配 iMotile App 使用</SvgText>
+              <Rect x="308" y="282" width="64" height="28" rx="14" fill="white"/>
+              <SvgText x="340" y="301" fontFamily="sans-serif" fontSize="18" fontWeight="700" fill="#0A5C6B" textAnchor="middle">6 入裝</SvgText>
+            </Svg>
+          </View>
           <View style={styles.productInfo}>
-            <Text style={styles.brandName}>FertiScan</Text>
+            <Text style={styles.brandName}>iMotile</Text>
             <Text style={styles.productName}>精子活力檢測試紙</Text>
             <Text style={styles.productSpec}>6 片裝</Text>
             <Text style={styles.productPrice}>NT$ 720</Text>
@@ -89,7 +89,7 @@ export default function ShopScreen({ navigation }: any) {
         {/* 商品說明 */}
         <View style={styles.listCard}>
           <Text style={styles.sectionTitle}>商品說明</Text>
-          <Text style={styles.descText}>FertiScan 精子活力檢測試紙採用免疫層析技術，可在家自行檢測精子活力，結合 FertiScan App 進行光學定量分析，提供 T/C 比值與換算濃度。</Text>
+          <Text style={styles.descText}>iMotile 精子活力檢測試紙採用免疫層析技術，可在家自行檢測精子活力，結合 iMotile App 進行光學定量分析，提供 T/C 比值與換算濃度。</Text>
           <View style={styles.divider} />
           {[
             { label: '每盒內容', value: '試紙 6 片、採樣管 6 支、說明書' },
@@ -133,45 +133,46 @@ export default function ShopScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46, flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
+    paddingTop: 30, paddingHorizontal: 18, paddingBottom: 20,
   },
-  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
-  appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
-  scroll: { flex: 1, padding: 18 },
+  appbarTitle: { fontSize: 22, fontWeight: '600', color: colors.gray900 },
+  scroll: { flex: 1, paddingHorizontal: 18 },
   productCard: {
     flexDirection: 'row', gap: 14,
-    backgroundColor: colors.gray100, borderRadius: 12,
-    padding: 14, marginBottom: 14,
+    backgroundColor: colors.primaryLight, borderRadius: 20,
+    padding: 14, marginBottom: 12,
   },
   productImg: {
-    width: 120, height: 120, borderRadius: 10,
+    width: 140, height: 140, borderRadius: 14,
     backgroundColor: '#5BC8D8',
     alignItems: 'center', justifyContent: 'center',
     overflow: 'hidden',
   },
   productImgText: { fontSize: 36 },
   productInfo: { flex: 1, justifyContent: 'center', gap: 2 },
-  brandName: { fontSize: typography.sizes.xs, color: colors.primary, fontWeight: typography.weights.medium },
-  productName: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
-  productSpec: { fontSize: typography.sizes.sm, color: colors.gray400 },
-  productPrice: { fontSize: typography.sizes.lg, fontWeight: typography.weights.medium, color: colors.primary, marginTop: 4 },
-  listCard: { borderWidth: 0.5, borderColor: colors.gray200, borderRadius: 10, paddingHorizontal: 14, marginBottom: 14 },
+  brandName: { fontSize: typography.sizes.lg, color: colors.primary, fontWeight: '600' },
+  productName: { fontSize: typography.sizes.lg, fontWeight: '600', color: colors.gray900, marginTop: 4 },
+  productSpec: { fontSize: typography.sizes.md, color: colors.gray500, marginTop: 4 },
+  productPrice: { fontSize: typography.sizes.lg, fontWeight: '700', color: colors.primary, marginTop: 4 },
+  listCard: {
+    backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
+    borderRadius: 18, paddingHorizontal: 14, marginBottom: 12,
+  },
   row: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 10, borderBottomWidth: 0.5, borderBottomColor: colors.gray100,
+    paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: colors.gray100,
   },
   rowLabel: { fontSize: typography.sizes.md, color: colors.gray900 },
   qtyRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   qtyBtn: {
-    width: 32, height: 32, borderRadius: 8,
+    width: 28, height: 28, borderRadius: 14,
     backgroundColor: colors.primaryLight,
     alignItems: 'center', justifyContent: 'center',
   },
-  qtyBtnText: { fontSize: 18, color: colors.primary, fontWeight: typography.weights.medium },
-  qtyNum: { fontSize: typography.sizes.lg, fontWeight: typography.weights.medium, color: colors.gray900, minWidth: 24, textAlign: 'center' },
-  totalPrice: { fontSize: typography.sizes.lg, fontWeight: typography.weights.medium, color: colors.primary },
-  sectionTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray500, marginBottom: 8, paddingTop: 10 },
+  qtyBtnText: { fontSize: 16, color: colors.primary, fontWeight: '600' },
+  qtyNum: { fontSize: typography.sizes.md, fontWeight: '600', color: colors.gray900, minWidth: 20, textAlign: 'center' },
+  totalPrice: { fontSize: typography.sizes.lg, fontWeight: '700', color: colors.primary },
+  sectionTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray500, marginBottom: 8, paddingTop: 12 },
   descText: { fontSize: typography.sizes.sm, color: colors.gray500, lineHeight: 20, marginBottom: 10 },
   divider: { height: 0.5, backgroundColor: colors.gray200, marginBottom: 8 },
   infoRow: {
@@ -180,7 +181,7 @@ const styles = StyleSheet.create({
   },
   infoLabel: { fontSize: typography.sizes.sm, color: colors.gray400 },
   infoValue: { fontSize: typography.sizes.sm, color: colors.gray900, flex: 1, textAlign: 'right' },
-  tealCard: { backgroundColor: colors.primaryLight, borderRadius: 10, padding: 12, marginBottom: 14 },
+  tealCard: { backgroundColor: colors.primaryLight, borderRadius: 16, padding: 14, marginBottom: 14 },
   tealTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.primary, marginBottom: 4 },
   tealText: { fontSize: typography.sizes.xs, color: '#0d7a8f', lineHeight: 18 },
   footer: {
@@ -190,11 +191,11 @@ const styles = StyleSheet.create({
   },
   footerInfo: { flex: 1 },
   footerQty: { fontSize: typography.sizes.xs, color: colors.gray400 },
-  footerTotal: { fontSize: typography.sizes.lg, fontWeight: typography.weights.medium, color: colors.primary },
+  footerTotal: { fontSize: typography.sizes.lg, fontWeight: '700', color: colors.primary },
   checkoutBtn: {
-    height: 42, paddingHorizontal: 24, borderRadius: 9,
+    height: 42, paddingHorizontal: 26, borderRadius: 21,
     backgroundColor: colors.primary,
     alignItems: 'center', justifyContent: 'center',
   },
-  checkoutBtnText: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: '#fff' },
+  checkoutBtnText: { fontSize: typography.sizes.md, fontWeight: '600', color: '#fff' },
 })

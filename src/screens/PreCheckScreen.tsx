@@ -23,14 +23,12 @@ function DropAnimation() {
       rippleOpacity.setValue(0)
 
       Animated.sequence([
-        // 水滴落下
         Animated.timing(dropY, {
           toValue: 38,
           duration: 700,
           easing: Easing.in(Easing.quad),
           useNativeDriver: true,
         }),
-        // 水滴消失、漣漪浮現
         Animated.parallel([
           Animated.timing(dropOpacity, {
             toValue: 0,
@@ -43,7 +41,6 @@ function DropAnimation() {
             useNativeDriver: true,
           }),
         ]),
-        // 漣漪擴散並淡出
         Animated.parallel([
           Animated.timing(rippleScale, {
             toValue: 1.6,
@@ -65,13 +62,8 @@ function DropAnimation() {
 
   return (
     <View style={styles.dropStage}>
-      {/* 試紙卡匣本體（橫放） */}
       <View style={styles.stripBody} />
-
-      {/* 圓形滴樣孔 */}
       <View style={styles.sampleWell} />
-
-      {/* 漣漪 */}
       <Animated.View
         style={[
           styles.ripple,
@@ -81,15 +73,11 @@ function DropAnimation() {
           },
         ]}
       />
-
-      {/* 判讀窗（帶訊號點） */}
       <View style={styles.resultWindow}>
         <View style={[styles.resultDot, { opacity: 1 }]} />
         <View style={[styles.resultDot, { opacity: 0.5 }]} />
         <View style={[styles.resultDot, { opacity: 0.3 }]} />
       </View>
-
-      {/* 水滴（疊在最上層） */}
       <Animated.View
         style={[
           styles.drop,
@@ -151,6 +139,8 @@ export default function PreCheckScreen({ navigation }: any) {
           <Text style={styles.nextBtnText}>已完成滴樣，開始檢測 ›</Text>
         </TouchableOpacity>
 
+        <View style={{ height: 20 }} />
+
       </ScrollView>
     </View>
   )
@@ -159,17 +149,17 @@ export default function PreCheckScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46, flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingTop: 10, paddingHorizontal: 18, paddingBottom: 20,
   },
-  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
-  appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
-  scroll: { flex: 1, padding: 18 },
+  back: { fontSize: 40, color: colors.primary, marginRight: 6, paddingBottom: 4  },
+  appbarTitle: { flex: 1, fontSize: 22, fontWeight: '600', color: colors.gray900 },
+  scroll: { flex: 1, paddingHorizontal: 18 },
   progressRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   hint: { fontSize: typography.sizes.sm, color: colors.gray400 },
   progressBg: { height: 4, backgroundColor: colors.gray200, borderRadius: 2, marginBottom: 16 },
   progressFill: { height: '100%', backgroundColor: colors.primary, borderRadius: 2 },
-  iconArea: { alignItems: 'center', paddingVertical: 12, gap: 8, marginBottom: 20, marginTop: 40 },
+  iconArea: { alignItems: 'center', paddingVertical: 12, gap: 8, marginBottom: 20, marginTop: 30 },
 
   dropStage: {
     width: 150, height: 80,
@@ -179,9 +169,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 26, left: 0,
     width: 150, height: 46,
-    backgroundColor: '#FAFAF8',
+    backgroundColor: colors.white,
     borderWidth: 1, borderColor: colors.gray300,
-    borderRadius: 10,
+    borderRadius: 16,
     zIndex: 1,
   },
   sampleWell: {
@@ -189,7 +179,7 @@ const styles = StyleSheet.create({
     top: 36, left: 14,
     width: 26, height: 26,
     borderRadius: 13,
-    backgroundColor: colors.gray100,
+    backgroundColor: colors.primaryLight,
     borderWidth: 2, borderColor: colors.gray300,
     zIndex: 2,
   },
@@ -207,7 +197,7 @@ const styles = StyleSheet.create({
     width: 76, height: 20,
     backgroundColor: colors.white,
     borderWidth: 1, borderColor: colors.gray300,
-    borderRadius: 4,
+    borderRadius: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -228,9 +218,13 @@ const styles = StyleSheet.create({
     zIndex: 5,
   },
 
-  iconTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
+  iconTitle: { fontSize: typography.sizes.md, fontWeight: '600', color: colors.gray900 },
   iconSub: { fontSize: typography.sizes.sm, color: colors.gray500, textAlign: 'center', lineHeight: 18 },
-  listCard: { borderWidth: 0.5, borderColor: colors.gray200, borderRadius: 10, padding: 12, marginBottom: 12 },
+  listCard: {
+    backgroundColor: colors.white,
+    borderWidth: 0.5, borderColor: colors.gray200,
+    borderRadius: 18, padding: 14, marginBottom: 12,
+  },
   sectionTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray500, marginBottom: 10 },
   checkRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 12 },
   bulletDot: {
@@ -239,12 +233,12 @@ const styles = StyleSheet.create({
     marginTop: 7, flexShrink: 0,
   },
   checkText: { fontSize: typography.sizes.md, color: colors.gray900, flex: 1, lineHeight: 20 },
-  tealCard: { backgroundColor: colors.primaryLight, borderRadius: 10, padding: 12, marginBottom: 14 },
+  tealCard: { backgroundColor: colors.primaryLight, borderRadius: 16, padding: 14, marginBottom: 14 },
   tealTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.primary, marginBottom: 4 },
   tealText: { fontSize: typography.sizes.sm, color: '#0d7a8f', lineHeight: 18 },
   nextBtn: {
-    height: 42, borderRadius: 9, backgroundColor: colors.primary,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 20,
+    height: 48, borderRadius: 24, backgroundColor: colors.primary,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 8,
   },
   nextBtnText: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.white },
 })

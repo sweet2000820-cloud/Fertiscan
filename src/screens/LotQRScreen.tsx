@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { colors, typography } from '../theme'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { setLotNumber, setStrips } from '../inventory'
 
 const { width, height } = Dimensions.get('window')
 const BOX_SIZE = 260
@@ -28,7 +28,8 @@ export default function LotQRScreen({ navigation }: any) {
   async function handleScan({ data }: { data: string }) {
     if (scanned) return
     setScanned(true)
-    await AsyncStorage.setItem('strips', '6')
+    await setLotNumber(data)
+    await setStrips(6)
     navigation.goBack()
   }
 

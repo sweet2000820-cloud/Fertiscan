@@ -11,7 +11,7 @@ import { useCallback } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import { Image } from 'react-native'
 import { getUserPlan } from '../plan'
-import { getClinics, clearAllClinicsAndHistory, getSharedHistory } from '../clinics'
+import { getClinics } from '../clinics'
 
 
 export default function SettingsScreen({ navigation }: any) {
@@ -50,7 +50,7 @@ export default function SettingsScreen({ navigation }: any) {
         setNotifyEnabled(true)
         await Notifications.scheduleNotificationAsync({
           content: {
-            title: 'FertiScan 提醒',
+            title: 'iMotile 提醒',
             body: '距離上次檢測已超過 4 週，建議進行一次新的檢測。',
           },
           trigger: {
@@ -61,7 +61,7 @@ export default function SettingsScreen({ navigation }: any) {
         })
         Alert.alert('已開啟', '將於每 4 週提醒您進行檢測')
       } else {
-        Alert.alert('無法開啟', '請在 iPhone 設定中允許 FertiScan 傳送通知')
+        Alert.alert('無法開啟', '請在 iPhone 設定中允許 iMotile 傳送通知')
       }
     } else {
       setNotifyEnabled(false)
@@ -115,13 +115,13 @@ export default function SettingsScreen({ navigation }: any) {
 
         <TouchableOpacity style={styles.clinicBanner} onPress={() => navigation.navigate('ClinicList')}>
           <View style={styles.clinicBannerIcon}>
-            <Ionicons name="business-outline" size={22} color="#fff" />
+            <Ionicons name="business-outline" size={20} color={colors.primary} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.clinicBannerTitle}>連結診所</Text>
             <Text style={styles.clinicBannerSub}>{clinicCount > 0 ? `已連結 ${clinicCount} 間診所 · 點擊管理` : '尚未連結診所 · 點擊新增'}</Text>
           </View>
-          <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>›</Text>
+          <Text style={styles.clinicBannerArrow}>›</Text>
         </TouchableOpacity>
 
         <Text style={styles.sectionTitle}>檢測設定</Text>
@@ -132,10 +132,10 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
           <TouchableOpacity style={styles.row} onPress={() => {
             Alert.alert('複測提醒週期', '選擇提醒間隔', [
-              { text: '每 1 週', onPress: async () => { setReminderWeeks(1);AsyncStorage.setItem('reminderWeeks', '1'); if (notifyEnabled) { await Notifications.cancelAllScheduledNotificationsAsync(); await Notifications.scheduleNotificationAsync({ content: { title: 'FertiScan 提醒', body: '建議進行一次新的檢測。' }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 60 * 60 * 24 * 7 * 1, repeats: true } }) } } },
-              { text: '每 2 週', onPress: async () => { setReminderWeeks(2);AsyncStorage.setItem('reminderWeeks', '2'); if (notifyEnabled) { await Notifications.cancelAllScheduledNotificationsAsync(); await Notifications.scheduleNotificationAsync({ content: { title: 'FertiScan 提醒', body: '建議進行一次新的檢測。' }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 60 * 60 * 24 * 7 * 2, repeats: true } }) } } },
-              { text: '每 3 週', onPress: async () => { setReminderWeeks(3);AsyncStorage.setItem('reminderWeeks', '3'); if (notifyEnabled) { await Notifications.cancelAllScheduledNotificationsAsync(); await Notifications.scheduleNotificationAsync({ content: { title: 'FertiScan 提醒', body: '建議進行一次新的檢測。' }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 60 * 60 * 24 * 7 * 3, repeats: true } }) } } },
-              { text: '每 4 週', onPress: async () => { setReminderWeeks(4);AsyncStorage.setItem('reminderWeeks', '4'); if (notifyEnabled) { await Notifications.cancelAllScheduledNotificationsAsync(); await Notifications.scheduleNotificationAsync({ content: { title: 'FertiScan 提醒', body: '建議進行一次新的檢測。' }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 60 * 60 * 24 * 7 * 4, repeats: true } }) } } },
+              { text: '每 1 週', onPress: async () => { setReminderWeeks(1);AsyncStorage.setItem('reminderWeeks', '1'); if (notifyEnabled) { await Notifications.cancelAllScheduledNotificationsAsync(); await Notifications.scheduleNotificationAsync({ content: { title: 'iMotile 提醒', body: '建議進行一次新的檢測。' }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 60 * 60 * 24 * 7 * 1, repeats: true } }) } } },
+              { text: '每 2 週', onPress: async () => { setReminderWeeks(2);AsyncStorage.setItem('reminderWeeks', '2'); if (notifyEnabled) { await Notifications.cancelAllScheduledNotificationsAsync(); await Notifications.scheduleNotificationAsync({ content: { title: 'iMotile 提醒', body: '建議進行一次新的檢測。' }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 60 * 60 * 24 * 7 * 2, repeats: true } }) } } },
+              { text: '每 3 週', onPress: async () => { setReminderWeeks(3);AsyncStorage.setItem('reminderWeeks', '3'); if (notifyEnabled) { await Notifications.cancelAllScheduledNotificationsAsync(); await Notifications.scheduleNotificationAsync({ content: { title: 'iMotile 提醒', body: '建議進行一次新的檢測。' }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 60 * 60 * 24 * 7 * 3, repeats: true } }) } } },
+              { text: '每 4 週', onPress: async () => { setReminderWeeks(4);AsyncStorage.setItem('reminderWeeks', '4'); if (notifyEnabled) { await Notifications.cancelAllScheduledNotificationsAsync(); await Notifications.scheduleNotificationAsync({ content: { title: 'iMotile 提醒', body: '建議進行一次新的檢測。' }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 60 * 60 * 24 * 7 * 4, repeats: true } }) } } },
               { text: '取消', style: 'cancel' },
             ])
           }}>
@@ -147,7 +147,6 @@ export default function SettingsScreen({ navigation }: any) {
             <Text style={styles.rowValue}>T/C 比值 + 濃度</Text>
           </View>
         </View>
-
 
         <View style={styles.tealCard}>
           <Text style={styles.tealTitle}>隱私說明</Text>
@@ -164,19 +163,9 @@ export default function SettingsScreen({ navigation }: any) {
             <Text style={styles.rowLabel}>圖示版權</Text>
             <Text style={styles.rowHint}>Freepik - Flaticon</Text>
           </View>
-          <TouchableOpacity style={styles.row} onPress={async () => {
-            await clearAllClinicsAndHistory()
-            setClinicCount(0)
-            Alert.alert('已清除', '診所資料已清除')
-          }}>
-            <Text style={[styles.rowLabel, { color: colors.danger }]}>清除診所資料（測試用）</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.row} onPress={async () => {
-            const history = await getSharedHistory(10)
-            Alert.alert('sharedHistory', JSON.stringify(history) || '空的')
-          }}>
-            <Text style={styles.rowLabel}>查看分享歷程（測試用）</Text>
-          </TouchableOpacity>
+        </View>
+
+        <View style={styles.listCard}>
           <TouchableOpacity style={[styles.row, { borderBottomWidth: 0 }]} onPress={() => {
             Alert.alert('登出帳號', '確定要登出嗎？', [
               { text: '取消', style: 'cancel' },
@@ -196,6 +185,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         <Text style={styles.disclaimer}>本產品僅供初步參考，不構成醫療診斷</Text>
 
+        <View style={{ height: 20 }} />
 
       </ScrollView>
     </View>
@@ -205,24 +195,17 @@ export default function SettingsScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46,
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.gray200,
+    paddingTop: 30, paddingHorizontal: 18, paddingBottom: 20,
   },
-  appbarTitle: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.medium,
-    color: colors.gray900,
-  },
-  scroll: { flex: 1, padding: 18 },
+  appbarTitle: { fontSize: 22, fontWeight: '600', color: colors.gray900 },
+  scroll: { flex: 1, paddingHorizontal: 18 },
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: colors.gray100,
-    borderRadius: 12,
+    backgroundColor: colors.white,
+    borderWidth: 0.5, borderColor: colors.gray200,
+    borderRadius: 18,
     padding: 12,
     marginBottom: 10,
   },
@@ -233,56 +216,55 @@ const styles = StyleSheet.create({
   },
   avatarText: { fontSize: 16, fontWeight: typography.weights.medium, color: colors.primary },
   profileInfo: { flex: 1 },
-  profileName: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
+  profileName: { fontSize: typography.sizes.md, fontWeight: '600', color: colors.gray900 },
   profileEmail: { fontSize: typography.sizes.xs, color: colors.gray400, marginTop: 2 },
   editBtn: { fontSize: typography.sizes.sm, color: colors.primary },
   planCard: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: '#0a1628', borderRadius: 12, padding: 12, marginBottom: 10,
+    backgroundColor: '#0a1628', borderRadius: 18, padding: 12, marginBottom: 10,
   },
   planIcon: {
-    width: 40, height: 40, borderRadius: 10,
+    width: 40, height: 40, borderRadius: 20,
     backgroundColor: 'rgba(93,191,204,0.15)',
     alignItems: 'center', justifyContent: 'center',
   },
   planInfo: { flex: 1 },
   planRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
   planTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: '#fff' },
-  freeBadge: { backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 },
+  freeBadge: { backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 8 },
   freeBadgeText: { fontSize: typography.sizes.xs, color: 'rgba(255,255,255,0.5)' },
   planSub: { fontSize: typography.sizes.xs, color: 'rgba(255,255,255,0.45)' },
   planArrow: { color: 'rgba(255,255,255,0.4)', fontSize: 14 },
   clinicBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: colors.primary, borderRadius: 12, padding: 12, marginBottom: 16,
+    backgroundColor: colors.primaryLight, borderRadius: 18, padding: 12, marginBottom: 16,
   },
   clinicBannerIcon: {
-    width: 40, height: 40, borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: colors.white,
     alignItems: 'center', justifyContent: 'center',
   },
-  clinicBannerTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: '#fff' },
-  clinicBannerSub: { fontSize: typography.sizes.xs, color: 'rgba(255,255,255,0.65)', marginTop: 2 },
+  clinicBannerTitle: { fontSize: typography.sizes.md, fontWeight: '600', color: colors.primary },
+  clinicBannerSub: { fontSize: typography.sizes.xs, color: colors.primary, opacity: 0.75, marginTop: 2 },
+  clinicBannerArrow: { color: colors.primary, opacity: 0.5, fontSize: 14 },
   sectionTitle: {
     fontSize: typography.sizes.sm, fontWeight: typography.weights.medium,
     color: colors.gray500, marginBottom: 8, marginTop: 4,
   },
   listCard: {
+    backgroundColor: colors.white,
     borderWidth: 0.5, borderColor: colors.gray200,
-    borderRadius: 10, paddingHorizontal: 14, marginBottom: 16,
+    borderRadius: 16, paddingHorizontal: 14, marginBottom: 16,
   },
   row: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 10, borderBottomWidth: 0.5, borderBottomColor: colors.gray100,
+    paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: colors.gray100,
   },
   rowLabel: { fontSize: typography.sizes.md, color: colors.gray900 },
   rowValue: { fontSize: typography.sizes.md, color: colors.primary },
   rowHint: { fontSize: typography.sizes.md, color: colors.gray400 },
-  tealCard: { backgroundColor: colors.primaryLight, borderRadius: 10, padding: 12, marginBottom: 16 },
+  tealCard: { backgroundColor: colors.primaryLight, borderRadius: 16, padding: 14, marginBottom: 16 },
   tealTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.primary, marginBottom: 4 },
   tealText: { fontSize: typography.sizes.xs, color: '#0d7a8f', lineHeight: 18 },
   disclaimer: { fontSize: typography.sizes.xs, color: colors.gray400, textAlign: 'center', marginBottom: 20 },
-  creditCard: { backgroundColor: colors.gray100, borderRadius: 10, padding: 12, marginBottom: 16 },
-  creditTitle: { fontSize: typography.sizes.xs, color: colors.gray500, marginBottom: 4 },
-  creditText: { fontSize: typography.sizes.xs, color: colors.primary, textDecorationLine: 'underline' },
 })

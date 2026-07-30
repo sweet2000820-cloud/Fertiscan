@@ -55,8 +55,10 @@ export default function ClinicAddScreen({ navigation }: any) {
         ))}
 
         <View style={styles.warnCard}>
-          <Text style={styles.warnText}>僅限已加入 FertiScan 醫療合作計畫的診所可連結。連結後診所不會主動存取您的資料。</Text>
+          <Text style={styles.warnText}>僅限已加入 iMotile 醫療合作計畫的診所可連結。連結後診所不會主動存取您的資料。</Text>
         </View>
+
+        <View style={{ height: 20 }} />
 
       </ScrollView>
     </View>
@@ -66,28 +68,29 @@ export default function ClinicAddScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46, flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingTop: 10, paddingHorizontal: 18, paddingBottom: 10,
   },
-  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
-  appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
-  scroll: { flex: 1, padding: 18 },
+  back: { fontSize: 40, color: colors.primary, marginRight: 6, paddingBottom: 4  },
+  appbarTitle: { flex: 1, fontSize: 22, fontWeight: '600', color: colors.gray900 },
+  scroll: { flex: 1, paddingHorizontal: 18 },
   sectionTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray500, marginBottom: 10 },
   optionCard: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: colors.white,
     borderWidth: 0.5, borderColor: colors.gray200,
-    borderRadius: 10, padding: 12, marginBottom: 10,
+    borderRadius: 18, padding: 14, marginBottom: 10,
   },
   optionCardSelected: {
     borderWidth: 1.5, borderColor: colors.primary, backgroundColor: colors.primaryLight,
   },
   optionIcon: {
-    width: 36, height: 36, borderRadius: 8,
+    width: 40, height: 40, borderRadius: 20,
     backgroundColor: colors.gray100, alignItems: 'center', justifyContent: 'center',
   },
   optionIconSelected: { backgroundColor: colors.primary },
   optionTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
   optionSub: { fontSize: typography.sizes.xs, color: colors.gray400, marginTop: 2 },
-  warnCard: { backgroundColor: colors.warningLight, borderRadius: 10, padding: 12, marginTop: 6 },
+  warnCard: { backgroundColor: colors.warningLight, borderRadius: 16, padding: 14, marginTop: 6 },
   warnText: { fontSize: typography.sizes.xs, color: colors.warning, lineHeight: 18 },
 })

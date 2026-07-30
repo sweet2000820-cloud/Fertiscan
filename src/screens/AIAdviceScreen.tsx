@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
 import { colors, typography } from '../theme'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getRecords, TestRecord } from '../storage'
-import { getBaziFromYear, elementColors, elementReadings, getDailyFortune } from '../utils/bazi'
+import { getBaziFromYear, elementColors, elementReadings, getDailyFortune, luckyColorHex } from '../utils/bazi'
 import { doc, getDoc } from 'firebase/firestore'
 import { auth, db } from '../firebase'
 
@@ -56,29 +55,29 @@ export default function AIAdviceScreen({ navigation, route }: any) {
   const [profile, setProfile] = useState<any>(null)
 
   useEffect(() => {
-  getRecords().then(setAllRecords)
-  ;(async () => {
-    const user = auth.currentUser
-    if (!user) return
-    const snap = await getDoc(doc(db, 'users', user.uid))
-    if (snap.exists()) {
-      const data: any = snap.data()
-      setProfile({
-        userBirthYear: data.birthYear || null,
-        userHeight: data.height || null,
-        userWeight: data.weight || null,
-        userSmoke: data.smoke ? 'true' : 'false',
-        userSmokeYears: data.smokeYears || null,
-        userVaricocele: data.varicocele ? 'true' : 'false',
-        userTesticularHistory: data.testicularHistory ? 'true' : 'false',
-        userEndocrineDisease: data.endocrineDisease ? 'true' : 'false',
-        userHadSemenTest: data.hadSemenTest ? 'true' : 'false',
-        userOccupationType: data.occupationType || null,
-        userTryingToConceive: data.tryingToConceive || null,
-      })
-    }
-  })()
-}, [])
+    getRecords().then(setAllRecords)
+    ;(async () => {
+      const user = auth.currentUser
+      if (!user) return
+      const snap = await getDoc(doc(db, 'users', user.uid))
+      if (snap.exists()) {
+        const data: any = snap.data()
+        setProfile({
+          userBirthYear: data.birthYear || null,
+          userHeight: data.height || null,
+          userWeight: data.weight || null,
+          userSmoke: data.smoke ? 'true' : 'false',
+          userSmokeYears: data.smokeYears || null,
+          userVaricocele: data.varicocele ? 'true' : 'false',
+          userTesticularHistory: data.testicularHistory ? 'true' : 'false',
+          userEndocrineDisease: data.endocrineDisease ? 'true' : 'false',
+          userHadSemenTest: data.hadSemenTest ? 'true' : 'false',
+          userOccupationType: data.occupationType || null,
+          userTryingToConceive: data.tryingToConceive || null,
+        })
+      }
+    })()
+  }, [])
 
   const tcVal = parseFloat(record?.tc || '0')
   const status = record?.status || '—'
@@ -336,6 +335,18 @@ export default function AIAdviceScreen({ navigation, route }: any) {
                   <>
                     <Text style={[styles.baziReadingLabel, { marginTop: 8 }]}>當日運勢</Text>
                     <Text style={styles.baziReadingText}>{dailyFortune.text}</Text>
+                    <Text style={[styles.baziReadingLabel, { marginTop: 8 }]}>今日宜忌</Text>
+                    <Text style={styles.baziReadingText}>宜：{dailyFortune.todayActivity}　忌：{dailyFortune.todayCaution}</Text>
+                    <Text style={[styles.baziReadingLabel, { marginTop: 8 }]}>今日幸運色</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 2 }}>
+                      <View style={{
+                        width: 16, height: 16, borderRadius: 8,
+                        backgroundColor: luckyColorHex[dailyFortune.todayLuckyColor] || colors.gray300,
+                        borderWidth: dailyFortune.todayLuckyColor === '白色' ? 1 : 0,
+                        borderColor: colors.gray300,
+                      }} />
+                      <Text style={styles.baziReadingText}>{dailyFortune.todayLuckyColor}</Text>
+                    </View>
                   </>
                 )}
                 <Text style={styles.baziDisclaimer}>本區塊為趣味小彩蛋，非醫學或命理專業建議，僅供參考。</Text>
@@ -395,30 +406,33 @@ export default function AIAdviceScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46, flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingTop: 10, paddingHorizontal: 18, paddingBottom: 10,
   },
-  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
-  appbarTitle: { flex: 1, fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
-  proBadge: { backgroundColor: colors.primaryLight, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+  back: { fontSize: 40, color: colors.primary, marginRight: 6,paddingBottom: 4 },
+  appbarTitle: { flex: 1, fontSize: 22, fontWeight: '600', color: colors.gray900 },
+  proBadge: { backgroundColor: colors.primaryLight, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
   proBadgeText: { fontSize: typography.sizes.sm, color: colors.primary, fontWeight: typography.weights.medium },
-  scroll: { flex: 1, padding: 18 },
-  darkCard: { backgroundColor: colors.primaryLight, borderRadius: 12, padding: 14, marginBottom: 14 },
+  scroll: { flex: 1, paddingHorizontal: 18 },
+  darkCard: { backgroundColor: colors.primaryLight, borderRadius: 18, padding: 14, marginBottom: 14 },
   darkLabel: { fontSize: typography.sizes.sm, color: colors.primary, marginBottom: 12, fontWeight: typography.weights.medium },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
   summaryLabel: { fontSize: typography.sizes.sm, color: '#0d7a8f' },
   summaryValue: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray900 },  
-  warnCard: { backgroundColor: '#FFF4E0', borderRadius: 10, padding: 12, marginBottom: 14 },
+  warnCard: { backgroundColor: '#FFF4E0', borderRadius: 16, padding: 14, marginBottom: 14 },
   warnTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: '#B8720A', marginBottom: 6 },
   warnText: { fontSize: typography.sizes.sm, color: '#8A5A08', lineHeight: 18 },
-  compoundCard: { backgroundColor: '#FDEEEE', borderRadius: 10, padding: 12, marginBottom: 14 },
+  compoundCard: { backgroundColor: '#FDEEEE', borderRadius: 16, padding: 14, marginBottom: 14 },
   compoundTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.danger, marginBottom: 4 },
   compoundSub: { fontSize: typography.sizes.sm, color: colors.gray500, marginBottom: 8, lineHeight: 18 },
   compoundTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
   compoundTag: { backgroundColor: '#fff', borderWidth: 1, borderColor: colors.danger, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
   compoundTagText: { fontSize: typography.sizes.sm, color: colors.danger },
   compoundHint: { fontSize: typography.sizes.sm, color: colors.gray500, lineHeight: 18 },
-  adviceCard: { borderWidth: 0.5, borderColor: colors.gray200, borderRadius: 10, padding: 12, marginBottom: 14 },
+  adviceCard: {
+    backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
+    borderRadius: 18, padding: 14, marginBottom: 14,
+  },
   adviceTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900, marginBottom: 10 },
   scoreRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
   scoreLabel: { fontSize: typography.sizes.sm, color: colors.gray400 },
@@ -436,10 +450,13 @@ const styles = StyleSheet.create({
   insightLabel: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray900, marginBottom: 3 },
   insightText: { fontSize: typography.sizes.sm, color: colors.gray500, lineHeight: 18 },
   insightCaveat: { fontSize: 10, color: colors.gray400, lineHeight: 15, marginTop: 4 },
-  factorCard: { backgroundColor: colors.gray100, borderRadius: 8, padding: 10, marginBottom: 8 },
+  factorCard: {
+    backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
+    borderRadius: 14, padding: 10, marginBottom: 8,
+  },
   factorHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   factorLabel: { flex: 1, fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray900 },
-  factorBadge: { paddingHorizontal: 6, paddingVertical: 1, borderRadius: 3 },
+  factorBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
   factorBadgeText: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium },
   actionRow: { flexDirection: 'row', gap: 10, paddingVertical: 8, borderBottomWidth: 0.5, borderBottomColor: colors.gray100 },
   actionNum: {
@@ -452,7 +469,7 @@ const styles = StyleSheet.create({
   actionText: { fontSize: typography.sizes.sm, color: colors.gray400, lineHeight: 16 },
   disclaimer: { fontSize: typography.sizes.sm, color: colors.gray400, textAlign: 'center', marginBottom: 12, lineHeight: 16 },
   backBtn: {
-    height: 36, borderRadius: 9, backgroundColor: colors.gray100,
+    height: 40, borderRadius: 20, backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
     alignItems: 'center', justifyContent: 'center',
   },
   backBtnText: { fontSize: typography.sizes.sm, color: colors.gray500 },
@@ -465,9 +482,10 @@ const styles = StyleSheet.create({
   riskTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray500, marginBottom: 4 },
   riskText: { fontSize: typography.sizes.sm, color: colors.danger, lineHeight: 18 },
   baziCard: {
-    backgroundColor: colors.gray100,
-    borderRadius: 10,
-    padding: 12,
+    backgroundColor: colors.white,
+    borderWidth: 0.5, borderColor: colors.gray200,
+    borderRadius: 16,
+    padding: 14,
     marginTop: 10,
     alignItems: 'center',
   },

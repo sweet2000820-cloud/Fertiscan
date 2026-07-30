@@ -40,9 +40,11 @@ export default function PlanScreen({ navigation }: any) {
             <View style={{ flex: 1 }}>
               <View style={styles.planRow}>
                 <Text style={styles.planTitle}>{currentPlan === 'pro' ? 'Pro 版' : '免費版'}</Text>
-                <Text style={styles.freeBadgeText}>
-                  {currentPlan === 'pro' ? 'Pro' : '免費'}
+                <View style={styles.freeBadge}>
+                  <Text style={styles.freeBadgeText}>
+                    {currentPlan === 'pro' ? 'Pro' : '免費'}
                   </Text>
+                </View>
               </View>
               <Text style={styles.planSub}>基本檢測功能</Text>
             </View>
@@ -64,7 +66,7 @@ export default function PlanScreen({ navigation }: any) {
         <Text style={styles.sectionTitle}>功能比較</Text>
         <View style={styles.compareCard}>
           <View style={styles.compareHeader}>
-            <Text style={[styles.compareCol, { flex: 1 }]}>功能</Text>
+            <Text style={[styles.compareCol, { flex: 1, textAlign: 'left' }]}>功能</Text>
             <Text style={styles.compareCol}>免費</Text>
             <Text style={[styles.compareCol, { color: colors.primary }]}>Pro</Text>
           </View>
@@ -77,7 +79,7 @@ export default function PlanScreen({ navigation }: any) {
             { label: '個人化複測計畫', free: false, pro: true },
             { label: '診所報告 PDF', free: false, pro: true },
           ].map((item, i) => (
-            <View key={i} style={[styles.compareRow, !item.free && { backgroundColor: '#F0FAF8' }]}>
+            <View key={i} style={[styles.compareRow, !item.free && { backgroundColor: colors.primaryLight }]}>
               <Text style={[styles.compareLabel, { flex: 1 }]}>{item.label}</Text>
               <Text style={[styles.compareCol, { color: item.free ? colors.success : colors.gray300 }]}>
                 {item.free ? '✓' : '—'}
@@ -156,43 +158,35 @@ export default function PlanScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.gray200,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingTop: 10, paddingHorizontal: 18, paddingBottom: 10,
   },
-  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
-  appbarTitle: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.medium,
-    color: colors.gray900,
-  },
-  scroll: { flex: 1, padding: 18 },
+  back: { fontSize: 40, color: colors.primary, marginRight: 6, paddingBottom: 4  },
+  appbarTitle: { flex: 1, fontSize: 22, fontWeight: '600', color: colors.gray900 },
+  scroll: { flex: 1, paddingHorizontal: 18 },
   darkCard: {
     backgroundColor: '#0a1628',
-    borderRadius: 14,
+    borderRadius: 20,
     padding: 16,
     marginBottom: 20,
   },
   darkCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
   planIcon: {
-    width: 40, height: 40, borderRadius: 10,
+    width: 40, height: 40, borderRadius: 20,
     backgroundColor: 'rgba(93,191,204,0.15)',
     alignItems: 'center', justifyContent: 'center',
   },
   planRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
   planTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: '#fff' },
-  freeBadge: { backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 },
-  freeBadgeText: { fontSize: typography.sizes.xs, color: 'rgba(255,255,255,0.5)' },
+  freeBadge: { backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
+  freeBadgeText: { fontSize: typography.sizes.xs, color: 'rgba(255,255,255,0.6)' },
   planSub: { fontSize: typography.sizes.xs, color: 'rgba(255,255,255,0.45)' },
   statsRow: { flexDirection: 'row', gap: 8 },
   statBox: {
-    flex: 1, backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 8, padding: 8, alignItems: 'center',
+    flex: 1, backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 14, padding: 10, alignItems: 'center',
   },
-  statLabel: { fontSize: typography.sizes.xs, color: 'rgba(255,255,255,0.35)', marginBottom: 2 },
+  statLabel: { fontSize: typography.sizes.xs, color: 'rgba(255,255,255,0.4)', marginBottom: 3 },
   statValue: { fontSize: 18, fontWeight: typography.weights.medium, color: '#fff' },
   sectionTitle: {
     fontSize: typography.sizes.sm,
@@ -201,23 +195,25 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   compareCard: {
+    backgroundColor: colors.white,
     borderWidth: 0.5, borderColor: colors.gray200,
-    borderRadius: 10, overflow: 'hidden', marginBottom: 16,
+    borderRadius: 16, overflow: 'hidden', marginBottom: 16,
   },
   compareHeader: {
-    flexDirection: 'row', padding: 8, paddingHorizontal: 12,
-    backgroundColor: colors.gray100, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
+    flexDirection: 'row', padding: 10, paddingHorizontal: 14,
+    backgroundColor: colors.primaryLight,
   },
   compareRow: {
-    flexDirection: 'row', padding: 9, paddingHorizontal: 12,
-    borderBottomWidth: 0.5, borderBottomColor: colors.gray100,
+    flexDirection: 'row', padding: 10, paddingHorizontal: 14,
+    borderTopWidth: 0.5, borderTopColor: colors.gray100,
   },
   compareCol: { width: 40, textAlign: 'center', fontSize: typography.sizes.xs, color: colors.gray400 },
   compareLabel: { fontSize: typography.sizes.sm, color: colors.gray900 },
   planOption: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    backgroundColor: colors.white,
     borderWidth: 1, borderColor: colors.gray200,
-    borderRadius: 10, padding: 12, marginBottom: 10,
+    borderRadius: 18, padding: 14, marginBottom: 10,
   },
   planOptionSelected: {
     borderWidth: 2, borderColor: colors.primary,
@@ -228,19 +224,19 @@ const styles = StyleSheet.create({
   planOptionPrice: { fontSize: 15, fontWeight: typography.weights.medium, color: colors.gray900 },
   planOptionUnit: { fontSize: typography.sizes.xs, color: colors.gray400 },
   bestBadge: {
-    position: 'absolute', top: -10, left: 12,
+    position: 'absolute', top: -10, left: 14,
     backgroundColor: colors.primary,
-    paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4,
+    paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10,
   },
   bestBadgeText: { fontSize: typography.sizes.xs, color: '#fff', fontWeight: typography.weights.medium },
   ctaBtn: {
-    height: 42, borderRadius: 9, backgroundColor: colors.primary,
+    height: 48, borderRadius: 24, backgroundColor: colors.primary,
     alignItems: 'center', justifyContent: 'center', marginBottom: 8,
   },
   ctaBtnText: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: '#fff' },
   ctaHint: { fontSize: typography.sizes.xs, color: colors.gray400, textAlign: 'center', marginBottom: 8 },
   cancelBtn: {
-    height: 36, borderRadius: 9,
+    height: 36, borderRadius: 18,
     alignItems: 'center', justifyContent: 'center', marginTop: 8,
   },
   cancelBtnText: { fontSize: typography.sizes.sm, color: colors.danger },

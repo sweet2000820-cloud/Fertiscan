@@ -81,18 +81,13 @@ export default function BrightnessCalibScreen({ navigation, route }: any) {
         {/* 校準步驟 */}
         <Text style={styles.sectionTitle}>白場校準步驟</Text>
         {[
-          { num: '✓', title: '停用自動亮度', sub: '已完成', done: true },
-          { num: '2', title: '準備試紙', sub: '將試紙放入夾具，確認 C、T 兩條線清晰', active: true },
-          { num: '3', title: '基準值確認', sub: '計算背景灰階均值，作為後續扣除基底', pending: true },
+          { num: '1', title: '停用自動亮度', sub: '避免拍攝過程中亮度自動變化，影響判讀一致性' },
+          { num: '2', title: '準備試紙', sub: '將試紙對齊方框拍攝，確認 C、T 兩條線清晰' },
+          { num: '3', title: '基準值確認', sub: '拍攝時自動計算背景灰階均值，作為後續扣除基底' },
         ].map((step, i) => (
-          <View key={i} style={[styles.stepRow, step.pending && { opacity: 0.4 }]}>
-            <View style={[
-              styles.stepCircle,
-              step.done && styles.stepDone,
-              step.active && styles.stepActive,
-              step.pending && styles.stepPending,
-            ]}>
-              <Text style={[styles.stepNum, (step.active || step.done) && { color: step.done ? colors.success : colors.white }]}>{step.num}</Text>
+          <View key={i} style={styles.stepRow}>
+            <View style={styles.stepCircle}>
+              <Text style={styles.stepNum}>{step.num}</Text>
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.stepTitle}>{step.title}</Text>
@@ -100,7 +95,6 @@ export default function BrightnessCalibScreen({ navigation, route }: any) {
             </View>
           </View>
         ))}
-
         <Button title="開始拍攝試紙 ›" onPress={() => navigation.navigate('CamCapture', { ...route?.params })} />
 
       </ScrollView>

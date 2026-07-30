@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native'
 import { colors, typography } from '../theme'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getInventory, setLotNumber as setLotNumberRemote, setStrips as setStripsRemote } from '../inventory'
+import { Ionicons } from '@expo/vector-icons'
+import Svg, { Circle, Line, Text as SvgText } from 'react-native-svg'
 
 const lotData: Record<string, {
   points: { tc: number, conc: number }[],
@@ -44,7 +46,7 @@ export default function CalibrationScreen({ navigation }: any) {
   const [lotNumber, setLotNumber] = useState('')
 
   useEffect(() => {
-    AsyncStorage.getItem('lotNumber').then(val => {
+    getInventory().then(({ lotNumber: val }) => {
       if (val) setLotNumber(val)
     })
   }, [])
@@ -54,17 +56,32 @@ export default function CalibrationScreen({ navigation }: any) {
   const r2 = currentLot?.r2 || '—'
   const points = currentLot?.points || []
 
+  const chartLeft = 6
+  const chartRight = 260
+  const chartTop = 8
+  const chartBottom = 65
+  const maxTc = 1.2
+  const maxConc = 60
+
+  function xFor(tc: number) {
+    return Math.round(chartLeft + (Math.min(tc, maxTc) / maxTc) * (chartRight - chartLeft))
+  }
+  function yFor(conc: number) {
+    return Math.round(chartBottom - (Math.min(conc, maxConc) / maxConc) * (chartBottom - chartTop))
+  }
+  const refX = xFor(0.85)
+
   function handleManualInput() {
     Alert.prompt(
       '手動輸入批號',
       '請輸入試紙包裝上的批號（例如：LOT-2025-A）',
       [
         { text: '取消', style: 'cancel' },
-        { text: '確認', onPress: (value: string | undefined) => {
+        { text: '確認', onPress: async (value: string | undefined) => {
           if (value) {
             setLotNumber(value)
-            AsyncStorage.setItem('lotNumber', value)
-            AsyncStorage.setItem('strips', '6')
+            await setLotNumberRemote(value)
+            await setStripsRemote(6)
             Alert.alert('已更新', `批號已更新為 ${value}，試紙數量已重設為 6 片`)
           }
         }},
@@ -82,7 +99,7 @@ export default function CalibrationScreen({ navigation }: any) {
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        <View style={styles.listCard}>
+        <View style={styles.card}>
           <View style={styles.lotRow}>
             <Text style={styles.rowLabel}>目前試紙批號</Text>
             <View style={styles.lotBadge}>
@@ -90,49 +107,35 @@ export default function CalibrationScreen({ navigation }: any) {
             </View>
           </View>
           <View style={styles.btnRow}>
-            <TouchableOpacity style={styles.btnSecondary} onPress={() => navigation.getParent()?.navigate('LotQR')}>
-              <Text style={styles.btnSecondaryText}>掃描 QR Code</Text>
+            <TouchableOpacity style={styles.btnOutline} onPress={() => navigation.getParent()?.navigate('LotQR')}>
+              <Text style={styles.btnOutlineText}>掃描 QR Code</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.btnGray} onPress={handleManualInput}>
-              <Text style={styles.btnGrayText}>手動輸入</Text>
+            <TouchableOpacity style={styles.btnFilled} onPress={handleManualInput}>
+              <Text style={styles.btnFilledText}>手動輸入</Text>
             </TouchableOpacity>
           </View>
           <Text style={styles.hint}>不同批次試紙靈敏度不同，請確認批號正確</Text>
         </View>
 
-        <View style={styles.listCard}>
-          <Text style={styles.sectionTitle}>標準曲線（批號 {lotNumber || '尚未設定'}）</Text>
-          <View style={styles.chartArea}>
-            <View style={styles.chartInner}>
-              <View style={styles.yAxis} />
-              <View style={styles.xAxis} />
-              {points.length === 0 ? (
-                <Text style={styles.emptyChart}>請先設定批號</Text>
-              ) : points.map((p, i) => {
-                const leftPct = `${(p.tc / 1.2) * 90}%`
-                const bottomPx = Math.max(4, (p.conc / 60) * 70)
-                return <View key={i} style={[styles.dot, { bottom: bottomPx, left: leftPct as any }]} />
-              })}
-              {points.length > 0 && <View style={styles.refLine} />}
-              {points.length > 0 && <Text style={styles.refLabel}>0.85</Text>}
+        <View style={styles.tealCard}>
+          <Text style={styles.tealSectionTitle}>標準曲線（批號 {lotNumber || '尚未設定'}）</Text>
+          {points.length === 0 ? (
+            <View style={{ height: 80, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={styles.tealHint}>請先設定批號</Text>
             </View>
-            <View style={styles.axisLabels}>
-              <Text style={styles.axisText}>0</Text>
-              <Text style={styles.axisText}>T/C →</Text>
-            </View>
-          </View>
-          {points.length > 0 && (
-            <>
-              <View style={styles.divider} />
-              <View style={styles.resultRow}>
-                <Text style={styles.hint}>目前讀值 T/C = 0.68</Text>
-                <Text style={styles.resultValue}>→ ≈ 22 mIU/mL</Text>
-              </View>
-            </>
+          ) : (
+            <Svg width="100%" height={80} viewBox="0 0 299 65">
+              <Line x1={chartLeft} y1={chartBottom} x2={chartRight} y2={chartBottom} stroke={colors.primary} strokeWidth={0.5} opacity={0.3} />
+              <Line x1={refX} y1={chartTop} x2={refX} y2={chartBottom} stroke={colors.success} strokeWidth={1} strokeDasharray="3,3" opacity={0.7} />
+              <SvgText x={refX + 2} y={chartTop + 8} fontSize={10} fill={colors.success}>0.85</SvgText>
+              {points.map((p, i) => (
+                <Circle key={i} cx={xFor(p.tc)} cy={yFor(p.conc)} r={2.5} fill={colors.primary} />
+              ))}
+            </Svg>
           )}
         </View>
 
-        <View style={styles.listCard}>
+        <View style={styles.card}>
           <Text style={styles.sectionTitle}>批號資訊</Text>
           {[
             { label: '批號', value: lotNumber || '尚未設定' },
@@ -141,16 +144,19 @@ export default function CalibrationScreen({ navigation }: any) {
             { label: '正常參考值', value: 'T/C ≥ 0.85', valueColor: colors.success },
             { label: 'R² 擬合度', value: r2 },
           ].map((item, i) => (
-            <View key={i} style={[styles.infoRow, i === 4 && { borderBottomWidth: 0 }]}>
+            <View key={i} style={[styles.infoRow, i === 4 && { borderBottomWidth: 5 }]}>
               <Text style={styles.hint}>{item.label}</Text>
               <Text style={[styles.infoValue, item.valueColor ? { color: item.valueColor, fontWeight: typography.weights.medium } : {}]}>{item.value}</Text>
             </View>
           ))}
         </View>
 
-        <View style={styles.tealCard}>
-          <Text style={styles.tealText}>✓ 批號已驗證。若更換新批次試紙，請重新掃描包裝上的 QR Code 更新校準曲線。</Text>
+        <View style={styles.noticeCard}>
+          <Ionicons name="checkmark-circle-outline" size={16} color={colors.primary} />
+          <Text style={styles.noticeText}>批號已驗證。若更換新批次試紙，請重新掃描包裝上的 QR Code 更新校準曲線。</Text>
         </View>
+
+        <View style={{ height: 20 }} />
 
       </ScrollView>
     </View>
@@ -160,40 +166,34 @@ export default function CalibrationScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46, justifyContent: 'center',
-    paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
+    paddingTop: 30, paddingHorizontal: 18, paddingBottom: 20, backgroundColor: colors.white,
   },
-  appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
-  scroll: { flex: 1, padding: 18 },
-  listCard: { borderWidth: 0.5, borderColor: colors.gray200, borderRadius: 10, padding: 12, marginBottom: 14 },
+  appbarTitle: { fontSize: 22, fontWeight: '600', color: colors.gray900 },
+  scroll: { flex: 1, paddingHorizontal: 18 },
+  card: {
+    backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
+    borderRadius: 18, padding: 14, marginBottom: 12,
+  },
   lotRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  rowLabel: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
-  lotBadge: { backgroundColor: colors.primaryLight, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4 },
-  lotBadgeText: { fontSize: typography.sizes.sm, color: colors.primary, fontWeight: typography.weights.medium },
+  rowLabel: { fontSize: typography.sizes.md, fontWeight: '600', color: colors.gray900 },
+  lotBadge: { backgroundColor: colors.primaryLight, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
+  lotBadgeText: { fontSize: typography.sizes.sm, color: colors.primary, fontWeight: '600' },
   btnRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
-  btnSecondary: { flex: 1, height: 34, borderWidth: 1.5, borderColor: colors.primary, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  btnSecondaryText: { fontSize: typography.sizes.sm, color: colors.primary },
-  btnGray: { flex: 1, height: 34, backgroundColor: colors.gray100, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  btnGrayText: { fontSize: typography.sizes.sm, color: colors.gray500 },
+  btnOutline: { flex: 1, height: 34, borderWidth: 1.5, borderColor: colors.primary, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  btnOutlineText: { fontSize: typography.sizes.sm, color: colors.primary, fontWeight: typography.weights.medium },
+  btnFilled: { flex: 1, height: 34, backgroundColor: colors.primaryLight, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  btnFilledText: { fontSize: typography.sizes.sm, color: colors.primary, fontWeight: typography.weights.medium },
   hint: { fontSize: typography.sizes.sm, color: colors.gray400 },
   sectionTitle: { fontSize: typography.sizes.sm, color: colors.gray500, marginBottom: 10 },
-  chartArea: { height: 100, marginBottom: 8 },
-  chartInner: { flex: 1, position: 'relative', marginBottom: 4 },
-  emptyChart: { position: 'absolute', top: 30, left: 0, right: 0, textAlign: 'center', fontSize: typography.sizes.xs, color: colors.gray400 },
-  yAxis: { position: 'absolute', left: 0, top: 0, bottom: 20, width: 0.5, backgroundColor: colors.gray200 },
-  xAxis: { position: 'absolute', left: 0, right: 0, bottom: 20, height: 0.5, backgroundColor: colors.gray200 },
-  dot: { position: 'absolute', width: 4, height: 4, borderRadius: 2, backgroundColor: colors.primary },
-  currentDot: { position: 'absolute', width: 8, height: 8, borderRadius: 4, backgroundColor: colors.warning, borderWidth: 1.5, borderColor: colors.white },
-  refLine: { position: 'absolute', left: '58%', top: 0, bottom: 20, width: 0.8, backgroundColor: colors.success },
-  refLabel: { position: 'absolute', left: '59%', top: 0, fontSize: 7, color: colors.success },
-  currentLabel: { position: 'absolute', left: '38%', bottom: 22, fontSize: 7, color: colors.warning },
-  axisLabels: { flexDirection: 'row', justifyContent: 'space-between' },
-  axisText: { fontSize: 7, color: colors.gray400 },
-  divider: { height: 0.5, backgroundColor: colors.gray200, marginVertical: 8 },
-  resultRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  resultValue: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.warning },
-  infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 0.5, borderBottomColor: colors.gray100 },
+  tealCard: { backgroundColor: colors.primaryLight, borderRadius: 18, padding: 14, marginBottom: 12 },
+  tealSectionTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.primary, marginBottom: 10 },
+  tealHint: { fontSize: typography.sizes.xs, color: colors.primary },
+  row: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 0.5, borderBottomColor: colors.gray100 },
   infoValue: { fontSize: typography.sizes.sm, color: colors.gray900 },
-  tealCard: { backgroundColor: colors.primaryLight, borderRadius: 10, padding: 12, marginBottom: 16 },
-  tealText: { fontSize: typography.sizes.sm, color: '#0d7a8f', lineHeight: 18 },
+  noticeCard: {
+    backgroundColor: colors.primaryLight, borderRadius: 14, padding: 12,
+    flexDirection: 'row', gap: 8, alignItems: 'flex-start',
+  },
+  noticeText: { flex: 1, fontSize: typography.sizes.xs, color: colors.primary, lineHeight: 17 },
 })

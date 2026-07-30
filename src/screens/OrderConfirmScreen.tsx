@@ -31,7 +31,7 @@ export default function OrderConfirmScreen({ navigation, route }: any) {
         <View style={styles.listCard}>
           <View style={styles.row}>
             <Text style={styles.rowLabel}>商品</Text>
-            <Text style={styles.rowValue}>FertiScan 精子活力檢測試紙</Text>
+            <Text style={styles.rowValue}>iMotile 精子活力檢測試紙</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.rowLabel}>規格</Text>
@@ -104,26 +104,29 @@ export default function OrderConfirmScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46, flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingTop: 10, paddingHorizontal: 18, paddingBottom: 20,
   },
-  back: { fontSize: 28, color: colors.primary, marginRight: 6 },
-  appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
-  scroll: { flex: 1, padding: 18 },
-  sectionTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray500, marginBottom: 8, marginTop: 4 },
-  listCard: { borderWidth: 0.5, borderColor: colors.gray200, borderRadius: 10, paddingHorizontal: 14, marginBottom: 16 },
+  back: { fontSize: 40, color: colors.primary, marginRight: 6 , paddingBottom: 4 },
+  appbarTitle: { flex: 1, fontSize: 22, fontWeight: '600', color: colors.gray900 },
+  scroll: { flex: 1, paddingHorizontal: 18 },
+  sectionTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray500, marginBottom: 8, marginTop: 4 },
+  listCard: {
+    backgroundColor: colors.white,
+    borderWidth: 0.5, borderColor: colors.gray200,
+    borderRadius: 18, paddingHorizontal: 14, marginBottom: 16,
+  },
   row: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 10, borderBottomWidth: 0.5, borderBottomColor: colors.gray100,
+    paddingVertical: 11, borderBottomWidth: 0.5, borderBottomColor: colors.gray100,
   },
-  rowLabel: { fontSize: typography.sizes.sm, color: colors.gray400 },
-  rowValue: { fontSize: typography.sizes.sm, color: colors.gray900 },
+  rowLabel: { fontSize: typography.sizes.md, color: colors.gray400 },
+  rowValue: { fontSize: typography.sizes.md, color: colors.gray900 },
   payRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: colors.gray100,
   },
-  payRowSelected: { backgroundColor: colors.primaryLight, marginHorizontal: -14, paddingHorizontal: 14 },
-  payIcon: { fontSize: 20 },
+  payRowSelected: { backgroundColor: colors.primaryLight, marginHorizontal: -14, paddingHorizontal: 14, borderRadius: 14 },
   payLabel: { flex: 1, fontSize: typography.sizes.md, color: colors.gray900 },
   radio: {
     width: 20, height: 20, borderRadius: 10,
@@ -132,15 +135,15 @@ const styles = StyleSheet.create({
   },
   radioSelected: { borderColor: colors.primary },
   radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary },
-  tealCard: { backgroundColor: colors.primaryLight, borderRadius: 10, padding: 12, marginBottom: 16 },
+  tealCard: { backgroundColor: colors.primaryLight, borderRadius: 16, padding: 14, marginBottom: 16 },
   tealText: { fontSize: typography.sizes.xs, color: '#0d7a8f', lineHeight: 18 },
   checkoutBtn: {
-    height: 42, borderRadius: 9, backgroundColor: colors.primary,
+    height: 48, borderRadius: 24, backgroundColor: colors.primary,
     alignItems: 'center', justifyContent: 'center', marginBottom: 8,
   },
   checkoutBtnText: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: '#fff' },
   cancelBtn: {
-    height: 36, borderRadius: 9, backgroundColor: colors.gray100,
+    height: 40, borderRadius: 20, backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
     alignItems: 'center', justifyContent: 'center',
   },
   cancelBtnText: { fontSize: typography.sizes.sm, color: colors.gray500 },
