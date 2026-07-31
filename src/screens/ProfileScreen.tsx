@@ -195,7 +195,7 @@ export default function ProfileScreen({ navigation }: any) {
         <TouchableOpacity style={styles.avatarArea} onPress={handlePickAvatar}>
           <View style={styles.avatarBig}>
             {avatar ? (
-              <Image source={{ uri: avatar }} style={{ width: 68, height: 68, borderRadius: 34 }} />
+              <Image source={{ uri: avatar }} style={{ width: 80, height: 80, borderRadius: 34 }} />
             ) : (
               <Text style={styles.avatarText}>{name ? name.slice(0, 1) : '?'}</Text>
             )}

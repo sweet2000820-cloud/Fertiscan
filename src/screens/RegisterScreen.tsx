@@ -79,7 +79,7 @@ export default function RegisterScreen({ navigation }: any) {
         <View style={styles.field}>
           <Text style={styles.label}>出生年月日</Text>
           <TouchableOpacity style={styles.input} onPress={() => setShowDatePicker(true)}>
-            <Text style={{ color: birthYear ? colors.gray900 : colors.gray400, fontSize: typography.sizes.md, lineHeight: 38 }}>
+            <Text style={{ color: birthYear ? colors.gray900 : colors.gray400, fontSize: typography.sizes.md, lineHeight: 42 }}>
               {birthYear && birthMonth && birthDay ? `${birthYear}/${birthMonth.padStart(2,'0')}/${birthDay.padStart(2,'0')}` : '請選擇出生年月日'}
             </Text>
           </TouchableOpacity>
@@ -152,17 +152,17 @@ export default function RegisterScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46, flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingTop: 10, paddingHorizontal: 18, paddingBottom: 20,
   },
-  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
-  appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
-  scroll: { flex: 1, padding: 18 },
+  back: { fontSize: 40, color: colors.primary, marginRight: 6, paddingBottom: 4 },
+  appbarTitle: { flex: 1, fontSize: 22, fontWeight: '600', color: colors.gray900 },
+  scroll: { flex: 1, paddingHorizontal: 18 },
   field: { marginBottom: 14 },
-  label: { fontSize: typography.sizes.md, color: colors.gray500, fontWeight: typography.weights.medium, marginBottom: 4 },
+  label: { fontSize: typography.sizes.md, color: colors.gray500, fontWeight: typography.weights.medium, marginBottom: 6 },
   input: {
-    height: 40, borderWidth: 0.5, borderColor: colors.gray300,
-    borderRadius: 8, paddingHorizontal: 12,
+    height: 44, borderWidth: 0.5, borderColor: colors.gray300,
+    borderRadius: 16, paddingHorizontal: 14,
     fontSize: typography.sizes.md, color: colors.gray900,
   },
   hint: { fontSize: typography.sizes.sm, color: colors.gray400, marginTop: 4 },
@@ -171,13 +171,13 @@ const styles = StyleSheet.create({
   strengthBarFill: { backgroundColor: colors.primary },
   agreeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 16 },
   checkbox: {
-    width: 14, height: 14, borderRadius: 3,
+    width: 16, height: 16, borderRadius: 4,
     borderWidth: 1.5, borderColor: colors.gray300,
     alignItems: 'center', justifyContent: 'center',
     marginTop: 2, flexShrink: 0,
   },
   checkboxDone: { backgroundColor: colors.primaryLight, borderColor: colors.primary },
-  checkmark: { fontSize: 9, color: colors.primary },
+  checkmark: { fontSize: 10, color: colors.primary },
   agreeText: { fontSize: typography.sizes.sm, color: colors.gray400, flex: 1, lineHeight: 18 },
   link: { color: colors.primary },
 })

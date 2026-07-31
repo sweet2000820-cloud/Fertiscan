@@ -129,10 +129,10 @@ export default function AIChatScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46, flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
+    flexDirection: 'row', alignItems: 'center',
+    paddingTop: 10, paddingHorizontal: 18, paddingBottom: 5,
   },
-  back: { fontSize: 28, color: colors.primary, marginRight: 6 },
+  back: { fontSize: 40, color: colors.primary, marginRight: 6, paddingBottom: 4 },
   appbarCenter: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
   botAvatar: {
     width: 44, height: 44, borderRadius: 22,
@@ -144,14 +144,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
-  appbarTitle: { fontSize: typography.sizes.lg, fontWeight: typography.weights.medium, color: colors.gray900 },
+  appbarTitle: { fontSize: 18, fontWeight: '600', color: colors.gray900 },
   onlineText: { fontSize: typography.sizes.xs, color: '#4ade80' },
   messages: { flex: 1, padding: 14 },
   msgRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 6, marginBottom: 10 },
   msgRowUser: { justifyContent: 'flex-end' },
-  bubble: { maxWidth: '80%', borderRadius: 12, padding: 10 },
-  bubbleBot: { backgroundColor: colors.gray100, borderBottomLeftRadius: 2 },
-  bubbleUser: { backgroundColor: colors.primary, borderBottomRightRadius: 2 },
+  bubble: { maxWidth: '80%', borderRadius: 18, padding: 10 },
+  bubbleBot: { backgroundColor: colors.gray100, borderBottomLeftRadius: 4 },
+  bubbleUser: { backgroundColor: colors.primary, borderBottomRightRadius: 4 },
   bubbleText: { fontSize: typography.sizes.md, color: colors.gray900, lineHeight: 20 },
   quickArea: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
   quickChip: {

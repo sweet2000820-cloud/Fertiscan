@@ -1,10 +1,9 @@
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { auth } from '../firebase'
 import { useState } from 'react'
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Keyboard, TouchableWithoutFeedback } from 'react-native'
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Keyboard, TouchableWithoutFeedback, Image } from 'react-native'
 import { colors, typography } from '../theme'
 import Button from '../components/Button'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 
 
 export default function LoginScreen({ onLogin, navigation }: any) {
@@ -37,10 +36,7 @@ export default function LoginScreen({ onLogin, navigation }: any) {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
         <View style={styles.logoArea}>
-          <View style={styles.logoBox}>
-            <Text style={styles.logoIcon}>⊞</Text>
-          </View>
-          <Text style={styles.appName}>iMotile</Text>
+          <Image source={require('../../assets/login_logo_circle.png')} style={styles.logoCircle} resizeMode="contain" />
           <Text style={styles.subtitle}>生殖功能試紙光學定量</Text>
         </View>
 
@@ -70,7 +66,9 @@ export default function LoginScreen({ onLogin, navigation }: any) {
           </View>
         </View>
 
-        <Button title="登入" onPress={handleLogin} />
+        <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
+          <Text style={styles.loginBtnText}>登入</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity style={styles.forgotBtn} onPress={() => navigation?.navigate('ForgotPassword')}>
           <Text style={styles.forgotText}>忘記密碼？</Text>
@@ -82,7 +80,9 @@ export default function LoginScreen({ onLogin, navigation }: any) {
           <View style={styles.divider} />
         </View>
 
-        <Button title="建立新帳號" onPress={() => navigation?.navigate('Register')} variant="secondary" />
+        <TouchableOpacity style={styles.registerBtn} onPress={() => navigation?.navigate('Register')}>
+          <Text style={styles.registerBtnText}>建立新帳號</Text>
+        </TouchableOpacity>
       </View>
     </TouchableWithoutFeedback>
   )
@@ -91,28 +91,33 @@ export default function LoginScreen({ onLogin, navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1, backgroundColor: colors.white,
-    padding: 24, justifyContent: 'center',
+    padding: 24, paddingTop: 100,
   },
-  logoArea: { alignItems: 'center', marginBottom: 32 },
-  logoBox: {
-    width: 64, height: 64, borderRadius: 18,
-    backgroundColor: colors.primary,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 8,
-  },
-  logoIcon: { fontSize: 28, color: colors.white },
-  appName: { fontSize: typography.sizes.xl, fontWeight: typography.weights.medium, color: colors.primary },
-  subtitle: { fontSize: typography.sizes.sm, color: colors.gray400, marginTop: 4 },
-  form: { gap: 12, marginBottom: 16 },
+  logoArea: { alignItems: 'center', marginBottom: 10 },
+  logoCircle: { width: 200, height: 200 },
+  subtitle: { fontSize: typography.sizes.sm, color: colors.gray400},
+  form: { gap: 12, marginBottom: 20 },
   field: { gap: 4 },
   label: { fontSize: typography.sizes.md, color: colors.gray500, fontWeight: typography.weights.medium },
   input: {
-    height: 40, borderWidth: 0.5, borderColor: colors.gray300,
-    borderRadius: 8, paddingHorizontal: 12,
+    height: 44, borderWidth: 0.5, borderColor: colors.gray300,
+    borderRadius: 16, paddingHorizontal: 14,
     fontSize: typography.sizes.md, color: colors.gray900,
   },
-  forgotBtn: { alignItems: 'center', marginTop: 10 },
+  loginBtn: {
+    height: 48, borderRadius: 24, backgroundColor: colors.primary,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  loginBtnText: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.white },
+  forgotBtn: { alignItems: 'center', marginTop: 14 },
   forgotText: { fontSize: typography.sizes.md, color: colors.primary },
-  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 10 },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 14 },
   divider: { flex: 1, height: 0.5, backgroundColor: colors.gray200 },
   dividerText: { fontSize: typography.sizes.sm, color: colors.gray400 },
+  registerBtn: {
+    height: 48, borderRadius: 24,
+    borderWidth: 1.5, borderColor: colors.primary,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  registerBtnText: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.primary },
 })
