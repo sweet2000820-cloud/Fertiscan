@@ -86,11 +86,11 @@ export default function ForgotPasswordScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
-    height: 46, flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.gray200,
+    flexDirection: 'row', alignItems: 'center',
+    paddingTop: 10, paddingHorizontal: 18, paddingBottom: 20,
   },
-  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
-  appbarTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900 },
+  back: { fontSize: 40, color: colors.primary, marginRight: 6, paddingBottom: 4 },
+  appbarTitle: { fontSize: 22, fontWeight: '600', color: colors.gray900 },
   content: { flex: 1, padding: 24 },
   iconArea: { alignItems: 'center', paddingVertical: 24, gap: 8, marginBottom: 16 },
   iconBox: {
@@ -102,10 +102,10 @@ const styles = StyleSheet.create({
   title: { fontSize: typography.sizes.lg, fontWeight: typography.weights.medium, color: colors.gray900 },
   sub: { fontSize: typography.sizes.sm, color: colors.gray400, textAlign: 'center', lineHeight: 20 },
   field: { marginBottom: 16 },
-  label: { fontSize: typography.sizes.xs, color: colors.gray500, fontWeight: typography.weights.medium, marginBottom: 4 },
+  label: { fontSize: typography.sizes.xs, color: colors.gray500, fontWeight: typography.weights.medium, marginBottom: 6 },
   input: {
-    height: 42, borderWidth: 0.5, borderColor: colors.gray300,
-    borderRadius: 8, paddingHorizontal: 12,
+    height: 44, borderWidth: 0.5, borderColor: colors.gray300,
+    borderRadius: 16, paddingHorizontal: 14,
     fontSize: typography.sizes.md, color: colors.gray900,
   },
   backBtn: { alignItems: 'center', marginTop: 12 },
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   successTitle: { fontSize: typography.sizes.lg, fontWeight: typography.weights.medium, color: colors.success, marginBottom: 8 },
   successSub: { fontSize: typography.sizes.md, color: colors.gray500, textAlign: 'center', lineHeight: 22, marginBottom: 20 },
   emailText: { color: colors.primary, fontWeight: typography.weights.medium },
-  tealCard: { backgroundColor: colors.primaryLight, borderRadius: 10, padding: 12, marginBottom: 20, width: '100%' },
+  tealCard: { backgroundColor: colors.primaryLight, borderRadius: 18, padding: 14, marginBottom: 20, width: '100%' },
   tealTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.primary, marginBottom: 4 },
   tealText: { fontSize: typography.sizes.xs, color: '#0d7a8f', lineHeight: 18 },
 })

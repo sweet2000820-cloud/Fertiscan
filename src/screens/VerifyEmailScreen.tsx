@@ -95,8 +95,8 @@ const styles = StyleSheet.create({
   },
   email: { color: colors.primary, fontWeight: typography.weights.medium },
   tealCard: {
-    backgroundColor: colors.primaryLight, borderRadius: 10,
-    padding: 12, marginBottom: 20, width: '100%',
+    backgroundColor: colors.primaryLight, borderRadius: 18,
+    padding: 14, marginBottom: 20, width: '100%',
   },
   tealTitle: {
     fontSize: typography.sizes.sm, fontWeight: typography.weights.medium,
