@@ -5,6 +5,7 @@ import { getRecords, TestRecord } from '../storage'
 import { getBaziFromYear, elementColors, elementReadings, getDailyFortune, luckyColorHex } from '../utils/bazi'
 import { doc, getDoc } from 'firebase/firestore'
 import { auth, db } from '../firebase'
+import { getZodiacSign, zodiacColors, zodiacReadings } from '../utils/zodiac'
 
 const sleepLabels: Record<string, string> = {
   lt5: '少於 5 小時', '5to6': '5–6 小時', '7to8': '7–8 小時', gt9: '超過 9 小時',
@@ -47,6 +48,46 @@ function correlationInsight(
   return { label, goodDesc, badDesc, goodAvg, badAvg, diffPct, goodCount: good.length, badCount: bad.length }
 }
 
+// 依問卷結果，收集所有符合的飲食建議面向，全部符合的都會顯示
+// 若都沒有特別不利因素，回傳一條通用的均衡飲食建議
+function getDietTips(survey: NonNullable<TestRecord['preTestSurvey']>) {
+  const tips: { title: string, text: string }[] = []
+
+  if (survey.heavyDrinking) {
+    tips.push({
+      title: '減少酒精攝取，補充保肝營養素',
+      text: '過量飲酒會影響精子品質與肝臟代謝，建議減少飲酒頻率，並多攝取十字花科蔬菜（花椰菜、高麗菜）與富含維生素B群的食物，協助肝臟修復。',
+    })
+  }
+  if (survey.heatExposure === 'often' || survey.heatExposure === 'almostDaily') {
+    tips.push({
+      title: '補充抗氧化營養素，減緩高溫氧化壓力',
+      text: '長期高溫暴露容易增加精子氧化壓力，建議多攝取莓果、堅果、深色蔬菜等富含維生素C、E與硒的食物，有助於保護精子DNA。',
+    })
+  }
+  if (survey.stressLevel === 'high' || survey.stressLevel === 'veryHigh') {
+    tips.push({
+      title: '補充維生素B群與鎂，協助紓緩壓力',
+      text: '長期壓力可能影響荷爾蒙平衡，建議多攝取全穀類、堅果、深綠色蔬菜，這些食物富含維生素B群與鎂，有助神經系統穩定。',
+    })
+  }
+  if (survey.sleepHours === 'lt5' || survey.sleepHours === '5to6') {
+    tips.push({
+      title: '補充助眠營養素，改善睡眠品質',
+      text: '睡眠不足可能影響荷爾蒙分泌，建議睡前避免咖啡因與重口味飲食，可適量攝取富含色胺酸的食物（如香蕉、堅果、牛奶），有助放鬆入眠。',
+    })
+  }
+
+  if (tips.length === 0) {
+    tips.push({
+      title: '維持均衡飲食，補充生殖健康營養素',
+      text: '目前生活習慣狀況良好，建議持續維持均衡飲食，適量攝取鋅（牡蠣、瘦肉）、Omega-3（深海魚類）與充足水分，有助維持精子品質穩定。',
+    })
+  }
+
+  return tips
+}
+
 export default function AIAdviceScreen({ navigation, route }: any) {
   const record: TestRecord = route?.params?.record
   const survey = record?.preTestSurvey
@@ -64,6 +105,8 @@ export default function AIAdviceScreen({ navigation, route }: any) {
         const data: any = snap.data()
         setProfile({
           userBirthYear: data.birthYear || null,
+          userBirthMonth: data.birthMonth || null,
+          userBirthDay: data.birthDay || null,
           userHeight: data.height || null,
           userWeight: data.weight || null,
           userSmoke: data.smoke ? 'true' : 'false',
@@ -85,6 +128,9 @@ export default function AIAdviceScreen({ navigation, route }: any) {
 
   const age = profile?.userBirthYear ? new Date().getFullYear() - parseInt(profile.userBirthYear) : null
   const baziInfo = profile?.userBirthYear ? getBaziFromYear(parseInt(profile.userBirthYear)) : null
+  const zodiacInfo = (profile?.userBirthMonth && profile?.userBirthDay)
+    ? getZodiacSign(parseInt(profile.userBirthMonth), parseInt(profile.userBirthDay))
+    : null
   const dailyFortune = baziInfo && record?.date ? getDailyFortune(baziInfo.element, record.date) : null
   const bmi = profile?.userHeight && profile?.userWeight
     ? (parseInt(profile.userWeight) / Math.pow(parseInt(profile.userHeight) / 100, 2)).toFixed(1)
@@ -198,6 +244,8 @@ export default function AIAdviceScreen({ navigation, route }: any) {
     (survey.heatExposure === 'often' || survey.heatExposure === 'almostDaily') && { title: '減少高溫暴露頻率', text: '減少三溫暖、熱水澡或久坐時間，每小時起身活動。' },
   ].filter(Boolean) as { title: string, text: string }[] : []
 
+  const dietTips = survey ? getDietTips(survey) : []
+
   return (
     <View style={styles.container}>
       <View style={styles.appbar}>
@@ -295,7 +343,6 @@ export default function AIAdviceScreen({ navigation, route }: any) {
           )}
         </View>
 
-
         <View style={styles.adviceCard}>
           <Text style={styles.adviceTitle}>個人健康綜合評估</Text>
           {profileComplete ? (
@@ -322,36 +369,6 @@ export default function AIAdviceScreen({ navigation, route }: any) {
                   {riskFactors.map((f, i) => <Text key={i} style={styles.riskText}>• {f}</Text>)}
                 </>
               )}
-              {baziInfo && (
-              <View style={styles.baziCard}>
-                <Text style={styles.baziLabel}>命理小彩蛋</Text>
-                <Text style={[styles.baziValue, { color: elementColors[baziInfo.element] }]}>
-                  {baziInfo.ganzhi}年・{baziInfo.nayin}
-                </Text>
-                <View style={styles.baziDivider} />
-                <Text style={styles.baziReadingLabel}>性格特質</Text>
-                <Text style={styles.baziReadingText}>{elementReadings[baziInfo.element]?.trait}</Text>
-                {dailyFortune && (
-                  <>
-                    <Text style={[styles.baziReadingLabel, { marginTop: 8 }]}>當日運勢</Text>
-                    <Text style={styles.baziReadingText}>{dailyFortune.text}</Text>
-                    <Text style={[styles.baziReadingLabel, { marginTop: 8 }]}>今日宜忌</Text>
-                    <Text style={styles.baziReadingText}>宜：{dailyFortune.todayActivity}　忌：{dailyFortune.todayCaution}</Text>
-                    <Text style={[styles.baziReadingLabel, { marginTop: 8 }]}>今日幸運色</Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 2 }}>
-                      <View style={{
-                        width: 16, height: 16, borderRadius: 8,
-                        backgroundColor: luckyColorHex[dailyFortune.todayLuckyColor] || colors.gray300,
-                        borderWidth: dailyFortune.todayLuckyColor === '白色' ? 1 : 0,
-                        borderColor: colors.gray300,
-                      }} />
-                      <Text style={styles.baziReadingText}>{dailyFortune.todayLuckyColor}</Text>
-                    </View>
-                  </>
-                )}
-                <Text style={styles.baziDisclaimer}>本區塊為趣味小彩蛋，非醫學或命理專業建議，僅供參考。</Text>
-              </View>
-            )}
             </>
           ) : (
             <Text style={styles.adviceText}>請至「設定 → 個人資料」填寫基礎資料，以獲得更完整的綜合評估。</Text>
@@ -388,6 +405,69 @@ export default function AIAdviceScreen({ navigation, route }: any) {
                 </View>
               </View>
             ))}
+          </View>
+        )}
+
+        {dietTips.length > 0 && (
+          <View style={styles.adviceCard}>
+            <Text style={styles.adviceTitle}>飲食建議</Text>
+            {dietTips.map((item, i) => (
+              <View key={i} style={[styles.actionRow, i === dietTips.length - 1 && { borderBottomWidth: 0 }]}>
+                <View style={styles.dietNum}>
+                  <Text style={styles.dietNumText}>🍽</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.actionTitle}>{item.title}</Text>
+                  <Text style={styles.dietText}>{item.text}</Text>
+                </View>
+              </View>
+            ))}
+            <Text style={styles.dietDisclaimer}>本建議依本次問卷結果篩選對應面向，屬一般性飲食衛教觀念，如有特殊飲食或健康需求，請諮詢營養師或醫師。</Text>
+          </View>
+        )}
+
+        {baziInfo && (
+          <View style={styles.baziCard}>
+            <Text style={styles.baziLabel}>小彩蛋</Text>
+            <Text style={[styles.baziValue, { color: elementColors[baziInfo.element] }]}>
+              {baziInfo.ganzhi}年・{baziInfo.nayin}
+            </Text>
+            <View style={styles.baziDivider} />
+            <Text style={styles.baziReadingLabel}>性格特質</Text>
+            <Text style={styles.baziReadingText}>{elementReadings[baziInfo.element]?.trait}</Text>
+            {dailyFortune && (
+              <>
+                <Text style={[styles.baziReadingLabel, { marginTop: 8 }]}>當日運勢</Text>
+                <Text style={styles.baziReadingText}>{dailyFortune.text}</Text>
+                <Text style={[styles.baziReadingLabel, { marginTop: 8 }]}>今日宜忌</Text>
+                <Text style={styles.baziReadingText}>宜：{dailyFortune.todayActivity}　忌：{dailyFortune.todayCaution}</Text>
+                <Text style={[styles.baziReadingLabel, { marginTop: 8 }]}>今日幸運色</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 2 }}>
+                  <View style={{
+                    width: 16, height: 16, borderRadius: 8,
+                    backgroundColor: luckyColorHex[dailyFortune.todayLuckyColor] || colors.gray300,
+                    borderWidth: dailyFortune.todayLuckyColor === '白色' ? 1 : 0,
+                    borderColor: colors.gray300,
+                  }} />
+                  <Text style={styles.baziReadingText}>{dailyFortune.todayLuckyColor}</Text>
+                </View>
+              </>
+            )}
+
+            {zodiacInfo && (
+              <>
+                <View style={styles.baziDivider} />
+                <Text style={[styles.baziValue, { color: zodiacColors[zodiacInfo.name] }]}>
+                  {zodiacInfo.name}・{zodiacInfo.element}
+                </Text>
+                <Text style={[styles.baziReadingLabel, { marginTop: 8 }]}>星座特質</Text>
+                <Text style={styles.baziReadingText}>{zodiacReadings[zodiacInfo.name]?.trait}</Text>
+                <Text style={[styles.baziReadingLabel, { marginTop: 8 }]}>近期運勢</Text>
+                <Text style={styles.baziReadingText}>{zodiacReadings[zodiacInfo.name]?.fortune}</Text>
+              </>
+            )}
+
+            <Text style={styles.baziDisclaimer}>本區塊為趣味小彩蛋，非醫學或命理專業建議，僅供參考。</Text>
           </View>
         )}
 
@@ -465,8 +545,16 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2,
   },
   actionNumText: { fontSize: 9, fontWeight: typography.weights.medium, color: colors.success },
+  dietNum: {
+    width: 20, height: 20, borderRadius: 10,
+    backgroundColor: colors.primaryLight, borderWidth: 1, borderColor: colors.primary,
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2,
+  },
+  dietNumText: { fontSize: 10 },
   actionTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray900, marginBottom: 2 },
   actionText: { fontSize: typography.sizes.sm, color: colors.gray400, lineHeight: 16 },
+  dietText: { fontSize: typography.sizes.sm, color: colors.gray900, lineHeight: 16 },
+  dietDisclaimer: { fontSize: 10, color: colors.gray400, textAlign: 'center', marginTop: 8, lineHeight: 15 },
   disclaimer: { fontSize: typography.sizes.sm, color: colors.gray400, textAlign: 'center', marginBottom: 12, lineHeight: 16 },
   backBtn: {
     height: 40, borderRadius: 20, backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
@@ -486,13 +574,13 @@ const styles = StyleSheet.create({
     borderWidth: 0.5, borderColor: colors.gray200,
     borderRadius: 16,
     padding: 14,
-    marginTop: 10,
+    marginBottom: 14,
     alignItems: 'center',
   },
-  baziLabel: { fontSize: typography.sizes.sm, color: colors.gray400, marginBottom: 4 },
+  baziLabel: { fontSize: typography.sizes.sm, color: colors.gray900, marginBottom: 4 },
   baziValue: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium },
   baziDivider: { height: 0.5, backgroundColor: colors.gray200, width: '100%', marginVertical: 8 },
-  baziReadingLabel: { fontSize: typography.sizes.sm, color: colors.gray400 },
-  baziReadingText: { fontSize: typography.sizes.sm, color: colors.gray500, textAlign: 'center', lineHeight: 18 },
-  baziDisclaimer: { fontSize: 10, color: colors.gray400, textAlign: 'center', marginTop: 6, lineHeight: 15 },
+  baziReadingLabel: { fontSize: typography.sizes.sm, color: colors.gray500 },
+  baziReadingText: { fontSize: typography.sizes.sm, color: colors.gray900, textAlign: 'center', lineHeight: 18 },
+  baziDisclaimer: { fontSize: 10, color: colors.gray500, textAlign: 'center', marginTop: 6, lineHeight: 15 },
 })

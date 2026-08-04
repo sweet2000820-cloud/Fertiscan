@@ -2,17 +2,32 @@ import { useState } from 'react'
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native'
 import { colors, typography } from '../theme'
 import Button from '../components/Button'
+import { sendPasswordResetEmail } from 'firebase/auth'
+import { auth } from '../firebase'
 
 export default function ForgotPasswordScreen({ navigation }: any) {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
+  const [sending, setSending] = useState(false)
 
-  function handleSend() {
+  async function handleSend() {
     if (!email) {
       Alert.alert('請填寫', '請輸入您的電子信箱')
       return
     }
-    setSent(true)
+    setSending(true)
+    try {
+      await sendPasswordResetEmail(auth, email)
+      setSent(true)
+    } catch (error: any) {
+      let message = '傳送失敗，請稍後再試'
+      if (error.code === 'auth/user-not-found') message = '找不到此信箱對應的帳號'
+      else if (error.code === 'auth/invalid-email') message = '信箱格式不正確'
+      else if (error.code === 'auth/too-many-requests') message = '嘗試次數過多，請稍後再試'
+      Alert.alert('傳送失敗', message)
+    } finally {
+      setSending(false)
+    }
   }
 
   if (sent) {
@@ -34,7 +49,12 @@ export default function ForgotPasswordScreen({ navigation }: any) {
             <Text style={styles.tealTitle}>沒收到信？</Text>
             <Text style={styles.tealText}>請確認信箱是否正確，或檢查垃圾郵件資料夾。連結有效期限為 30 分鐘。</Text>
           </View>
-          <Button title="重新傳送" onPress={() => setSent(false)} variant="secondary" />
+          <Button
+            title={sending ? '傳送中...' : '重新傳送'}
+            onPress={handleSend}
+            disabled={sending}
+            variant="secondary"
+          />
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.navigate('Login')}>
             <Text style={styles.backBtnText}>返回登入</Text>
           </TouchableOpacity>
@@ -74,7 +94,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
           />
         </View>
 
-        <Button title="傳送重設連結" onPress={handleSend} />
+        <Button title={sending ? '傳送中...' : '傳送重設連結'} onPress={handleSend} disabled={sending} />
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Text style={styles.backBtnText}>返回登入</Text>
         </TouchableOpacity>

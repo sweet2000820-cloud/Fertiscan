@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { colors, typography } from '../theme'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch, Share, Linking } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch, Share, Linking, ActivityIndicator, TextInput } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
 import * as Print from 'expo-print'
 import * as Sharing from 'expo-sharing'
@@ -10,10 +10,115 @@ import { doc, getDoc } from 'firebase/firestore'
 import { auth, db } from '../firebase'
 import { getUserPlan } from '../plan'
 
+// 後端 API 網址。imotile.app 網域正式綁定 Render 後，把 API_BASE 改成 https://imotile.app 即可
+const API_BASE = 'https://fertiscan-api.onrender.com'
+// 分享連結顯示用的網域。目前 imotile.app 尚未指向後端，實際能開啟的網址是 API_BASE + /r/{id}
+// 待網域設定完成後，SHARE_DOMAIN 改成 'imotile.app' 就會跟畫面顯示、實際連結一致
+const SHARE_DOMAIN = 'fertiscan-api.onrender.com'
+
+// ⚠️ 換算公式為前端暫時推估值，非真實校準結果，待批號校準曲線完成後需整支替換
+const CONCENTRATION_FACTOR = 22
+const C_LINE_FACTOR = 142
+const T_LINE_FACTOR = 97
+const CALIBRATION_DIVISOR = 0.68
+// ⚠️ 參考下限尚未對應任何醫學實際標準或後端設定值，待確認
+const REFERENCE_LOWER_LIMIT = 25
+
+function calcMetrics(tc: string) {
+  const tcVal = parseFloat(tc)
+  return {
+    conc: Math.round(CONCENTRATION_FACTOR * tcVal / CALIBRATION_DIVISOR),
+    cLine: Math.round(tcVal * C_LINE_FACTOR / CALIBRATION_DIVISOR),
+    tLine: Math.round(T_LINE_FACTOR * tcVal / CALIBRATION_DIVISOR),
+  }
+}
+
+// 依使用者 UID 產生穩定的匿名代碼，同一使用者每次產生的代碼相同，但不同使用者不會撞號
+function generateAnonymousId(uid: string) {
+  let hash = 0
+  for (let i = 0; i < uid.length; i++) {
+    hash = (hash * 31 + uid.charCodeAt(i)) >>> 0
+  }
+  return 'FS-' + hash.toString(36).toUpperCase().padStart(4, '0').slice(-4)
+}
+
 export default function ReportLinkScreen({ navigation, route }: any) {
   const [pwEnabled, setPwEnabled] = useState(false)
+  const [password, setPassword] = useState('')
   const [expiry, setExpiry] = useState('7 天')
+  const [anonymousId, setAnonymousId] = useState('')
+  const [shareId, setShareId] = useState('')
+  const [creating, setCreating] = useState(true)
   const records = route?.params?.records || []
+
+  const expiryHoursMap: Record<string, number> = {
+    '24 小時': 24, '3 天': 72, '7 天': 168, '30 天': 720,
+  }
+
+  async function createShare() {
+    if (pwEnabled && !password.trim()) {
+      // 密碼開關開著卻沒輸入密碼，不送出請求
+      return
+    }
+    setCreating(true)
+    try {
+      const res = await fetch(`${API_BASE}/share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          records: records.map((r: any) => ({
+            date: r.date,
+            time: r.time,
+            tc: r.tc,
+            status: r.status,
+            lot: r.lot,
+            qualityPassed: r.qualityPassed !== false,
+          })),
+          expiry_hours: expiryHoursMap[expiry] ?? 168,
+          password: pwEnabled ? password : null,
+        }),
+      })
+      const json = await res.json()
+      if (json.success) {
+        setShareId(json.share_id)
+      } else {
+        Alert.alert('產生連結失敗', '請稍後再試')
+      }
+    } catch (e) {
+      Alert.alert('連線失敗', '無法連上伺服器，請確認網路連線後再試一次')
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  useEffect(() => {
+    const uid = auth.currentUser?.uid
+    if (uid) setAnonymousId(generateAnonymousId(uid))
+    createShare()
+  }, [])
+
+  // 有效期限、密碼開關、密碼內容變更時，延遲 600ms 後重新產生分享連結
+  // 用 debounce 避免使用者打密碼時每個字都觸發一次 API
+  useEffect(() => {
+    if (creating) return
+    if (pwEnabled && !password.trim()) return
+    const timer = setTimeout(() => {
+      createShare()
+    }, 600)
+    return () => clearTimeout(timer)
+  }, [expiry, pwEnabled, password])
+
+  const shareUrl = shareId ? `${SHARE_DOMAIN}/r/${shareId}` : ''
+
+  // 只要有任一筆紀錄的 qualityPassed 明確為 false，就視為未全部通過
+  // 目前後端影像分析（main.py）沒有留 log、不回傳這個欄位，所以現階段預設為 true（尚無法真正判斷）
+  const allQualityPassed = records.every((r: any) => r.qualityPassed !== false)
+
+  async function copyLink() {
+    if (!shareUrl) return
+    await Clipboard.setStringAsync(shareUrl)
+    Alert.alert('已複製', '連結已複製到剪貼簿')
+  }
 
   async function exportPDF() {
     const user = auth.currentUser
@@ -58,13 +163,11 @@ export default function ReportLinkScreen({ navigation, route }: any) {
         <div class="section">
           <div class="section-title">檢測紀錄明細</div>
           ${records.map((r: any) => {
-            const tcVal = parseFloat(r.tc)
-            const conc = Math.round(22 * tcVal / 0.68)
-            const cLine = Math.round(tcVal * 142 / 0.68)
-            const tLine = Math.round(97 * tcVal / 0.68)
+            const { conc, cLine, tLine } = calcMetrics(r.tc)
             const badgeClass = r.status === '正常' ? 'badge-normal' : r.status === '邊緣' ? 'badge-warn' : 'badge-danger'
             const tcColor = r.status === '正常' ? '#0A5C6B' : r.status === '邊緣' ? '#f57f17' : '#c62828'
-            
+            const qualityOk = r.qualityPassed !== false
+
             return `
               <div class="record-card">
                 <div class="record-header">
@@ -72,18 +175,18 @@ export default function ReportLinkScreen({ navigation, route }: any) {
                   <span class="badge ${badgeClass}">${r.status}</span>
                 </div>
                 <div class="tc-big" style="color:${tcColor}">${r.tc}</div>
-                <div class="row"><span class="label">換算濃度</span><span class="value">≈ ${conc} mIU/mL</span></div>
-                <div class="row"><span class="label">參考下限</span><span class="value">25 mIU/mL</span></div>
+                <div class="row"><span class="label">換算濃度（推估值）</span><span class="value">≈ ${conc} mIU/mL</span></div>
+                <div class="row"><span class="label">參考下限</span><span class="value">${REFERENCE_LOWER_LIMIT} mIU/mL</span></div>
                 <div class="row"><span class="label">Control line (C)</span><span class="value">灰階 ${cLine}</span></div>
                 <div class="row"><span class="label">Test line (T)</span><span class="value">灰階 ${tLine}</span></div>
                 <div class="row"><span class="label">試紙批號</span><span class="value">${r.lot}</span></div>
-                <div class="row" style="border:none"><span class="label">影像品質</span><span class="value" style="color:green">✓ 全部通過</span></div>
+                <div class="row" style="border:none"><span class="label">影像品質</span><span class="value" style="color:${qualityOk ? 'green' : '#c62828'}">${qualityOk ? '✓ 通過' : '⚠ 需確認'}</span></div>
               </div>
             `
           }).join('')}
         </div>
         <div class="footer">
-          本報告由 iMotile App 自動生成，僅供初步參考，不構成醫療診斷。如有疑慮請諮詢生殖科醫師。
+          本報告由 iMotile App 自動生成，濃度換算為推估值，僅供初步參考，不構成醫療診斷。如有疑慮請諮詢生殖科醫師。
         </div>
       </body>
       </html>
@@ -112,7 +215,7 @@ export default function ReportLinkScreen({ navigation, route }: any) {
 
         <View style={styles.listCard}>
           <Text style={styles.reportTitle}>iMotile 檢測報告</Text>
-          <Text style={[styles.hint, { marginBottom: 8 }]}>共 {records.length} 筆紀錄 · 匿名 ID: FS-4A2C</Text>
+          <Text style={[styles.hint, { marginBottom: 8 }]}>共 {records.length} 筆紀錄 · 匿名 ID: {anonymousId || '產生中...'}</Text>
           {records.map((r: any, i: number) => (
             <View key={i} style={[styles.recordRow, i < records.length - 1 && { marginBottom: 8 }]}>
               <View style={{ flex: 1 }}>
@@ -135,40 +238,59 @@ export default function ReportLinkScreen({ navigation, route }: any) {
         <Text style={styles.sectionTitle}>分享連結</Text>
         <View style={styles.linkBox}>
           <View style={styles.linkUrl}>
-            <Text style={styles.linkText}>imotile.app/r/FS-4A2C-x8kqp</Text>
+            {creating ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text style={styles.linkText}>產生連結中...</Text>
+              </View>
+            ) : pwEnabled && !password.trim() ? (
+              <Text style={styles.linkText}>請先設定密碼</Text>
+            ) : (
+              <Text style={styles.linkText}>{shareUrl || '連結產生失敗'}</Text>
+            )}
           </View>
-          <TouchableOpacity
-            style={styles.linkBtn}
-            onPress={async () => {
-              await Clipboard.setStringAsync('imotile.app/r/FS-4A2C-x8kqp')
-              Alert.alert('已複製', '連結已複製到剪貼簿')
-            }}
-          >
+          <TouchableOpacity style={styles.linkBtn} onPress={copyLink} disabled={!shareUrl}>
             <Text style={styles.linkBtnText}>複製連結</Text>
           </TouchableOpacity>
         </View>
 
         <Text style={styles.sectionTitle}>快速傳送管道</Text>
         <View style={styles.channelRow}>
-          <TouchableOpacity style={styles.channel} onPress={() => Linking.openURL('https://line.me/R/share?text=imotile.app/r/FS-4A2C-x8kqp')}>
+          <TouchableOpacity
+            style={styles.channel}
+            disabled={!shareUrl}
+            onPress={() => Linking.openURL(`https://line.me/R/share?text=${encodeURIComponent(shareUrl)}`)}
+          >
             <View style={[styles.channelIcon, { backgroundColor: '#06C755' }]}>
               <Text style={styles.channelIconText}>L</Text>
             </View>
             <Text style={styles.channelName}>LINE</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.channel} onPress={() => Linking.openURL('mailto:?subject=iMotile%20檢測報告&body=imotile.app/r/FS-4A2C-x8kqp')}>
+          <TouchableOpacity
+            style={styles.channel}
+            disabled={!shareUrl}
+            onPress={() => Linking.openURL(`mailto:?subject=iMotile%20檢測報告&body=${encodeURIComponent(shareUrl)}`)}
+          >
             <View style={[styles.channelIcon, { backgroundColor: colors.primary }]}>
               <Text style={styles.channelIconText}>✉</Text>
             </View>
             <Text style={styles.channelName}>Email</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.channel} onPress={() => Linking.openURL('sms:?body=imotile.app/r/FS-4A2C-x8kqp')}>
+          <TouchableOpacity
+            style={styles.channel}
+            disabled={!shareUrl}
+            onPress={() => Linking.openURL(`sms:?body=${encodeURIComponent(shareUrl)}`)}
+          >
             <View style={[styles.channelIcon, { backgroundColor: '#4B9EFF' }]}>
               <Text style={styles.channelIconText}>💬</Text>
             </View>
             <Text style={styles.channelName}>訊息</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.channel} onPress={() => Share.share({ message: '我的 iMotile 檢測報告：imotile.app/r/FS-4A2C-x8kqp' })}>
+          <TouchableOpacity
+            style={styles.channel}
+            disabled={!shareUrl}
+            onPress={() => Share.share({ message: `我的 iMotile 檢測報告：${shareUrl}` })}
+          >
             <View style={[styles.channelIcon, { backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200 }]}>
               <Text style={[styles.channelIconText, { color: colors.gray500 }]}>···</Text>
             </View>
@@ -190,13 +312,28 @@ export default function ReportLinkScreen({ navigation, route }: any) {
               <Text style={styles.expiryValue}>{expiry} ›</Text>
             </TouchableOpacity>
           </View>
-          <View style={[styles.row, { borderBottomWidth: 0 }]}>
+          <View style={[styles.row, { borderBottomWidth: pwEnabled ? 0.5 : 0 }]}>
             <View>
               <Text style={styles.rowLabel}>需要密碼開啟</Text>
               <Text style={styles.hint}>{pwEnabled ? '開啟 — 需輸入密碼' : '關閉 — 任何人可查閱'}</Text>
             </View>
-            <Switch value={pwEnabled} onValueChange={setPwEnabled} trackColor={{ true: colors.primary }} />
+            <Switch value={pwEnabled} onValueChange={(v) => {
+              setPwEnabled(v)
+              if (!v) setPassword('')
+            }} trackColor={{ true: colors.primary }} />
           </View>
+          {pwEnabled && (
+            <View style={{ paddingVertical: 11, borderBottomWidth: 0 }}>
+              <TextInput
+                style={styles.pwInput}
+                placeholder="設定分享密碼"
+                placeholderTextColor={colors.gray400}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
+            </View>
+          )}
         </View>
 
         <TouchableOpacity
@@ -224,8 +361,8 @@ export default function ReportLinkScreen({ navigation, route }: any) {
           <TouchableOpacity style={styles.btnGray} onPress={() => navigation.goBack()}>
             <Text style={styles.btnGrayText}>返回報告</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.btnPrimary} onPress={() => {
-            Alert.alert('已複製', '連結已複製到剪貼簿')
+          <TouchableOpacity style={styles.btnPrimary} onPress={async () => {
+            if (shareUrl) await copyLink()
             navigation.goBack()
           }}>
             <Text style={styles.btnPrimaryText}>複製並返回</Text>
@@ -270,6 +407,11 @@ const styles = StyleSheet.create({
   },
   rowLabel: { fontSize: typography.sizes.md, color: colors.gray900 },
   expiryValue: { fontSize: typography.sizes.md, color: colors.primary, fontWeight: typography.weights.medium },
+  pwInput: {
+    height: 44, borderWidth: 0.5, borderColor: colors.gray300,
+    borderRadius: 12, paddingHorizontal: 14,
+    fontSize: typography.sizes.md, color: colors.gray900,
+  },
   pdfBtn: {
     height: 46, borderRadius: 23,
     borderWidth: 1.5, borderColor: colors.primary,

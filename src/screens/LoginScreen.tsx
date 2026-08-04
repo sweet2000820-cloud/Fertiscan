@@ -36,7 +36,7 @@ export default function LoginScreen({ onLogin, navigation }: any) {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
         <View style={styles.logoArea}>
-          <Image source={require('../../assets/login_logo_v2.png')} style={styles.logoCircle} resizeMode="contain" />
+          <Image source={require('../../assets/login_logo_v3.png')} style={styles.logoCircle} resizeMode="contain" />
           <Text style={styles.subtitle}>生殖功能試紙光學定量</Text>
         </View>
 
@@ -93,8 +93,8 @@ const styles = StyleSheet.create({
     flex: 1, backgroundColor: colors.white,
     padding: 24, paddingTop: 80,
   },
-  logoArea: { paddingTop: 20, paddingBottom: -20, alignItems: 'center' },
-  logoCircle: { width: 300, height: 300 },
+  logoArea: { paddingTop: 20, paddingBottom: 10, alignItems: 'center' },
+  logoCircle: { width: 200, height: 200, marginBottom: 30 },
   subtitle: { fontSize: typography.sizes.sm, color: colors.gray400, marginTop: -60 },
   form: { gap: 12, marginBottom: 20 },
   field: { gap: 4 },

@@ -25,8 +25,8 @@ export default function DashboardScreen({ navigation }: any) {
         getDoc(doc(db, 'users', user.uid)).then(snap => {
           if (snap.exists()) {
             const data: any = snap.data()
-            if (data.name) setUserName(data.name)
-            if (data.avatar) setAvatar(data.avatar)
+            setUserName(data.name || '')
+            setAvatar(data.avatar || null)
           }
         })
       }
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   brandLogo: {
-    width: 200,
+    width: 120,
     height: 60,
   },
   header: {
