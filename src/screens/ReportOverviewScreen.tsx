@@ -2,6 +2,9 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } fr
 import { colors, typography } from '../theme'
 import { Ionicons } from '@expo/vector-icons'
 import { getUserPlan } from '../plan'
+import { doc, getDoc } from 'firebase/firestore'
+import { auth, db } from '../firebase'
+import { getRecords } from '../storage'
 import * as Print from 'expo-print'
 import * as Sharing from 'expo-sharing'
 
@@ -19,6 +22,42 @@ function getNeedlePosition(tc: string) {
   if (val < 0.5) return '15%'
   if (val < 0.85) return `${((val - 0.5) / 0.35) * 35 + 15}%`
   return `${Math.min(((val - 0.85) / 0.15) * 20 + 50, 90)}%`
+}
+
+function generateAnonId(uid: string): string {
+  let hash = 0
+  for (let i = 0; i < uid.length; i++) {
+    hash = ((hash << 5) - hash + uid.charCodeAt(i)) | 0
+  }
+  const code = Math.abs(hash).toString(36).toUpperCase().slice(0, 6)
+  return `FS-${code}`
+}
+
+function getStatusBadgeColors(status: string) {
+  if (status === '正常') return { bg: '#EAF3DE', text: '#3B6D11' }
+  if (status === '邊緣') return { bg: '#FAEEDA', text: '#854F0B' }
+  return { bg: '#FCEBEB', text: '#A32D2D' }
+}
+
+const sleepLabels: Record<string, string> = { lt5: '少於 5 小時', '5to6': '5–6 小時', '7to8': '7–8 小時', gt9: '超過 9 小時' }
+const stressLabels: Record<string, string> = { low: '壓力不大', moderate: '有些壓力', high: '壓力較大', veryHigh: '壓力很大' }
+const heatLabels: Record<string, string> = { never: '從不', occasional: '偶爾', often: '常常', almostDaily: '幾乎每天' }
+const occupationLabels: Record<string, string> = { sedentary: '久坐辦公', active: '站立走動', highHeat: '高溫作業', other: '其他' }
+
+function calcScoreItems(survey: any) {
+  if (!survey) return []
+  return [
+    { label: '睡眠', max: 25, score: survey.sleepHours === '7to8' || survey.sleepHours === 'gt9' ? 25 : survey.sleepHours === '5to6' ? 14 : survey.sleepHours === 'lt5' ? 5 : 12, detail: sleepLabels[survey.sleepHours] || '未填寫' },
+    { label: '壓力', max: 25, score: survey.stressLevel === 'low' ? 25 : survey.stressLevel === 'moderate' ? 16 : survey.stressLevel === 'high' ? 8 : survey.stressLevel === 'veryHigh' ? 3 : 12, detail: stressLabels[survey.stressLevel] || '未填寫' },
+    { label: '高溫暴露', max: 25, score: survey.heatExposure === 'never' ? 25 : survey.heatExposure === 'occasional' ? 16 : survey.heatExposure === 'often' ? 8 : survey.heatExposure === 'almostDaily' ? 3 : 12, detail: heatLabels[survey.heatExposure] || '未填寫' },
+    { label: '飲酒', max: 25, score: survey.heavyDrinking ? 5 : 25, detail: survey.heavyDrinking ? '近48小時有大量飲酒' : '近48小時無大量飲酒' },
+  ]
+}
+
+function getScoreColor(s: number) {
+  if (s >= 70) return '#3B6D11'
+  if (s >= 40) return '#854F0B'
+  return '#A32D2D'
 }
 
 export default function ReportOverviewScreen({ navigation, route }: any) {
@@ -39,70 +78,226 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
   const cLine = record.cIntensity ? record.cIntensity.toFixed(1) : Math.round(tcVal * 142 / 0.68)
   const tLine = record.tIntensity ? record.tIntensity.toFixed(1) : Math.round(97 * tcVal / 0.68)
   const conc = '待校準'
+  const abstinenceDays = record.preTestSurvey?.abstinenceDays
 
   async function exportPDF() {
+    const user = auth.currentUser
+    let nameRaw = ''
+    let anonId = 'FS-------'
+    let profile: any = null
+    let allRecords: any[] = []
+
+    if (user) {
+      anonId = generateAnonId(user.uid)
+      const snap = await getDoc(doc(db, 'users', user.uid))
+      if (snap.exists()) {
+        const data: any = snap.data()
+        nameRaw = data.name || ''
+        profile = data
+      }
+      allRecords = await getRecords()
+    }
+
+    const maskedName = nameRaw.length > 0
+      ? nameRaw.slice(0, 1) + '○' + (nameRaw.length > 2 ? nameRaw.slice(-1) : '')
+      : '使用者'
+
+    const generatedAt = new Date().toLocaleString('zh-TW')
+    const badgeColors = getStatusBadgeColors(record.status)
+    const adviceText = record.status === '正常'
+      ? `此次 T/C 比值（${record.tc}）在正常範圍內（≥0.85）。建議維持目前生活習慣，定期複測追蹤趨勢。`
+      : record.status === '邊緣'
+      ? `此次 T/C 比值（${record.tc}）低於正常參考值（≥0.85）。建議 2 週後複測，或諮詢生殖科醫師進行完整評估。`
+      : `此次 T/C 比值（${record.tc}）明顯偏低。建議儘速諮詢生殖科醫師進行進一步檢查。`
+
+    // ── AI 解讀相關計算 ──
+    const age = profile?.birthYear ? new Date().getFullYear() - parseInt(profile.birthYear) : null
+    const bmi = profile?.height && profile?.weight
+      ? (parseInt(profile.weight) / Math.pow(parseInt(profile.height) / 100, 2)).toFixed(1)
+      : null
+    const bmiNum = bmi ? parseFloat(bmi) : null
+    const bmiStatus = bmiNum ? (bmiNum < 18.5 ? '偏輕' : bmiNum < 24 ? '正常' : bmiNum < 27 ? '過重' : '肥胖') : '未填寫'
+
+    const riskFactors: string[] = []
+    if (profile?.varicocele) riskFactors.push('精索靜脈曲張病史')
+    if (profile?.testicularHistory) riskFactors.push('隱睪症／睪丸手術病史')
+    if (profile?.endocrineDisease) riskFactors.push('內分泌相關疾病')
+    if (profile?.smoke) riskFactors.push(`吸菸${profile?.smokeYears ? `（約 ${profile.smokeYears} 年）` : ''}`)
+    if (profile?.occupationType === 'highHeat') riskFactors.push('高溫作業環境')
+
+    const survey = record.preTestSurvey
+    const scoreItems = calcScoreItems(survey)
+    const score = scoreItems.length > 0 ? scoreItems.reduce((s, i) => s + i.score, 0) : null
+
+    const comparableRecords = abstinenceDays != null
+      ? allRecords.filter(r => { const d = r.preTestSurvey?.abstinenceDays; return d != null && Math.abs(d - abstinenceDays) <= 2 })
+      : []
+    const trend = comparableRecords.length >= 2
+      ? parseFloat(comparableRecords[0].tc) > parseFloat(comparableRecords[1].tc) ? '上升'
+        : parseFloat(comparableRecords[0].tc) < parseFloat(comparableRecords[1].tc) ? '下降' : '穩定'
+      : '資料不足'
+
+    const actionList = survey ? [
+      !(survey.sleepHours === '7to8' || survey.sleepHours === 'gt9') && { title: '固定就寢時間，目標 7–8 小時', text: '從今晚起設定固定就寢時間，睡前 30 分鐘避免使用螢幕。' },
+      survey.stressLevel !== 'low' && { title: '每天安排 10 分鐘放鬆時間', text: '嘗試冥想、深呼吸或散步，幫助調節壓力荷爾蒙。' },
+      (survey.heatExposure === 'often' || survey.heatExposure === 'almostDaily') && { title: '減少高溫暴露頻率', text: '減少三溫暖、熱水澡或久坐時間，每小時起身活動。' },
+    ].filter(Boolean) as { title: string, text: string }[] : []
+
+    const healthSectionHtml = (age || bmi || riskFactors.length > 0) ? `
+      <div class="section">
+        <div class="section-title">個人健康綜合評估</div>
+        <table>
+          ${age ? `<tr><td class="row-label">年齡</td><td class="row-value">${age} 歲</td></tr>` : ''}
+          ${bmi ? `<tr><td class="row-label">BMI</td><td class="row-value">${bmi}（${bmiStatus}）</td></tr>` : ''}
+          ${profile?.occupationType ? `<tr><td class="row-label">職業型態</td><td class="row-value">${occupationLabels[profile.occupationType] || '未填寫'}</td></tr>` : ''}
+        </table>
+        ${riskFactors.length > 0 ? `<div class="risk-box"><div class="risk-title">已知風險因子</div>${riskFactors.map(f => `<div class="risk-item">• ${f}</div>`).join('')}</div>` : ''}
+      </div>
+    ` : ''
+
+    const scoreSectionHtml = score != null ? `
+      <div class="section">
+        <div class="section-title">本次生活習慣評分</div>
+        <div class="score-row">
+          <span class="score-value" style="color:${getScoreColor(score)}">${score} / 100</span>
+        </div>
+        <table>
+          ${scoreItems.map(i => `<tr><td class="row-label">${i.label}（${i.detail}）</td><td class="row-value">${i.score}/${i.max}</td></tr>`).join('')}
+        </table>
+        <div class="trend-note">在禁慾天數相近的紀錄中，T/C 比值趨勢為「${trend}」。</div>
+      </div>
+    ` : ''
+
+    const actionSectionHtml = actionList.length > 0 ? `
+      <div class="section">
+        <div class="section-title">本週行動建議</div>
+        ${actionList.map((a, i) => `
+          <div class="action-item">
+            <span class="action-num">${i + 1}</span>
+            <div>
+              <div class="action-title">${a.title}</div>
+              <div class="action-text">${a.text}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    ` : ''
+
     const html = `
       <html>
       <head>
         <meta charset="utf-8">
         <style>
-          body { font-family: sans-serif; padding: 40px; color: #333; }
-          h1 { color: #0A5C6B; font-size: 24px; margin-bottom: 4px; }
-          .subtitle { color: #888; font-size: 14px; margin-bottom: 30px; }
-          .section { margin-bottom: 24px; }
-          .section-title { color: #0A5C6B; font-size: 16px; font-weight: bold; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
-          .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
-          .label { color: #888; font-size: 13px; }
-          .value { font-size: 13px; font-weight: bold; }
-          .tc-value { font-size: 48px; font-weight: bold; color: ${tcColor}; text-align: center; margin: 20px 0; }
-          .footer { margin-top: 40px; font-size: 11px; color: #aaa; text-align: center; border-top: 1px solid #eee; padding-top: 16px; }
+          * { box-sizing: border-box; }
+          body { font-family: sans-serif; margin: 0; color: #333; }
+          .header { padding: 36px 40px 24px; border-bottom: 3px solid #0A5C6B; display: flex; justify-content: space-between; align-items: center; }
+          .brand { font-size: 22px; font-weight: 700; color: #0A5C6B; }
+          .brand-sub { font-size: 11px; color: #6B7280; margin-top: 2px; }
+          .meta { text-align: right; font-size: 11px; color: #4B5563; line-height: 1.6; }
+          .content { padding: 28px 40px 0; }
+          .tc-card { background: #E0F3F5; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px; }
+          .tc-label { font-size: 11px; color: #0A5C6B; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 8px; }
+          .tc-value { font-size: 48px; font-weight: 700; color: ${tcColor}; }
+          .tc-badge { display: inline-block; margin-top: 8px; background: ${badgeColors.bg}; color: ${badgeColors.text}; font-size: 12px; font-weight: 600; padding: 4px 16px; border-radius: 20px; }
+          .section-title { font-size: 12px; font-weight: 600; color: #4B5563; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #F3F4F6; }
+          .section { margin-bottom: 20px; page-break-inside: avoid; break-inside: avoid; }
+          table { width: 100%; font-size: 13px; border-collapse: collapse; }
+          td { padding: 6px 0; }
+          .row-label { color: #4B5563; }
+          .row-value { text-align: right; color: #111827; font-weight: 500; }
+          .row-value-ok { text-align: right; color: #3B6D11; font-weight: 500; }
+          .advice-box { background: ${badgeColors.bg}; border-radius: 12px; padding: 16px 18px; margin-bottom: 28px; page-break-inside: avoid; break-inside: avoid; }
+          .advice-title { font-size: 12px; font-weight: 600; color: ${badgeColors.text}; margin-bottom: 4px; }
+          .advice-text { font-size: 12.5px; color: ${badgeColors.text}; line-height: 1.6; }
+          .footer { padding: 16px 40px 24px; border-top: 1px solid #F3F4F6; text-align: center; }
+          .footer-text { font-size: 10px; color: #6B7280; line-height: 1.6; }
+          .risk-box { background: #FCEBEB; border-radius: 8px; padding: 10px 12px; margin-top: 8px; }
+          .risk-title { font-size: 11px; font-weight: 600; color: #A32D2D; margin-bottom: 4px; }
+          .risk-item { font-size: 12px; color: #A32D2D; line-height: 1.6; }
+          .score-row { text-align: center; margin-bottom: 10px; }
+          .score-value { font-size: 28px; font-weight: 700; }
+          .trend-note { font-size: 12px; color: #4B5563; margin-top: 8px; line-height: 1.6; }
+          .action-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #F3F4F6; }
+          .action-num { width: 20px; height: 20px; border-radius: 10px; background: #EAF3DE; color: #3B6D11; font-size: 11px; font-weight: 600; text-align: center; line-height: 20px; flex-shrink: 0; }
+          .action-title { font-size: 13px; font-weight: 500; color: #111827; }
+          .action-text { font-size: 12px; color: #6B7280; margin-top: 2px; }
         </style>
       </head>
       <body>
-        <h1>iMotile 檢測報告</h1>
-        <p class="subtitle">${record.date} · ${record.time}</p>
-        <div class="section">
-          <div class="section-title">T/C 比值結果</div>
-          <div class="tc-value">${record.tc}</div>
-          <div class="row"><span class="label">狀態</span><span class="value">${badgeStyle.label}</span></div>
-          <div class="row"><span class="label">換算濃度</span><span class="value">≈ ${conc} mIU/mL</span></div>
-          <div class="row"><span class="label">參考下限</span><span class="value">25 mIU/mL</span></div>
-          <div class="row"><span class="label">試紙批號</span><span class="value">${record.lot}</span></div>
+        <div class="header">
+          <div>
+            <div class="brand">iMotile</div>
+            <div class="brand-sub">檢測報告</div>
+          </div>
+          <div class="meta">
+            ${record.date} · ${record.time}<br/>
+            批號 ${record.lot}<br/>
+            使用者 ${maskedName} · 識別碼 ${anonId}
+          </div>
         </div>
-        <div class="section">
-          <div class="section-title">條線訊號詳情</div>
-          <div class="row"><span class="label">Control line (C)</span><span class="value">灰階 ${cLine}</span></div>
-          <div class="row"><span class="label">Test line (T)</span><span class="value">灰階 ${tLine}</span></div>
+
+        <div class="content">
+          <div class="tc-card">
+            <div class="tc-label">T/C 比值</div>
+            <div class="tc-value">${record.tc}</div>
+            <div class="tc-badge">${badgeStyle.label}</div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">採樣資訊</div>
+            <table>
+              <tr><td class="row-label">禁慾天數</td><td class="row-value">${abstinenceDays != null ? `${abstinenceDays} 天` : '未記錄'}</td></tr>
+              <tr><td class="row-label">試紙批號</td><td class="row-value">${record.lot}</td></tr>
+              <tr><td class="row-label">報告產生時間</td><td class="row-value">${generatedAt}</td></tr>
+            </table>
+          </div>
+
+          <div class="section">
+            <div class="section-title">條線訊號詳情</div>
+            <table>
+              <tr><td class="row-label">Control line (C)</td><td class="row-value">灰階 ${cLine}</td></tr>
+              <tr><td class="row-label">Test line (T)</td><td class="row-value">灰階 ${tLine}</td></tr>
+              <tr><td class="row-label">換算濃度</td><td class="row-value">≈ ${conc} mIU/mL</td></tr>
+            </table>
+          </div>
+
+          <div class="section">
+            <div class="section-title">影像品質確認</div>
+            <table>
+              <tr><td class="row-label">C line 訊號</td><td class="row-value-ok">✓ 通過</td></tr>
+              <tr><td class="row-label">T line 偵測</td><td class="row-value-ok">✓ 通過</td></tr>
+              <tr><td class="row-label">影像穩定度</td><td class="row-value-ok">✓ 通過</td></tr>
+              <tr><td class="row-label">螢幕亮度</td><td class="row-value-ok">✓ 通過</td></tr>
+              <tr><td class="row-label">批號匹配</td><td class="row-value-ok">✓ 通過</td></tr>
+            </table>
+          </div>
+
+          ${healthSectionHtml}
+          ${scoreSectionHtml}
+          ${actionSectionHtml}
+
+          <div class="advice-box">
+            <div class="advice-title">${record.status === '正常' ? '結果說明' : '初步建議'}</div>
+            <div class="advice-text">${adviceText}</div>
+          </div>
         </div>
-        <div class="section">
-          <div class="section-title">影像品質確認</div>
-          <div class="row"><span class="label">C line 訊號</span><span class="value" style="color:green">✓ 通過</span></div>
-          <div class="row"><span class="label">T line 偵測</span><span class="value" style="color:green">✓ 通過</span></div>
-          <div class="row"><span class="label">影像穩定度</span><span class="value" style="color:green">✓ 通過</span></div>
-          <div class="row"><span class="label">螢幕亮度</span><span class="value" style="color:green">✓ 通過</span></div>
-          <div class="row"><span class="label">批號匹配</span><span class="value" style="color:green">✓ 通過</span></div>
-        </div>
-        <div class="section">
-          <div class="section-title">初步建議</div>
-          <p style="font-size:13px; color:#555; line-height:1.6;">
-            ${record.status === '正常'
-              ? `此次 T/C 比值（${record.tc}）在正常範圍內（≥0.85）。建議維持目前生活習慣，定期複測追蹤趨勢。`
-              : record.status === '邊緣'
-              ? `此次 T/C 比值（${record.tc}）低於正常參考值（≥0.85）。建議 2 週後複測，或諮詢生殖科醫師進行完整評估。`
-              : `此次 T/C 比值（${record.tc}）明顯偏低。建議儘速諮詢生殖科醫師進行進一步檢查。`
-            }
-          </p>
-        </div>
+
         <div class="footer">
-          本報告由 iMotile App 自動生成，僅供初步參考，不構成醫療診斷。<br/>
-          如有疑慮請諮詢生殖科醫師。
+          <div class="footer-text">
+            本報告由 iMotile App 自動生成，僅供初步參考，不構成醫療診斷。<br/>
+            如有疑慮請諮詢生殖科醫師。
+          </div>
         </div>
       </body>
       </html>
     `
     try {
-      const { uri } = await Print.printToFileAsync({ html })
-      await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: '分享 iMotile  報告' })
+      const { uri } = await Print.printToFileAsync({
+        html,
+        width: 595,
+        height: 842,
+      })
+      await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: '分享 iMotile 報告' })
     } catch (e) {
       Alert.alert('匯出失敗', '請再試一次')
     }
@@ -167,8 +362,8 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
             <Text style={[styles.infoValue, { color: tcColor }]}>≈ {conc} mIU/mL</Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.hint}>參考下限</Text>
-            <Text style={styles.infoValue}>25 mIU/mL</Text>
+            <Text style={styles.hint}>禁慾天數</Text>
+            <Text style={styles.infoValue}>{abstinenceDays != null ? `${abstinenceDays} 天` : '未記錄'}</Text>
           </View>
         </View>
 
@@ -251,8 +446,9 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.btnGray} onPress={() => navigation.navigate('ReportLink', { records: [record] })}>
-          <Text style={styles.btnGrayText}>複製分享連結</Text>
+        <TouchableOpacity style={styles.linkBtn} onPress={() => navigation.navigate('ReportLink', { records: [record] })}>
+          <Ionicons name="link-outline" size={16} color={colors.primary} />
+          <Text style={styles.linkBtnText}>複製分享連結</Text>
         </TouchableOpacity>
 
         <View style={{ height: 20 }} />
@@ -265,16 +461,16 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   appbar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingTop: 10, paddingHorizontal: 18, paddingBottom: 20,
+    paddingTop: 30, paddingHorizontal: 18, paddingBottom: 20,
   },
-  back: { fontSize: 40, color: colors.primary, marginRight: 6, paddingBottom: 4 },
+  back: { fontSize: 30, color: colors.primary, marginRight: 6 },
   appbarTitle: { flex: 1, fontSize: 22, fontWeight: '600', color: colors.gray900 },
   scroll: { flex: 1, paddingHorizontal: 18 },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 },
   hint: { fontSize: typography.sizes.sm, color: colors.gray400 },
   title: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900, marginTop: 2 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
-  badgeText: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium },
+  badgeText: { fontSize: typography.sizes.xs, fontWeight: typography.weights.medium },
   gaugeCard: {
     backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
     borderRadius: 18, padding: 16, alignItems: 'center', marginBottom: 14,
@@ -331,4 +527,11 @@ const styles = StyleSheet.create({
   aiBtnText: { fontSize: typography.sizes.md, color: colors.primary, fontWeight: typography.weights.medium },
   proBadge: { backgroundColor: colors.primary, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
   proBadgeText: { fontSize: 9, color: '#fff', fontWeight: typography.weights.medium },
-})
+  linkBtn: {
+  height: 44, borderRadius: 22,
+  borderWidth: 1.5, borderColor: colors.primary,
+  flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+  gap: 6, marginBottom: 8,
+  },
+  linkBtnText: { fontSize: typography.sizes.md, color: colors.primary, fontWeight: typography.weights.medium },
+  })

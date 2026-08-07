@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { colors, typography } from '../theme'
+import { auth } from '../firebase'
 
 export default function CamCaptureScreen({ navigation, route }: any) {
   const [permission, requestPermission] = useCameraPermissions()
@@ -31,6 +32,16 @@ async function takePicture() {
     setIsProcessing(true)
     setProcessStep('拍攝第 1 張...')
     try {
+      // 取得目前登入使用者的憑證，之後每次呼叫 API 都要附上
+      const user = auth.currentUser
+      if (!user) {
+        setIsProcessing(false)
+        Alert.alert('請重新登入', '找不到登入狀態，請重新登入後再試一次')
+        setCaptured(false)
+        return
+      }
+      const idToken = await user.getIdToken()
+
       const results = []
       
       for (let i = 0; i < 3; i++) {
@@ -53,8 +64,18 @@ async function takePicture() {
         const response = await fetch(API_URL, {
           method: 'POST',
           body: formData,
-          headers: { 'Content-Type': 'multipart/form-data' },
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${idToken}`,
+          },
         })
+
+        if (response.status === 401) {
+          setIsProcessing(false)
+          Alert.alert('登入已過期', '請重新登入後再試一次')
+          setCaptured(false)
+          return
+        }
 
         const result = await response.json()
 
@@ -80,7 +101,6 @@ async function takePicture() {
       }
 
       // 過濾異常值：排除偏差超過 50% 的結果
-     Alert.alert('三張結果', results.map((r, i) => `第${i+1}張: ${r.tc_ratio}`).join('\n'))
      const tcValues = results.map(r => r.tc_ratio)
      const medianTC = tcValues.sort((a, b) => a - b)[Math.floor(tcValues.length / 2)]
      const filteredResults = results.filter(r => 

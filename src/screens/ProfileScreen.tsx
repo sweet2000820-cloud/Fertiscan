@@ -6,6 +6,7 @@ import { auth, db } from '../firebase'
 import DatePickerModal from '../components/DatePickerModal'
 import PickerModal from '../components/PickerModal'
 import * as ImagePicker from 'expo-image-picker'
+import { signOut, sendPasswordResetEmail } from 'firebase/auth'
 
 const occupationOpts = [
   { label: '久坐辦公', value: 'sedentary' },
@@ -331,19 +332,29 @@ export default function ProfileScreen({ navigation }: any) {
         </View>
 
         <Text style={styles.sectionTitle}>帳號安全</Text>
-        <View style={styles.listCard}>
-          <TouchableOpacity style={[styles.fieldRow, { borderBottomWidth: 0 }]} onPress={() => {
-            Alert.alert('更改密碼', '將寄送密碼重設連結至您的信箱\n' + email, [
-              { text: '取消', style: 'cancel' },
-              { text: '寄送', onPress: () => {
-                Alert.alert('已寄出', `密碼重設連結已寄至 ${email}，請查看信箱。`)
-              }},
-            ])
-          }}>
-            <Text style={styles.fieldLabel}>更改密碼</Text>
-            <Text style={styles.arrow}>›</Text>
-          </TouchableOpacity>
-        </View>
+<View style={styles.listCard}>
+  <TouchableOpacity style={[styles.fieldRow, { borderBottomWidth: 0 }]} onPress={() => {
+    Alert.alert('更改密碼', '將寄送密碼重設連結至您的信箱\n' + email, [
+      { text: '取消', style: 'cancel' },
+      { text: '寄送', onPress: async () => {
+        try {
+          await sendPasswordResetEmail(auth, email)
+          Alert.alert('已寄出', `密碼重設連結已寄至 ${email}，請查看信箱。`)
+        } catch (e: any) {
+          const msg = e?.code === 'auth/too-many-requests'
+            ? '請求過於頻繁，請稍後再試'
+            : e?.code === 'auth/invalid-email'
+            ? '信箱格式有誤，請確認個人資料中的信箱'
+            : '寄送失敗，請稍後再試'
+          Alert.alert('寄送失敗', msg)
+        }
+      }},
+    ])
+  }}>
+    <Text style={styles.fieldLabel}>更改密碼</Text>
+    <Text style={styles.arrow}>›</Text>
+  </TouchableOpacity>
+</View>
 
         <View style={{ height: 30 }} />
         <DatePickerModal
