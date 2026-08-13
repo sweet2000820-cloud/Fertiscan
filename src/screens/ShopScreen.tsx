@@ -1,15 +1,57 @@
-import { useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } from 'react-native'
+import { useState, useEffect } from 'react'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image, Dimensions } from 'react-native'
 import { colors, typography } from '../theme'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import Svg, { Rect, Line, Text as SvgText, G } from 'react-native-svg'
+import { useMeasureTargets } from '../hooks/useMeasureTargets'
+import { useFeatureTour, TourStep } from '../context/FeatureTourContext'
+import { useIsFocused } from '@react-navigation/native'
 
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window')
+const TAB_BAR_HEIGHT = 80
+const TAB_INDEX = { dashboard: 0, history: 1, calibration: 2, shop: 3, settings: 4 }
+
+function tabRect(index: number) {
+  return { x: (SCREEN_W / 5) * index, y: SCREEN_H - TAB_BAR_HEIGHT, width: SCREEN_W / 5, height: TAB_BAR_HEIGHT }
+}
+
+const SHOP_TARGET_KEYS = ['qtySelector', 'checkoutBtn']
 
 export default function ShopScreen({ navigation }: any) {
   const [qty, setQty] = useState(1)
 
   const unitPrice = 720
   const total = unitPrice * qty
+
+  const isFocused = useIsFocused()
+  const { stage, registerSteps, setStageDirectly } = useFeatureTour()
+  const isMyTurn = stage === 'shop' && isFocused
+  const { setRef, measureAll } = useMeasureTargets(SHOP_TARGET_KEYS)
+
+ useEffect(() => {
+      if (!isMyTurn) return
+      const timer = setTimeout(async () => {
+        const t = await measureAll()
+        const steps: TourStep[] = [
+          ...(t.qtySelector ? [{ key: 'qtySelector', label: '這裡可以增減購買數量', rect: t.qtySelector as any }] : []),
+          ...(t.checkoutBtn ? [{ key: 'checkoutBtn', label: '試紙用完了可以在這裡補買', rect: t.checkoutBtn as any }] : []),
+          {
+            key: 'tab-next',
+            label: '點擊「設定」前往下一步',
+            rect: tabRect(TAB_INDEX.settings),
+            shape: 'circle',
+            labelSide: 'top',
+            passthrough: true,
+            onPress: () => {
+              setStageDirectly('settings')
+              navigation.navigate('設定')
+            },
+          },
+        ]
+        registerSteps(steps)
+      }, 300)
+      return () => clearTimeout(timer)
+    }, [isMyTurn])
 
   return (
     <View style={styles.container}>
@@ -60,10 +102,10 @@ export default function ShopScreen({ navigation }: any) {
         </View>
 
         {/* 數量選擇 */}
-        <View style={styles.listCard}>
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>購買數量</Text>
-            <View style={styles.qtyRow}>
+          <View ref={setRef('qtySelector')} style={styles.listCard}>
+            <View style={styles.row}>
+              <Text style={styles.rowLabel}>購買數量</Text>
+              <View style={styles.qtyRow}>
               <TouchableOpacity
                 style={[styles.qtyBtn, qty <= 1 && { opacity: 0.3 }]}
                 onPress={() => setQty(q => Math.max(1, q - 1))}
@@ -120,6 +162,7 @@ export default function ShopScreen({ navigation }: any) {
           <Text style={styles.footerTotal}>NT$ {total.toLocaleString()}</Text>
         </View>
         <TouchableOpacity
+          ref={setRef('checkoutBtn')}
           style={styles.checkoutBtn}
           onPress={() => navigation.navigate('OrderConfirm', { qty })}
         >

@@ -1,9 +1,22 @@
 import { useState, useEffect } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Dimensions } from 'react-native'
 import { colors, typography } from '../theme'
 import { getInventory, setLotNumber as setLotNumberRemote, setStrips as setStripsRemote } from '../inventory'
 import { Ionicons } from '@expo/vector-icons'
 import Svg, { Circle, Line, Text as SvgText } from 'react-native-svg'
+import { useMeasureTargets } from '../hooks/useMeasureTargets'
+import { useFeatureTour, TourStep } from '../context/FeatureTourContext'
+import { useIsFocused } from '@react-navigation/native'
+
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window')
+const TAB_BAR_HEIGHT = 80
+const TAB_INDEX = { dashboard: 0, history: 1, calibration: 2, shop: 3, settings: 4 }
+
+function tabRect(index: number) {
+  return { x: (SCREEN_W / 5) * index, y: SCREEN_H - TAB_BAR_HEIGHT, width: SCREEN_W / 5, height: TAB_BAR_HEIGHT }
+}
+
+const CALIBRATION_TARGET_KEYS = ['qrBtn', 'manualBtn']
 
 const lotData: Record<string, {
   points: { tc: number, conc: number }[],
@@ -44,6 +57,36 @@ const lotData: Record<string, {
 
 export default function CalibrationScreen({ navigation }: any) {
   const [lotNumber, setLotNumber] = useState('')
+
+  const isFocused = useIsFocused()
+  const { stage, registerSteps, setStageDirectly } = useFeatureTour()
+  const isMyTurn = stage === 'calibration' && isFocused
+  const { setRef, measureAll } = useMeasureTargets(CALIBRATION_TARGET_KEYS)
+
+  useEffect(() => {
+    if (!isMyTurn) return
+    const timer = setTimeout(async () => {
+      const t = await measureAll()
+      const steps: TourStep[] = [
+        ...(t.qrBtn ? [{ key: 'qrBtn', label: '可以掃描試紙包裝上的 QR Code 完成校準', rect: t.qrBtn as any }] : []),
+        ...(t.manualBtn ? [{ key: 'manualBtn', label: '或是手動輸入批號也可以', rect: t.manualBtn as any }] : []),
+        {
+          key: 'tab-next',
+          label: '點擊「商店」前往下一步',
+          rect: tabRect(TAB_INDEX.shop),
+          shape: 'circle',
+          labelSide: 'top',
+          passthrough: true,
+          onPress: () => {
+            setStageDirectly('shop')
+            navigation.navigate('商店')
+          },
+        },
+      ]
+      registerSteps(steps)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [isMyTurn])
 
   useEffect(() => {
     getInventory().then(({ lotNumber: val }) => {
@@ -107,10 +150,10 @@ export default function CalibrationScreen({ navigation }: any) {
             </View>
           </View>
           <View style={styles.btnRow}>
-            <TouchableOpacity style={styles.btnOutline} onPress={() => navigation.getParent()?.navigate('LotQR')}>
+            <TouchableOpacity ref={setRef('qrBtn')} style={styles.btnOutline} onPress={() => navigation.getParent()?.navigate('LotQR')}>
               <Text style={styles.btnOutlineText}>掃描 QR Code</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.btnFilled} onPress={handleManualInput}>
+            <TouchableOpacity ref={setRef('manualBtn')} style={styles.btnFilled} onPress={handleManualInput}>
               <Text style={styles.btnFilledText}>手動輸入</Text>
             </TouchableOpacity>
           </View>

@@ -1,15 +1,26 @@
 import { colors, typography } from '../theme'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, Dimensions } from 'react-native'
 import { useEffect, useState } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { doc, getDoc } from 'firebase/firestore'
 import { auth, db } from '../firebase'
 import { getInventory, setStrips as setStripsRemote } from '../inventory'
 import { getRecords, TestRecord } from '../storage'
-import { useFocusEffect } from '@react-navigation/native'
+import { useFocusEffect, useIsFocused } from '@react-navigation/native'
 import { useCallback } from 'react'
 import { Ionicons } from '@expo/vector-icons'
+import { useMeasureTargets } from '../hooks/useMeasureTargets'
+import { useFeatureTour, TourStep } from '../context/FeatureTourContext'
 
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window')
+const TAB_BAR_HEIGHT = 80
+const TAB_INDEX = { dashboard: 0, history: 1, calibration: 2, shop: 3, settings: 4 }
+
+function tabRect(index: number) {
+  return { x: (SCREEN_W / 5) * index, y: SCREEN_H - TAB_BAR_HEIGHT, width: SCREEN_W / 5, height: TAB_BAR_HEIGHT }
+}
+
+const DASHBOARD_TARGET_KEYS = ['trend', 'stats', 'cta', 'history']
 
 export default function DashboardScreen({ navigation }: any) {
   const [daysSince, setDaysSince] = useState<string>('尚未檢測')
@@ -17,6 +28,44 @@ export default function DashboardScreen({ navigation }: any) {
   const [strips, setStrips] = useState<number>(6)
   const [userName, setUserName] = useState<string>('')
   const [avatar, setAvatar] = useState<string | null>(null)
+
+  const isFocused = useIsFocused()
+  const { stage, registerSteps, startTour, setStageDirectly } = useFeatureTour()
+  const isMyTurn = stage === 'dashboard' && isFocused
+  const { setRef, measureAll } = useMeasureTargets(DASHBOARD_TARGET_KEYS)
+
+    useEffect(() => {
+      console.log('[Dashboard] isMyTurn 變化了:', isMyTurn, 'stage=', stage, 'isFocused=', isFocused)
+      if (!isMyTurn) return
+      const timer = setTimeout(async () => {
+        console.log('[Dashboard] 開始量測目標座標')
+        const t = await measureAll()
+        console.log('[Dashboard] 量到的座標:', JSON.stringify(t))
+        const steps: TourStep[] = [
+          { key: 'tab-self', label: '這裡是首頁', rect: tabRect(TAB_INDEX.dashboard), shape: 'circle' },
+          ...(t.trend ? [{ key: 'trend', label: '這裡顯示近期 T/C 比值趨勢', rect: t.trend as any }] : []),
+          ...(t.stats ? [{ key: 'stats', label: '上次檢測時間與試紙剩餘數量', rect: t.stats as any }] : []),
+          ...(t.cta ? [{ key: 'cta', label: '點這裡開始新一次檢測', rect: t.cta as any }] : []),
+          ...(t.history ? [{ key: 'history', label: '這裡會顯示你近 3 次的檢測紀錄', rect: t.history as any, minHeight: 160 , labelSide: 'bottom' as const }] : []),
+          {
+            key: 'tab-next',
+            label: '點擊「紀錄」前往下一步',
+            rect: tabRect(TAB_INDEX.history),
+            shape: 'circle',
+            labelSide: 'top',
+            passthrough: true,
+            onPress: () => {
+              setStageDirectly('history')
+              navigation.navigate('紀錄')
+            },
+          },
+        ]
+        console.log('[Dashboard] 準備登記的步驟數量:', steps.length)
+        registerSteps(steps)
+        console.log('[Dashboard] registerSteps 已呼叫完成')
+      }, 300)
+      return () => clearTimeout(timer)
+    }, [isMyTurn])
 
   useFocusEffect(
     useCallback(() => {
@@ -95,11 +144,20 @@ export default function DashboardScreen({ navigation }: any) {
     )
   }
 
+  console.log('[Dashboard] 每次渲染都會印 - isFocused:', isFocused, 'stage:', stage, 'isMyTurn:', isMyTurn)
+
   return (
     <View style={styles.container}>
-      <View style={styles.brandBar}>
+      <TouchableOpacity
+          style={styles.brandBar}
+          onLongPress={() => {
+            console.log('長按觸發了，目前 stage 準備設成 dashboard')
+            startTour()
+          }}
+          delayLongPress={2000}
+        >
         <Image source={require('../../assets/logo.png')} style={styles.brandLogo} resizeMode="contain" />
-      </View>
+      </TouchableOpacity>
 
       <View style={styles.header}>
         <View>
@@ -119,7 +177,7 @@ export default function DashboardScreen({ navigation }: any) {
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        <View style={styles.tealCard}>
+        <View ref={setRef('trend')} style={styles.tealCard}>
           <Text style={styles.cardTitle}>近 {Math.min(displayRecords.length, 3)} 次 T/C 比值趨勢</Text>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 60, gap: 10, marginBottom: 8, paddingHorizontal: 12 }}>
             {displayRecords.slice(0, 3).reverse().map((r, i) => {
@@ -141,7 +199,7 @@ export default function DashboardScreen({ navigation }: any) {
           </View>
         </View>
 
-        <View style={styles.statsRow}>
+        <View ref={setRef('stats')} style={styles.statsRow}>
           <View style={styles.statCard}>
             <Ionicons name="calendar-outline" size={18} color={colors.primary} />
             <Text style={styles.hint}>上次檢測</Text>
@@ -154,7 +212,7 @@ export default function DashboardScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.ctaBtn} onPress={async () => {
+        <TouchableOpacity ref={setRef('cta')} style={styles.ctaBtn} onPress={async () => {
           const { lotNumber } = await getInventory()
           if (!lotNumber) {
             Alert.alert('尚未設定批號', '請先前往「校準」頁面設定試紙批號，才能開始檢測。', [
@@ -169,20 +227,22 @@ export default function DashboardScreen({ navigation }: any) {
           <Text style={styles.ctaBtnText}>開始新一次檢測</Text>
         </TouchableOpacity>
 
-        <Text style={styles.sectionTitle}>最近紀錄</Text>
+        <View ref={setRef('history')}>
+          <Text style={styles.sectionTitle}>最近紀錄</Text>
 
-        {displayRecords.map((r, i) => (
-          <TouchableOpacity key={i} style={styles.historyCard} onPress={() => navigation.navigate('ReportOverview', { record: r })}>
-            <View>
-              <Text style={styles.historyDate}>{r.date}</Text>
-              <Text style={styles.hint}>{r.time}</Text>
-            </View>
-            <View style={styles.historyRight}>
-              <Text style={[styles.tcValue, { color: getStatusColor(r.status) }]}>T/C {r.tc}</Text>
-              <Text style={[styles.statusText, { color: getStatusColor(r.status) }]}>{r.status}</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
+          {displayRecords.map((r, i) => (
+            <TouchableOpacity key={i} style={styles.historyCard} onPress={() => navigation.navigate('ReportOverview', { record: r })}>
+              <View>
+                <Text style={styles.historyDate}>{r.date}</Text>
+                <Text style={styles.hint}>{r.time}</Text>
+              </View>
+              <View style={styles.historyRight}>
+                <Text style={[styles.tcValue, { color: getStatusColor(r.status) }]}>T/C {r.tc}</Text>
+                <Text style={[styles.statusText, { color: getStatusColor(r.status) }]}>{r.status}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
 
         <View style={{ height: 90 }} />
 

@@ -235,11 +235,155 @@ const quizzes = [
     correct: 1,
     explain: '長期使用類固醇類藥物可能影響自身荷爾蒙分泌軸，用藥前後建議諮詢專業醫師 💊',
   },
+  // ── 以下為新增：精子冷知識與小歷史 ──
+  {
+    q: '第一個用顯微鏡觀察到精子的人是誰？',
+    opts: ['達文西', '雷文霍克', '達爾文'],
+    correct: 1,
+    explain: '荷蘭科學家雷文霍克於 1677 年首次用自製顯微鏡觀察到精子，是微生物學史上的重要一刻 🔬',
+  },
+  {
+    q: '「精子」spermatozoon 這個字的字源來自？',
+    opts: ['拉丁文，意指「戰士」', '希臘文，「種子」+「動物」', '法文，「生命之源」'],
+    correct: 1,
+    explain: 'spermatozoon 源自希臘文 sperma（種子）加上 zoon（動物），字面意思就是「會動的種子」🧬',
+  },
+  {
+    q: '人類精子跟藍鯨的精子，體積差異有多大？',
+    opts: ['藍鯨精子大上數千倍', '兩者大小其實差不多', '人類精子反而比較大'],
+    correct: 1,
+    explain: '哺乳類的精子大小跟體型無關，儘管藍鯨體型是人類的數萬倍，兩者精子大小卻相差無幾 🐋',
+  },
+  {
+    q: '17 世紀曾流行一時的「預成論」，認為精子裡藏著什麼？',
+    opts: ['完整縮小版的人形', '決定性別的基因', '未來的記憶'],
+    correct: 0,
+    explain: '早期顯微鏡技術有限，曾有科學家誤以為在精子裡看到蜷縮的迷你人形，這個理論後來被證實是錯誤的 🔍',
+  },
+  {
+    q: '動物界中，精子「相對體長」最誇張的生物是？',
+    opts: ['大象', '某些果蠅', '藍鯨'],
+    correct: 1,
+    explain: '某些果蠅（如 Drosophila bifurca）的精子可以長達好幾公分，是自身體長的數倍，堪稱動物界紀錄 🪰',
+  },
+  {
+    q: '精子擺動尾巴前進所需的能量，主要來自哪個部位？',
+    opts: ['頭部', '中段（密集分佈粒線體）', '尾巴末端'],
+    correct: 1,
+    explain: '精子中段密集堆疊著粒線體，是名副其實的「發電廠」，負責產生能量讓尾巴持續擺動 ⚡',
+  },
+  {
+    q: '世界上第一批人類精子銀行大約成立於？',
+    opts: ['1970 年代', '1930 年代', '2000 年代'],
+    correct: 0,
+    explain: '隨著冷凍保存技術逐漸成熟，人類精子銀行約在 1970 年代開始發展，是生殖醫學的重要里程碑 🧊',
+  },
+  {
+    q: 'WHO（世界衛生組織）發布精液分析標準手冊的主要用途是？',
+    opts: ['提供全球一致的檢測方法與參考範圍', '規定合法生育年齡', '僅用於動物實驗'],
+    correct: 0,
+    explain: 'WHO 定期更新精液分析手冊，讓全球實驗室與臨床能用一致的方法判讀檢測結果 📖',
+  },
+  {
+    q: '精子細胞的基本結構主要分為幾個部分？',
+    opts: ['兩部分：頭、尾', '三部分：頭、中段、尾', '四部分'],
+    correct: 1,
+    explain: '精子主要分為頭部（含遺傳物質）、中段（能量來源）與尾部（推進動力）三個部分 🧫',
+  },
+  {
+    q: '跟女性一生卵子數量固定不同，男性睪丸製造精子的狀況是？',
+    opts: ['40 歲左右就會停止', '終生持續製造，速度隨年齡減緩', '只能持續到 30 歲'],
+    correct: 1,
+    explain: '男性睪丸終生都在持續製造精子，不像女性卵子數量有限，只是隨年齡增長速度可能減緩、品質也可能受影響 ♾️',
+  },
+  {
+    q: '世界上第一個「試管嬰兒」誕生於哪一年？',
+    opts: ['1978 年', '1958 年', '1998 年'],
+    correct: 0,
+    explain: '露易絲·布朗（Louise Brown）於 1978 年在英國誕生，是全球第一位體外受精（IVF）技術下出生的嬰兒 👶',
+  },
+  {
+    q: '精子游動時尾巴擺動的方式，比較接近哪種運動模式？',
+    opts: ['像螺旋槳一樣旋轉推進', '單純上下拍動', '完全隨機亂動'],
+    correct: 0,
+    explain: '精子尾巴其實是以近似螺旋、鞭狀擺動的方式前進，效率遠比單純拍動更好 🌀',
+  },
+  {
+    q: '相較於其他靈長類，人類精子的活動力表現如何？',
+    opts: ['明顯優於大猩猩、黑猩猩', '大致相近，沒有顯著差異', '明顯低於大猩猩、黑猩猩'],
+    correct: 2,
+    explain: '有趣的是，研究發現黑猩猩精子活動力普遍優於人類，推測與物種交配策略的演化差異有關 🦍',
+  },
+  {
+    q: '最早的「不孕症」相關記載，可以追溯到哪個古文明？',
+    opts: ['古埃及', '古羅馬', '這是近代才有的醫學概念'],
+    correct: 0,
+    explain: '古埃及莎草紙文獻中已有關於生育相關問題的記載，顯示這是人類歷史上長期關注的課題 📜',
+  },
+  {
+    q: '精子的「頂體」（acrosome）主要功能是什麼？',
+    opts: ['儲存能量', '幫助穿透卵子外層', '控制游動方向'],
+    correct: 1,
+    explain: '頂體位於精子頭部前端，內含酵素，能幫助精子穿透卵子外層的保護構造，是受精過程的關鍵 🎯',
+  },
+  {
+    q: '20 世紀中期，科學家開始用什麼物質成功冷凍保存精子？',
+    opts: ['甘油（glycerol）作為保護劑', '純水直接冷凍', '酒精浸泡'],
+    correct: 0,
+    explain: '1949 年科學家發現甘油能保護精子細胞在冷凍過程中不被冰晶破壞，是精子冷凍技術的重大突破 ❄️',
+  },
+  {
+    q: '哪一種動物的精子「沒有尾巴」，靠爬行方式移動？',
+    opts: ['某些線蟲', '青蛙', '海豚'],
+    correct: 0,
+    explain: '線蟲（如秀麗隱桿線蟲）的精子沒有鞭毛尾巴，而是靠變形蟲式的爬行方式移動，跟一般認知很不一樣 🐛',
+  },
+  {
+    q: '「精液分析」在臨床上最早被系統性使用，大約始於？',
+    opts: ['19 世紀末～20 世紀初', '中世紀時期', '21 世紀才開始'],
+    correct: 0,
+    explain: '隨著顯微鏡技術與細胞學發展，19 世紀末開始有醫師系統性地將精液顯微觀察應用於臨床評估 👨‍⚕️',
+  },
+  {
+    q: '人類精子的游動速度，大約是多少？',
+    opts: ['每分鐘幾乎不動', '每分鐘約可移動數毫米', '每分鐘可移動超過 1 公尺'],
+    correct: 1,
+    explain: '健康精子的游動速度約為每分鐘數毫米，聽起來不快，但相對於自身體積來說已經是很有效率的移動 🏊',
+  },
+  {
+    q: '「Y 染色體」與「X 染色體」精子，兩者在游動表現上有明確差異嗎？',
+    opts: ['科學上並無可靠證據支持兩者游動速度不同', 'Y 精子確定游得比較快', 'X 精子確定游得比較快'],
+    correct: 0,
+    explain: '坊間常有「快慢精子決定性別」的說法，但目前並無可靠科學證據證實兩者游動能力有系統性差異 ⚖️',
+  },
+  {
+    q: '人類每次射精大約含有多少精子？',
+    opts: ['數十萬個', '數千萬到數億個不等', '固定 1 億個'],
+    correct: 1,
+    explain: '每次射精的精子數量會因人、因禁慾天數而異，一般範圍大約落在數千萬到數億個之間 🔢',
+  },
+  {
+    q: '哪位科學家因研究精子與受精機制，對現代生殖生物學貢獻卓著，並在 2010 年獲頒諾貝爾獎（表彰體外受精技術）？',
+    opts: ['羅伯特·愛德華茲（Robert Edwards）', '達爾文', '巴斯德'],
+    correct: 0,
+    explain: '英國生理學家羅伯特·愛德華茲因開發體外受精技術，於 2010 年獲得諾貝爾生理學或醫學獎 🏅',
+  },
 ]
+
+function shuffleIndices(length: number) {
+  const arr = Array.from({ length }, (_, i) => i)
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
+}
 
 export default function RestTimerScreen({ navigation, route }: any) {
   const [secondsLeft, setSecondsLeft] = useState(TOTAL_SECONDS)
-  const [quizIndex, setQuizIndex] = useState(() => Math.floor(Math.random() * quizzes.length))
+  const orderRef = useRef<number[]>(shuffleIndices(quizzes.length))
+  const posRef = useRef(0)
+  const [quizIndex, setQuizIndex] = useState(() => orderRef.current[0])
   const [selectedOpt, setSelectedOpt] = useState<number | null>(null)
   const timerRef = useRef<any>(null)
 
@@ -272,14 +416,17 @@ export default function RestTimerScreen({ navigation, route }: any) {
 
   function nextQuiz() {
     setSelectedOpt(null)
-    setQuizIndex(prev => {
-      if (quizzes.length <= 1) return prev
-      let next = Math.floor(Math.random() * quizzes.length)
-      while (next === prev) {
-        next = Math.floor(Math.random() * quizzes.length)
+    posRef.current += 1
+    if (posRef.current >= orderRef.current.length) {
+      let newOrder = shuffleIndices(quizzes.length)
+      const lastShown = orderRef.current[orderRef.current.length - 1]
+      if (newOrder[0] === lastShown && newOrder.length > 1) {
+        ;[newOrder[0], newOrder[1]] = [newOrder[1], newOrder[0]]
       }
-      return next
-    })
+      orderRef.current = newOrder
+      posRef.current = 0
+    }
+    setQuizIndex(orderRef.current[posRef.current])
   }
 
   const minutes = Math.floor(secondsLeft / 60)
@@ -287,11 +434,9 @@ export default function RestTimerScreen({ navigation, route }: any) {
   const timeText = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
   const rawQuiz = quizzes[quizIndex]
 
-// 每次切換題目時，重新洗牌選項順序
 const shuffledQuiz = useMemo(() => {
   const opts = [...rawQuiz.opts]
   const indices = opts.map((_, i) => i)
-  // Fisher-Yates 洗牌
   for (let i = indices.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     ;[indices[i], indices[j]] = [indices[j], indices[i]]

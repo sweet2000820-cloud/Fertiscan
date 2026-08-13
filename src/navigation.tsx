@@ -2,13 +2,15 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { NavigationContainer } from '@react-navigation/native'
-import { Text } from 'react-native'
+import { View, Text } from 'react-native'
 import { colors, typography } from './theme'
 import { useState, useEffect } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from './firebase'
+import { FeatureTourProvider } from './context/FeatureTourContext'
+import FeatureTourOverlay from './components/FeatureTourOverlay'
 
 
 import DashboardScreen from './screens/DashboardScreen'
@@ -122,7 +124,16 @@ export default function Navigation({ onLogin }: any) {
           </>
         ) : (
           <>
-            <Stack.Screen name="Main" component={TabNavigator} />
+            <Stack.Screen name="Main">
+              {() => (
+                <FeatureTourProvider>
+                  <View style={{ flex: 1 }}>
+                    <TabNavigator />
+                    <FeatureTourOverlay />
+                  </View>
+                </FeatureTourProvider>
+              )}
+            </Stack.Screen>
             <Stack.Screen name="Profile" component={ProfileScreen} />
             <Stack.Screen name="Plan" component={PlanScreen} />
             <Stack.Screen name="PreCheck" component={PreCheckScreen} />

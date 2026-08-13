@@ -1,18 +1,29 @@
 import { signOut } from 'firebase/auth'
 import { auth, db } from '../firebase'
 import { doc, getDoc } from 'firebase/firestore'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Linking } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Linking, Dimensions } from 'react-native'
 import { colors, typography } from '../theme'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Notifications from 'expo-notifications'
-import { useState } from 'react'
-import { useFocusEffect } from '@react-navigation/native'
+import { useState, useEffect } from 'react'
+import { useFocusEffect, useIsFocused } from '@react-navigation/native'
 import { useCallback } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import { Image } from 'react-native'
 import { getUserPlan } from '../plan'
 import { getClinics } from '../clinics'
+import { useMeasureTargets } from '../hooks/useMeasureTargets'
+import { useFeatureTour, TourStep } from '../context/FeatureTourContext'
 
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window')
+const TAB_BAR_HEIGHT = 80
+const TAB_INDEX = { dashboard: 0, history: 1, calibration: 2, shop: 3, settings: 4 }
+
+function tabRect(index: number) {
+  return { x: (SCREEN_W / 5) * index, y: SCREEN_H - TAB_BAR_HEIGHT, width: SCREEN_W / 5, height: TAB_BAR_HEIGHT }
+}
+
+const SETTINGS_TARGET_KEYS = ['profile', 'plan', 'clinic', 'notify', 'logout']
 
 export default function SettingsScreen({ navigation }: any) {
   const [notifyEnabled, setNotifyEnabled] = useState(true)
@@ -22,6 +33,27 @@ export default function SettingsScreen({ navigation }: any) {
   const [userEmail, setUserEmail] = useState('')
   const [avatar, setAvatar] = useState<string | null>(null)
   const [userPlan, setUserPlan] = useState('free')
+
+  const isFocused = useIsFocused()
+  const { stage, registerSteps } = useFeatureTour()
+  const isMyTurn = stage === 'settings' && isFocused
+  const { setRef, measureAll } = useMeasureTargets(SETTINGS_TARGET_KEYS)
+
+  useEffect(() => {
+    if (!isMyTurn) return
+    const timer = setTimeout(async () => {
+      const t = await measureAll()
+      const steps: TourStep[] = [
+        ...(t.profile ? [{ key: 'profile', label: '點這裡管理個人資料與帳號安全設定', rect: t.profile as any }] : []),
+        ...(t.plan ? [{ key: 'plan', label: '在這裡查看或升級訂閱方案', rect: t.plan as any }] : []),
+        ...(t.clinic ? [{ key: 'clinic', label: '連結診所後可以直接分享報告', rect: t.clinic as any }] : []),
+        ...(t.notify ? [{ key: 'notify', label: '開啟通知，提醒您定期複測', rect: t.notify as any }] : []),
+        ...(t.logout ? [{ key: 'logout', label: '需要登出帳號時，在這裡操作', rect: t.logout as any }] : []),
+      ]
+      registerSteps(steps)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [isMyTurn])
 
   useFocusEffect(
     useCallback(() => {
@@ -78,7 +110,7 @@ export default function SettingsScreen({ navigation }: any) {
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        <TouchableOpacity style={styles.profileCard} onPress={() => navigation.navigate('Profile')}>
+        <TouchableOpacity ref={setRef('profile')} style={styles.profileCard} onPress={() => navigation.navigate('Profile')}>
           <View style={styles.avatar}>
             {avatar ? (
               <Image source={{ uri: avatar }} style={{ width: 46, height: 46, borderRadius: 23 }} />
@@ -93,7 +125,7 @@ export default function SettingsScreen({ navigation }: any) {
           <Text style={styles.editBtn}>編輯 ›</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.planCard} onPress={() => navigation.navigate('Plan')}>
+        <TouchableOpacity ref={setRef('plan')} style={styles.planCard} onPress={() => navigation.navigate('Plan')}>
           <View style={styles.planIcon}>
             <Text style={{ fontSize: 18 }}>★</Text>
           </View>
@@ -113,7 +145,7 @@ export default function SettingsScreen({ navigation }: any) {
           <Text style={styles.planArrow}>›</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.clinicBanner} onPress={() => navigation.navigate('ClinicList')}>
+        <TouchableOpacity ref={setRef('clinic')} style={styles.clinicBanner} onPress={() => navigation.navigate('ClinicList')}>
           <View style={styles.clinicBannerIcon}>
             <Ionicons name="business-outline" size={20} color={colors.primary} />
           </View>
@@ -126,7 +158,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         <Text style={styles.sectionTitle}>檢測設定</Text>
         <View style={styles.listCard}>
-          <View style={styles.row}>
+          <View ref={setRef('notify')} style={styles.row}>
             <Text style={styles.rowLabel}>通知提醒</Text>
             <Switch value={notifyEnabled} onValueChange={handleNotifyToggle} trackColor={{ true: colors.primary }} />
           </View>
@@ -166,7 +198,7 @@ export default function SettingsScreen({ navigation }: any) {
         </View>
 
         <View style={styles.listCard}>
-          <TouchableOpacity style={[styles.row, { borderBottomWidth: 0 }]} onPress={() => {
+          <TouchableOpacity ref={setRef('logout')} style={[styles.row, { borderBottomWidth: 0 }]} onPress={() => {
             Alert.alert('登出帳號', '確定要登出嗎？', [
               { text: '取消', style: 'cancel' },
               { text: '登出', style: 'destructive', onPress: async () => {

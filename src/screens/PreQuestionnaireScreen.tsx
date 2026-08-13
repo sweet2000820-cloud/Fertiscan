@@ -131,9 +131,9 @@ export default function PreQuestionnaireScreen({ navigation, route }: any) {
     }
     const freqIndex = step - 1 - yesNoQuestions.length
     const freqConfigs = [
-      { q: '最近是否有泡溫泉/三溫暖/熱水澡/久坐？', opts: heatExposureOpts, selected: heatExposure, setter: setHeatExposure },
+      { q: '近三個月是否有泡溫泉/三溫暖/熱水澡/久坐？', opts: heatExposureOpts, selected: heatExposure, setter: setHeatExposure },
       { q: '昨晚睡眠時數？', opts: sleepHoursOpts, selected: sleepHours, setter: setSleepHours },
-      { q: '最近整體壓力狀況？', opts: stressOpts, selected: stressLevel, setter: setStressLevel },
+      { q: '近三個月整體壓力狀況？', opts: stressOpts, selected: stressLevel, setter: setStressLevel },
     ]
     const cfg = freqConfigs[freqIndex]
     if (!cfg) return null

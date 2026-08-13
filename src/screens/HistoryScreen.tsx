@@ -1,9 +1,22 @@
 import { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Dimensions } from 'react-native'
 import { colors, typography } from '../theme'
 import { getRecords, TestRecord } from '../storage'
 import { Ionicons } from '@expo/vector-icons'
 import Svg, { Polyline, Circle, Text as SvgText, Line } from 'react-native-svg'
+import { useMeasureTargets } from '../hooks/useMeasureTargets'
+import { useFeatureTour, TourStep } from '../context/FeatureTourContext'
+import { useIsFocused } from '@react-navigation/native'
+
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window')
+const TAB_BAR_HEIGHT = 80
+const TAB_INDEX = { dashboard: 0, history: 1, calibration: 2, shop: 3, settings: 4 }
+
+function tabRect(index: number) {
+  return { x: (SCREEN_W / 5) * index, y: SCREEN_H - TAB_BAR_HEIGHT, width: SCREEN_W / 5, height: TAB_BAR_HEIGHT }
+}
+
+const HISTORY_TARGET_KEYS = ['overview', 'allRecords']
 
 function getStatusColor(status: string) {
   switch (status) {
@@ -17,6 +30,36 @@ export default function HistoryScreen({ navigation }: any) {
   const [records, setRecords] = useState<TestRecord[]>([])
   const [selectMode, setSelectMode] = useState(false)
   const [selected, setSelected] = useState<number[]>([])
+
+  const isFocused = useIsFocused()
+  const { stage, registerSteps, setStageDirectly } = useFeatureTour()
+  const isMyTurn = stage === 'history' && isFocused
+  const { setRef, measureAll } = useMeasureTargets(HISTORY_TARGET_KEYS)
+
+  useEffect(() => {
+    if (!isMyTurn) return
+    const timer = setTimeout(async () => {
+      const t = await measureAll()
+      const steps: TourStep[] = [
+        ...(t.overview ? [{ key: 'overview', label: '這裡看近期 T/C 比值趨勢', rect: t.overview as any }] : []),
+        ...(t.allRecords ? [{ key: 'allRecords', label: '這裡是你的所有檢測紀錄', rect: t.allRecords as any, minHeight: 200 }] : []),
+        {
+          key: 'tab-next',
+          label: '點擊「校準」前往下一步',
+          rect: tabRect(TAB_INDEX.calibration),
+          shape: 'circle',
+          labelSide: 'top',
+          passthrough: true,
+          onPress: () => {
+            setStageDirectly('calibration')
+            navigation.navigate('校準')
+          },
+        },
+      ]
+      registerSteps(steps)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [isMyTurn])
 
   useEffect(() => {
     getRecords().then(r => {
@@ -95,7 +138,7 @@ export default function HistoryScreen({ navigation }: any) {
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        <View style={styles.card}>
+        <View ref={setRef('overview')} style={styles.card}>
           <Text style={styles.sectionTitle}>T/C 比值趨勢（近 {Math.min(records.length, 5)} 次）</Text>
           {chartRecords.length > 0 ? (
             <Svg width="100%" height={140} viewBox="0 0 300 140">
@@ -176,68 +219,70 @@ export default function HistoryScreen({ navigation }: any) {
           </View>
         </View>
 
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <Text style={styles.sectionTitle}>所有紀錄</Text>
-          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-            {selectMode && (
-              <TouchableOpacity onPress={() => setSelected(records.map((_, i) => i))}>
-                <Text style={{ fontSize: typography.sizes.xs, color: colors.primary }}>全選</Text>
-              </TouchableOpacity>
-            )}
-            {records.length > 0 && (
-              <TouchableOpacity
-                style={[styles.selectModeBtn, selectMode && { backgroundColor: colors.primary }]}
-                onPress={() => { setSelectMode(!selectMode); setSelected([]) }}
-              >
-                <Ionicons name="checkmark-circle-outline" size={14} color={selectMode ? '#fff' : colors.primary} />
-                <Text style={[styles.selectModeBtnText, selectMode && { color: '#fff' }]}>
-                  {selectMode ? '取消選擇' : '選擇匯出'}
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-
-        {records.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>尚無檢測紀錄</Text>
-            <Text style={styles.emptyHint}>完成第一次檢測後將顯示於此</Text>
-          </View>
-        ) : (
-          <View style={{ gap: 8 }}>
-            {records.map((r, i) => (
-              <TouchableOpacity
-                key={i}
-                style={[
-                  styles.row,
-                  selectMode && selected.includes(i) && { borderColor: colors.primary, borderWidth: 1.5 },
-                ]}
-                onPress={() => {
-                  if (selectMode) {
-                    toggleSelect(i)
-                  } else {
-                    navigation.getParent()?.navigate('ReportOverview', { record: r })
-                  }
-                }}
-              >
+        <View ref={setRef('allRecords')}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <Text style={styles.sectionTitle}>所有紀錄</Text>
+              <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
                 {selectMode && (
-                  <View style={[styles.checkbox, selected.includes(i) && styles.checkboxDone]}>
-                    {selected.includes(i) && <Text style={styles.checkmark}>✓</Text>}
-                  </View>
+                  <TouchableOpacity onPress={() => setSelected(records.map((_, i) => i))}>
+                    <Text style={{ fontSize: typography.sizes.xs, color: colors.primary }}>全選</Text>
+                  </TouchableOpacity>
                 )}
-                <View style={[styles.statusBar, { backgroundColor: getStatusColor(r.status) }]} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.date}>{r.date}</Text>
-                  <Text style={styles.hint}>{r.time} · {r.lot}</Text>
-                </View>
-                <View style={styles.right}>
-                  <Text style={[styles.tc, { color: getStatusColor(r.status) }]}>T/C {r.tc}</Text>
-                  <Text style={[styles.statusText, { color: getStatusColor(r.status) }]}>{r.status}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
+                {records.length > 0 && (
+                  <TouchableOpacity
+                    style={[styles.selectModeBtn, selectMode && { backgroundColor: colors.primary }]}
+                    onPress={() => { setSelectMode(!selectMode); setSelected([]) }}
+                  >
+                    <Ionicons name="checkmark-circle-outline" size={14} color={selectMode ? '#fff' : colors.primary} />
+                    <Text style={[styles.selectModeBtnText, selectMode && { color: '#fff' }]}>
+                      {selectMode ? '取消選擇' : '選擇匯出'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
+            {records.length === 0 ? (
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyText}>尚無檢測紀錄</Text>
+                <Text style={styles.emptyHint}>完成第一次檢測後將顯示於此</Text>
+              </View>
+            ) : (
+              <View style={{ gap: 8 }}>
+                {records.map((r, i) => (
+                  <TouchableOpacity
+                    key={i}
+                    style={[
+                      styles.row,
+                      selectMode && selected.includes(i) && { borderColor: colors.primary, borderWidth: 1.5 },
+                    ]}
+                    onPress={() => {
+                      if (selectMode) {
+                        toggleSelect(i)
+                      } else {
+                        navigation.getParent()?.navigate('ReportOverview', { record: r })
+                      }
+                    }}
+                  >
+                    {selectMode && (
+                      <View style={[styles.checkbox, selected.includes(i) && styles.checkboxDone]}>
+                        {selected.includes(i) && <Text style={styles.checkmark}>✓</Text>}
+                      </View>
+                    )}
+                    <View style={[styles.statusBar, { backgroundColor: getStatusColor(r.status) }]} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.date}>{r.date}</Text>
+                      <Text style={styles.hint}>{r.time} · {r.lot}</Text>
+                    </View>
+                    <View style={styles.right}>
+                      <Text style={[styles.tc, { color: getStatusColor(r.status) }]}>T/C {r.tc}</Text>
+                      <Text style={[styles.statusText, { color: getStatusColor(r.status) }]}>{r.status}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
-        )}
 
         <View style={{ height: 80 }} />
       </ScrollView>
