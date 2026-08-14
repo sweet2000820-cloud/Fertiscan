@@ -35,7 +35,7 @@ export default function SettingsScreen({ navigation }: any) {
   const [userPlan, setUserPlan] = useState('free')
 
   const isFocused = useIsFocused()
-  const { stage, registerSteps } = useFeatureTour()
+ const { stage, registerSteps, completeTour } = useFeatureTour()
   const isMyTurn = stage === 'settings' && isFocused
   const { setRef, measureAll } = useMeasureTargets(SETTINGS_TARGET_KEYS)
 
@@ -44,12 +44,21 @@ export default function SettingsScreen({ navigation }: any) {
     const timer = setTimeout(async () => {
       const t = await measureAll()
       const steps: TourStep[] = [
-        ...(t.profile ? [{ key: 'profile', label: '點這裡管理個人資料與帳號安全設定', rect: t.profile as any }] : []),
-        ...(t.plan ? [{ key: 'plan', label: '在這裡查看或升級訂閱方案', rect: t.plan as any }] : []),
-        ...(t.clinic ? [{ key: 'clinic', label: '連結診所後可以直接分享報告', rect: t.clinic as any }] : []),
-        ...(t.notify ? [{ key: 'notify', label: '開啟通知，提醒您定期複測', rect: t.notify as any }] : []),
-        ...(t.logout ? [{ key: 'logout', label: '需要登出帳號時，在這裡操作', rect: t.logout as any }] : []),
-      ]
+      ...(t.plan ? [{ key: 'plan', label: '在這裡查看或升級訂閱方案', rect: t.plan as any }] : []),
+      ...(t.clinic ? [{ key: 'clinic', label: '連結診所後可以直接分享報告', rect: t.clinic as any }] : []),
+      ...(t.notify ? [{ key: 'notify', label: '開啟通知，提醒您定期複測', rect: t.notify as any }] : []),
+      ...(t.logout ? [{ key: 'logout', label: '需要登出帳號時，在這裡操作', rect: t.logout as any }] : []),
+      ...(t.profile ? [{
+        key: 'profile',
+        label: '最後一步：填寫個人基本資料，讓分析結果更準確',
+        rect: t.profile as any, 
+        passthrough: true,
+        onPress: () => {
+          completeTour()
+          navigation.navigate('Profile')
+        },
+      }] : []),
+    ]
       registerSteps(steps)
     }, 300)
     return () => clearTimeout(timer)

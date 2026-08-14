@@ -34,7 +34,7 @@ export default function ShopScreen({ navigation }: any) {
         const t = await measureAll()
         const steps: TourStep[] = [
           ...(t.qtySelector ? [{ key: 'qtySelector', label: '這裡可以增減購買數量', rect: t.qtySelector as any }] : []),
-          ...(t.checkoutBtn ? [{ key: 'checkoutBtn', label: '試紙用完了可以在這裡補買', rect: t.checkoutBtn as any }] : []),
+          ...(t.checkoutBtn ? [{ key: 'checkoutBtn', label: '點這裡可以進行付款', rect: t.checkoutBtn as any }] : []),
           {
             key: 'tab-next',
             label: '點擊「設定」前往下一步',

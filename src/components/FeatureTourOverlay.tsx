@@ -39,11 +39,11 @@ export default function FeatureTourOverlay() {
   const holeCenterX = holeX + holeW / 2
   const holeCenterY = holeY + holeH / 2
 
-  const TEXT_MARGIN = 24
-  const labelX = Math.min(
-    Math.max(holeCenterX, TEXT_MARGIN),
-    SCREEN_W - TEXT_MARGIN
-  )
+  // 如果挖空框太靠近螢幕左右邊緣，文字改用螢幕水平中央，避免長文字超出邊界被裁切
+  const EDGE_THRESHOLD = 100
+  const labelX = (holeCenterX < EDGE_THRESHOLD || holeCenterX > SCREEN_W - EDGE_THRESHOLD)
+    ? SCREEN_W / 2
+    : holeCenterX
 
   const labelOnTop = step.labelSide ? step.labelSide === 'top' : holeCenterY > SCREEN_H * 0.55
   const labelY = labelOnTop ? Math.max(60, holeY - 20) : Math.min(SCREEN_H - 50, holeY + holeH + 30)

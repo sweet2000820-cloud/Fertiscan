@@ -16,7 +16,7 @@ function tabRect(index: number) {
   return { x: (SCREEN_W / 5) * index, y: SCREEN_H - TAB_BAR_HEIGHT, width: SCREEN_W / 5, height: TAB_BAR_HEIGHT }
 }
 
-const HISTORY_TARGET_KEYS = ['overview', 'allRecords']
+const HISTORY_TARGET_KEYS = ['overview', 'exportBtn', 'allRecords']
 
 function getStatusColor(status: string) {
   switch (status) {
@@ -35,14 +35,16 @@ export default function HistoryScreen({ navigation }: any) {
   const { stage, registerSteps, setStageDirectly } = useFeatureTour()
   const isMyTurn = stage === 'history' && isFocused
   const { setRef, measureAll } = useMeasureTargets(HISTORY_TARGET_KEYS)
+  
 
-  useEffect(() => {
+ useEffect(() => {
     if (!isMyTurn) return
     const timer = setTimeout(async () => {
       const t = await measureAll()
       const steps: TourStep[] = [
         ...(t.overview ? [{ key: 'overview', label: '這裡看近期 T/C 比值趨勢', rect: t.overview as any }] : []),
         ...(t.allRecords ? [{ key: 'allRecords', label: '這裡是你的所有檢測紀錄', rect: t.allRecords as any, minHeight: 200 }] : []),
+        ...(t.exportBtn ? [{ key: 'exportBtn', label: '點這裡可以一次選取多筆紀錄匯出', rect: t.exportBtn as any }] : []),
         {
           key: 'tab-next',
           label: '點擊「校準」前往下一步',
@@ -230,6 +232,7 @@ export default function HistoryScreen({ navigation }: any) {
                 )}
                 {records.length > 0 && (
                   <TouchableOpacity
+                    ref={setRef('exportBtn')}
                     style={[styles.selectModeBtn, selectMode && { backgroundColor: colors.primary }]}
                     onPress={() => { setSelectMode(!selectMode); setSelected([]) }}
                   >

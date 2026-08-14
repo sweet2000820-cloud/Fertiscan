@@ -44,7 +44,7 @@ export default function DashboardScreen({ navigation }: any) {
         const steps: TourStep[] = [
           { key: 'tab-self', label: '這裡是首頁', rect: tabRect(TAB_INDEX.dashboard), shape: 'circle' },
           ...(t.trend ? [{ key: 'trend', label: '這裡顯示近期 T/C 比值趨勢', rect: t.trend as any }] : []),
-          ...(t.stats ? [{ key: 'stats', label: '上次檢測時間與試紙剩餘數量', rect: t.stats as any }] : []),
+          ...(t.stats ? [{ key: 'stats', label: '上次檢測時間與試紙剩餘數量', rect: t.stats as any, labelSide: 'top' as const }] : []),
           ...(t.cta ? [{ key: 'cta', label: '點這裡開始新一次檢測', rect: t.cta as any }] : []),
           ...(t.history ? [{ key: 'history', label: '這裡會顯示你近 3 次的檢測紀錄', rect: t.history as any, minHeight: 160 , labelSide: 'bottom' as const }] : []),
           {
