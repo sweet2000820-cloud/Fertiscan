@@ -44,7 +44,7 @@ export default function SettingsScreen({ navigation }: any) {
     const timer = setTimeout(async () => {
       const t = await measureAll()
       const steps: TourStep[] = [
-      ...(t.plan ? [{ key: 'plan', label: '在這裡查看或升級訂閱方案', rect: t.plan as any }] : []),
+      ...(t.plan ? [{ key: 'plan', label: '升級訂閱方案可以獲得AI趨勢解讀與PDF報告', rect: t.plan as any }] : []),
       ...(t.clinic ? [{ key: 'clinic', label: '連結診所後可以直接分享報告', rect: t.clinic as any }] : []),
       ...(t.notify ? [{ key: 'notify', label: '開啟通知，提醒您定期複測', rect: t.notify as any }] : []),
       ...(t.logout ? [{ key: 'logout', label: '需要登出帳號時，在這裡操作', rect: t.logout as any }] : []),

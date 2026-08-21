@@ -9,20 +9,25 @@ export default function VerifyEmailScreen({ navigation, route }: any) {
   const email = route?.params?.email || 'your@email.com'
   const [checking, setChecking] = useState(false)
 
-  async function handleCheckVerified() {
+async function handleCheckVerified() {
   setChecking(true)
   try {
     const user = auth.currentUser
-    console.log('手機目前登入的 UID:', user?.uid)
     if (!user) {
       Alert.alert('請重新登入', '找不到登入狀態，請重新登入一次')
       return
     }
     await user.reload()
-    console.log('reload後的 emailVerified 狀態:', user.emailVerified)   // 加這一行
     if (user.emailVerified) {
-    await auth.updateCurrentUser(null)
-    await auth.updateCurrentUser(user)
+      Alert.alert('驗證成功 🎉', '您的信箱已完成驗證，即將帶您進入 iMotile', [
+        {
+          text: '開始使用',
+          onPress: async () => {
+            await auth.updateCurrentUser(null)
+            await auth.updateCurrentUser(user)
+          },
+        },
+      ])
     } else {
       Alert.alert('尚未驗證', '還沒偵測到驗證完成，請確認已點擊信件中的連結，或稍等片刻再試一次')
     }

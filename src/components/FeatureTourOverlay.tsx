@@ -77,7 +77,7 @@ export default function FeatureTourOverlay() {
             </Mask>
           </Defs>
 
-          <Rect x={0} y={0} width={SCREEN_W} height={SCREEN_H} fill="rgba(15,20,25,0.55)" mask="url(#tour-hole-mask)" />
+          <Rect x={0} y={0} width={SCREEN_W} height={SCREEN_H} fill="rgba(15,20,25,0.75)" mask="url(#tour-hole-mask)" />
 
           {isCircle ? (
             <Circle cx={circleCx} cy={circleCy} r={circleR} fill="none" stroke="#fff" strokeWidth={2.5} />

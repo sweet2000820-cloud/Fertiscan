@@ -17,6 +17,15 @@ function getTCColor(status: string) {
   }
 }
 
+function getIndexLabel(status: string) {
+  switch (status) {
+    case '正常': return '高'
+    case '邊緣': return '中'
+    case '偏低': return '低'
+    default: return '—'
+  }
+}
+
 function getNeedlePosition(tc: string) {
   const val = parseFloat(tc)
   if (val < 0.5) return '15%'
@@ -303,6 +312,19 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
     }
   }
 
+  function handleExportPDF() {
+    getUserPlan().then(({ plan }) => {
+      if (plan !== 'pro') {
+        Alert.alert('Pro 功能', 'PDF 報告匯出為 Pro 版專屬功能。', [
+          { text: '稍後再說', style: 'cancel' },
+          { text: '升級 Pro', onPress: () => navigation.navigate('Plan') },
+        ])
+        return
+      }
+      exportPDF()
+    })
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.appbar}>
@@ -317,26 +339,28 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
         <View style={styles.titleRow}>
           <View>
             <Text style={styles.hint}>{record.date} · {record.time}</Text>
-            <Text style={styles.title}>T/C 比值分析</Text>
+            <Text style={styles.title}>好孕指數分析</Text>
           </View>
           <View style={[styles.badge, { backgroundColor: badgeStyle.bg }]}>
-            <Text style={[styles.badgeText, { color: badgeStyle.text }]}>{badgeStyle.label}</Text>
+            <Text style={[styles.badgeText, { color: badgeStyle.text }]}>{getIndexLabel(record.status)}</Text>
           </View>
         </View>
 
         <View style={styles.gaugeCard}>
-          <Text style={styles.hint}>T/C 比值（定量指標）</Text>
+          <Text style={styles.hint}>好孕指數</Text>
           <View style={styles.gaugeCenter}>
-            <Text style={[styles.gaugeNum, { color: tcColor }]}>{record.tc}</Text>
-            <Text style={styles.gaugeUnit}>T/C ratio</Text>
+            <Text style={[styles.gaugeNum, { color: tcColor, fontSize: 44 }]}>{getIndexLabel(record.status)}</Text>
+          </View>
+          <View style={styles.tcPill}>
+            <Text style={styles.tcPillText}>T/C 比值 <Text style={styles.tcPillValue}>{record.tc}</Text></Text>
           </View>
           <View style={styles.scaleBar}>
             <View style={[styles.scaleNeedle, { left: `${needlePos}` as any }]} />
           </View>
           <View style={styles.scaleLabels}>
-            <Text style={[styles.scaleLabel, { color: colors.danger }]}>低（&lt;0.5）</Text>
-            <Text style={[styles.scaleLabel, { color: colors.warning }]}>邊緣</Text>
-            <Text style={[styles.scaleLabel, { color: colors.success }]}>正常（≥0.85）</Text>
+            <Text style={[styles.scaleLabel, { color: colors.danger }]}>低</Text>
+            <Text style={[styles.scaleLabel, { color: colors.warning }]}>中</Text>
+            <Text style={[styles.scaleLabel, { color: colors.success }]}>高</Text>
           </View>
         </View>
 
@@ -446,10 +470,19 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.linkBtn} onPress={() => navigation.navigate('ReportLink', { records: [record] })}>
-          <Ionicons name="link-outline" size={16} color={colors.primary} />
-          <Text style={styles.linkBtnText}>複製分享連結</Text>
-        </TouchableOpacity>
+        <View style={styles.btnRow}>
+          <TouchableOpacity style={[styles.linkBtn, { flex: 1, marginBottom: 0 }]} onPress={handleExportPDF}>
+            <Ionicons name="document-text-outline" size={16} color={colors.primary} />
+            <Text style={styles.linkBtnText}>匯出 PDF</Text>
+            <View style={styles.proBadge}>
+              <Text style={styles.proBadgeText}>PRO</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.linkBtn, { flex: 1, marginBottom: 0 }]} onPress={() => navigation.navigate('ReportLink', { records: [record] })}>
+            <Ionicons name="link-outline" size={16} color={colors.primary} />
+            <Text style={styles.linkBtnText}>複製分享連結</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={{ height: 20 }} />
       </ScrollView>
@@ -478,6 +511,22 @@ const styles = StyleSheet.create({
   gaugeCenter: { alignItems: 'center', marginVertical: 12 },
   gaugeNum: { fontSize: 36, fontWeight: typography.weights.medium },
   gaugeUnit: { fontSize: typography.sizes.sm, color: colors.gray400, marginTop: 2 },
+  tcPill: {
+    backgroundColor: colors.gray100,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    marginBottom: 12,
+  },
+  tcPillText: {
+    fontSize: typography.sizes.sm,
+    color: colors.gray500,
+  },
+  tcPillValue: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
+    color: colors.gray900,
+  },
   scaleBar: { width: '100%', height: 8, borderRadius: 4, backgroundColor: colors.gray200, position: 'relative', marginBottom: 4 },
   scaleNeedle: { position: 'absolute', top: -4, width: 2.5, height: 16, backgroundColor: colors.gray900, borderRadius: 1.5 },
   scaleLabels: { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
@@ -534,4 +583,4 @@ const styles = StyleSheet.create({
   gap: 6, marginBottom: 8,
   },
   linkBtnText: { fontSize: typography.sizes.md, color: colors.primary, fontWeight: typography.weights.medium },
-  })
+})

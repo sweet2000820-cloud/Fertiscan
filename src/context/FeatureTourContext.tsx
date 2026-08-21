@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { auth, db } from '../firebase'
 import { TargetRect } from '../hooks/useMeasureTargets'
 
 export type TourStage = 'dashboard' | 'history' | 'calibration' | 'shop' | 'settings'
@@ -55,23 +56,33 @@ export function FeatureTourProvider({ children }: { children: ReactNode }) {
   const [activeSteps, setActiveSteps] = useState<TourStep[]>([])
 
   useEffect(() => {
-    AsyncStorage.getItem('featureTourShown').then(shown => {
+    const user = auth.currentUser
+    if (!user) return
+    getDoc(doc(db, 'users', user.uid)).then(snap => {
+      const shown = snap.exists() && snap.data()?.featureTourShown
       if (!shown) setStage('dashboard')
     })
   }, [])
+
+  function markTourShown() {
+    const user = auth.currentUser
+    if (user) {
+      setDoc(doc(db, 'users', user.uid), { featureTourShown: true }, { merge: true })
+    }
+  }
 
   function startTour() {
     setStage('dashboard')
   }
 
   function skipAll() {
-    AsyncStorage.setItem('featureTourShown', 'true')
+    markTourShown()
     setStage(null)
     setActiveSteps([])
   }
 
   function completeTour() {
-    AsyncStorage.setItem('featureTourShown', 'true')
+    markTourShown()
     setStage(null)
     setActiveSteps([])
   }
@@ -81,7 +92,7 @@ export function FeatureTourProvider({ children }: { children: ReactNode }) {
   }
 
   function setStageDirectly(next: TourStage) {
-    setActiveSteps([]) 
+    setActiveSteps([])
     setStage(next)
   }
 
