@@ -347,7 +347,7 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
         </View>
 
         <View style={styles.gaugeCard}>
-          <Text style={styles.hint}>好孕指數</Text>
+          <Text style={styles.labelDark}>好孕指數</Text>
           <View style={styles.gaugeCenter}>
             <Text style={[styles.gaugeNum, { color: tcColor, fontSize: 44 }]}>{getIndexLabel(record.status)}</Text>
           </View>
@@ -367,14 +367,14 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
         <View style={styles.listCard}>
           <Text style={styles.sectionTitle}>條線訊號詳情</Text>
           <View style={styles.signalRow}>
-            <Text style={styles.hint}>Control line (C) — 內部對照</Text>
+            <Text style={styles.labelDark}>Control line (C) — 內部對照</Text>
             <Text style={[styles.signalValue, { color: '#1a6fbe' }]}>灰階 {cLine}</Text>
           </View>
           <View style={styles.progressBg}>
             <View style={[styles.progressFill, { width: `${Math.min(cLine / 170 * 100, 100)}%`, backgroundColor: '#1a6fbe' }]} />
           </View>
           <View style={styles.signalRow}>
-            <Text style={styles.hint}>Test line (T) — 樣本反應</Text>
+            <Text style={styles.labelDark}>Test line (T) — 樣本反應</Text>
             <Text style={[styles.signalValue, { color: tcColor }]}>灰階 {tLine}</Text>
           </View>
           <View style={styles.progressBg}>
@@ -382,11 +382,11 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
           </View>
           <View style={styles.divider} />
           <View style={styles.infoRow}>
-            <Text style={styles.hint}>換算濃度（批號 {record.lot}）</Text>
+            <Text style={styles.labelDark}>換算濃度（批號 {record.lot}）</Text>
             <Text style={[styles.infoValue, { color: tcColor }]}>≈ {conc} mIU/mL</Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.hint}>禁慾天數</Text>
+            <Text style={styles.labelDark}>禁慾天數</Text>
             <Text style={styles.infoValue}>{abstinenceDays != null ? `${abstinenceDays} 天` : '未記錄'}</Text>
           </View>
         </View>
@@ -395,7 +395,7 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
           <Text style={styles.sectionTitle}>影像品質確認</Text>
           {['C line 訊號', 'T line 偵測', '影像穩定度', '螢幕亮度', '批號匹配'].map((item, i) => (
             <View key={i} style={styles.qcRow}>
-              <Text style={styles.hint}>{item}</Text>
+              <Text style={styles.labelDark}>{item}</Text>
               <Text style={{ fontSize: typography.sizes.xs, color: colors.success }}>✓ 通過</Text>
             </View>
           ))}
@@ -501,9 +501,10 @@ const styles = StyleSheet.create({
   scroll: { flex: 1, paddingHorizontal: 18 },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 },
   hint: { fontSize: typography.sizes.sm, color: colors.gray400 },
+  labelDark: { fontSize: typography.sizes.md, color: colors.gray900 },
   title: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.gray900, marginTop: 2 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
-  badgeText: { fontSize: typography.sizes.xs, fontWeight: typography.weights.medium },
+  badgeText: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium },
   gaugeCard: {
     backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
     borderRadius: 18, padding: 16, alignItems: 'center', marginBottom: 14,
@@ -519,11 +520,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   tcPillText: {
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.md,
     color: colors.gray500,
   },
   tcPillValue: {
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.md,
     fontWeight: typography.weights.medium,
     color: colors.gray900,
   },
@@ -535,7 +536,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
     borderRadius: 18, padding: 14, marginBottom: 14,
   },
-  sectionTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray500, marginBottom: 10 },
+  sectionTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray900, marginBottom: 10 },
   signalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
   signalValue: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium },
   progressBg: { height: 5, backgroundColor: colors.gray200, borderRadius: 3, marginBottom: 10, overflow: 'hidden' },

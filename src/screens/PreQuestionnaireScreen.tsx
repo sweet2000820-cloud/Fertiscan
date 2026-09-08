@@ -14,10 +14,10 @@ const yesNoQuestions = [
 
 // 頻率程度題（4選項）
 const heatExposureOpts = [
-  { label: '從不', value: 'never' },
-  { label: '偶爾', value: 'occasional' },
-  { label: '常常', value: 'often' },
-  { label: '幾乎每天', value: 'almostDaily' },
+  { label: '完全沒有', value: 'never' },
+  { label: '每週 1 次以內', value: 'occasional' },
+  { label: '每週 2–3 次', value: 'often' },
+  { label: '每週 4 次以上', value: 'almostDaily' },
 ]
 const sleepHoursOpts = [
   { label: '少於 5 小時', value: 'lt5' },
@@ -39,6 +39,10 @@ export default function PreQuestionnaireScreen({ navigation, route }: any) {
   const [abstinenceDays, setAbstinenceDays] = useState('')
   const [showAbstinencePicker, setShowAbstinencePicker] = useState(false)
 
+  // 檢體總量
+  const [sampleVolume, setSampleVolume] = useState('')
+  const [showVolumePicker, setShowVolumePicker] = useState(false)
+
   // 是非題答案
   const [yesNoAnswers, setYesNoAnswers] = useState<Record<string, boolean | undefined>>({})
 
@@ -54,6 +58,10 @@ export default function PreQuestionnaireScreen({ navigation, route }: any) {
   function canProceed() {
     if (step === 0) return abstinenceDays.trim() !== ''
     const yesNoIndex = step - 1
+    if (yesNoIndex === 0) {
+      // sampleComplete 這題是複合題，Yes/No 跟 mL 兩個都要填才能繼續
+      return yesNoAnswers.sampleComplete !== undefined && sampleVolume.trim() !== ''
+    }
     if (yesNoIndex >= 0 && yesNoIndex < yesNoQuestions.length) {
       return yesNoAnswers[yesNoQuestions[yesNoIndex].key] !== undefined
     }
@@ -73,6 +81,7 @@ export default function PreQuestionnaireScreen({ navigation, route }: any) {
         abstinenceDays: parseInt(abstinenceDays, 10),
         restTimeConfirmed: !!route?.params?.restTimeConfirmed,
         sampleComplete: !!yesNoAnswers.sampleComplete,
+        sampleVolume: parseInt(sampleVolume, 10),
         usedLubricant: !!yesNoAnswers.usedLubricant,
         hadFever: !!yesNoAnswers.hadFever,
         newMedication: !!yesNoAnswers.newMedication,
@@ -112,6 +121,9 @@ export default function PreQuestionnaireScreen({ navigation, route }: any) {
       return (
         <>
           <Text style={styles.question}>{item.q}</Text>
+          {item.key === 'sampleComplete' && (
+            <Text style={styles.hint}>採集過程中，檢體有沒有漏掉一部分（例如一開始或最後有漏接）？</Text>
+          )}
           <View style={styles.optionList}>
             {[{ label: '是', value: true }, { label: '否', value: false }].map(opt => (
               <TouchableOpacity
@@ -126,36 +138,47 @@ export default function PreQuestionnaireScreen({ navigation, route }: any) {
               </TouchableOpacity>
             ))}
           </View>
+          {item.key === 'sampleComplete' && (
+            <>
+              <Text style={styles.question}>本次檢體總量約多少 mL？</Text>
+              <TouchableOpacity style={styles.numInput} onPress={() => setShowVolumePicker(true)}>
+                <Text style={{ color: sampleVolume ? colors.gray900 : colors.gray400, fontSize: typography.sizes.lg }}>
+                  {sampleVolume ? `${sampleVolume} mL` : '請選擇容量'}
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
         </>
       )
     }
     const freqIndex = step - 1 - yesNoQuestions.length
-    const freqConfigs = [
-      { q: '近三個月是否有泡溫泉/三溫暖/熱水澡/久坐？', opts: heatExposureOpts, selected: heatExposure, setter: setHeatExposure },
-      { q: '昨晚睡眠時數？', opts: sleepHoursOpts, selected: sleepHours, setter: setSleepHours },
-      { q: '近三個月整體壓力狀況？', opts: stressOpts, selected: stressLevel, setter: setStressLevel },
-    ]
+      const freqConfigs = [
+        { q: '近三個月，每週泡溫泉/三溫暖/熱水澡的次數？', hint: '熱水澡：水溫 40°C 以上、單次超過 15 分鐘才算', opts: heatExposureOpts, selected: heatExposure, setter: setHeatExposure },
+        { q: '昨晚睡眠時數？', hint: undefined, opts: sleepHoursOpts, selected: sleepHours, setter: setSleepHours },
+        { q: '近三個月整體壓力狀況？', hint: undefined, opts: stressOpts, selected: stressLevel, setter: setStressLevel },
+      ]
     const cfg = freqConfigs[freqIndex]
-    if (!cfg) return null
-    return (
-      <>
-        <Text style={styles.question}>{cfg.q}</Text>
-        <View style={styles.optionList}>
-          {cfg.opts.map(opt => (
-            <TouchableOpacity
-              key={opt.value}
-              style={[styles.option, cfg.selected === opt.value && styles.optionSelected]}
-              onPress={() => cfg.setter(opt.value)}
-            >
-              <View style={[styles.radio, cfg.selected === opt.value && styles.radioSelected]}>
-                {cfg.selected === opt.value && <View style={styles.radioDot} />}
-              </View>
-              <Text style={[styles.optionText, cfg.selected === opt.value && styles.optionTextSelected]}>{opt.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </>
-    )
+      if (!cfg) return null
+      return (
+        <>
+          <Text style={styles.question}>{cfg.q}</Text>
+          {cfg.hint && <Text style={styles.hint}>{cfg.hint}</Text>}
+          <View style={styles.optionList}>
+            {cfg.opts.map(opt => (
+              <TouchableOpacity
+                key={opt.value}
+                style={[styles.option, cfg.selected === opt.value && styles.optionSelected]}
+                onPress={() => cfg.setter(opt.value)}
+              >
+                <View style={[styles.radio, cfg.selected === opt.value && styles.radioSelected]}>
+                  {cfg.selected === opt.value && <View style={styles.radioDot} />}
+                </View>
+                <Text style={[styles.optionText, cfg.selected === opt.value && styles.optionTextSelected]}>{opt.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </>
+      )
   }
 
   return (
@@ -200,6 +223,19 @@ export default function PreQuestionnaireScreen({ navigation, route }: any) {
             setShowAbstinencePicker(false)
           }}
           onCancel={() => setShowAbstinencePicker(false)}
+        />
+
+        <PickerModal
+          visible={showVolumePicker}
+          title="檢體總量"
+          value={sampleVolume || '3'}
+          items={Array.from({ length: 10 }, (_, i) => String(i + 1))}
+          unit=" mL"
+          onConfirm={(val) => {
+            setSampleVolume(val)
+            setShowVolumePicker(false)
+          }}
+          onCancel={() => setShowVolumePicker(false)}
         />
 
         <View style={{ height: 20 }} />

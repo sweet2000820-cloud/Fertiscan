@@ -21,4 +21,7 @@ export const colors = {
   
   white: '#FFFFFF',
   background: '#EFF3F8',
+
+  easterEgg: '#B0559A',
+  easterEggBorder: '#D4A5D8',
 }
