@@ -7,6 +7,14 @@ import * as ImageManipulator from 'expo-image-manipulator'
 import * as FileSystem from 'expo-file-system/legacy'
 import * as Sharing from 'expo-sharing'
 
+// 取景框在螢幕上距離頂部的比例。這個數字必須跟下面 styles.maskMiddle 的
+// top 值保持一致——兩處分別用來「畫出框」和「算出裁切範圍」，
+// 如果各自寫死不同數字，畫面上的框跟實際裁切範圍就會對不齊
+// （這正是之前 869818C7 那張照片判讀窗被切到只剩下半部的原因：
+//  框實際貼在螢幕 35% 高度，但裁切計算誤用「垂直置中」去算，
+//  兩者換算成螢幕比例差了 5.5%，裁切範圍整個往下偏移）。
+const FRAME_TOP_PERCENT = 0.35
+
 export default function CamCaptureScreen({ navigation, route }: any) {
   const [permission, requestPermission] = useCameraPermissions()
   const [captured, setCaptured] = useState(false)
@@ -101,9 +109,12 @@ export default function CamCaptureScreen({ navigation, route }: any) {
           const cropWidth = width * (FRAME_W / SCREEN_W)
           const cropHeight = height * (FRAME_H / SCREEN_H)
 
-          // 👉 中間裁切（因為你的框在正中間）
+          // 👉 中間裁切：水平方向框本來就置中，維持原本算法沒問題；
+          // 垂直方向框不是置中的，是貼在距頂部 FRAME_TOP_PERCENT 的位置，
+          // 要直接用這個比例算裁切起點，不能假設垂直置中，
+          // 否則裁切範圍會跟畫面上實際看到的框對不齊（見上面常數的註解）
           const originX = (width - cropWidth) / 2
-          const originY = (height - cropHeight) / 2
+          const originY = height * FRAME_TOP_PERCENT
 
           console.log(`[CamCapture] 螢幕尺寸: ${SCREEN_W}x${SCREEN_H}, 裁切區域: ${cropWidth.toFixed(0)}x${cropHeight.toFixed(0)} @ (${originX.toFixed(0)}, ${originY.toFixed(0)})`)
 
@@ -294,10 +305,10 @@ const styles = StyleSheet.create({
   permText: { color: '#fff', fontSize: typography.sizes.md, textAlign: 'center', marginBottom: 20 },
   permBtn: { backgroundColor: colors.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 9 },
   permBtnText: { color: '#fff', fontSize: typography.sizes.md, fontWeight: typography.weights.medium },
-  maskTop: { position: 'absolute', top: 0, left: 0, right: 0, height: '35%', backgroundColor: 'rgba(0,0,0,0.6)' },
-  maskMiddle: { position: 'absolute', top: '35%', left: 0, right: 0, height: 160, flexDirection: 'row' },
+  maskTop: { position: 'absolute', top: 0, left: 0, right: 0, height: `${FRAME_TOP_PERCENT * 100}%`, backgroundColor: 'rgba(0,0,0,0.6)' },
+  maskMiddle: { position: 'absolute', top: `${FRAME_TOP_PERCENT * 100}%`, left: 0, right: 0, height: 160, flexDirection: 'row' },
   maskSide: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
-  maskBottom: { position: 'absolute', top: '35%', left: 0, right: 0, bottom: 0, marginTop: 160, backgroundColor: 'rgba(0,0,0,0.6)' },
+  maskBottom: { position: 'absolute', top: `${FRAME_TOP_PERCENT * 100}%`, left: 0, right: 0, bottom: 0, marginTop: 160, backgroundColor: 'rgba(0,0,0,0.6)' },
   header: {
     position: 'absolute', top: 0, left: 0, right: 0,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
