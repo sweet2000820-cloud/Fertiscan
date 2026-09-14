@@ -32,6 +32,11 @@ const stressOpts = [
   { label: '壓力很大', value: 'veryHigh' },
 ]
 
+// 檢體總量選項：頭尾改成範圍分類（<1、>7），中間維持整數 1~7，
+// 因為是分類標籤（不是單純的數字），存起來的值是字串本身
+// （例如 "<1"、"3"、">7"），不能再用 parseInt 轉成數字。
+const sampleVolumeOpts = ['<1', '1', '2', '3', '4', '5', '6', '7', '>7']
+
 export default function PreQuestionnaireScreen({ navigation, route }: any) {
   const [step, setStep] = useState(0)
 
@@ -81,7 +86,10 @@ export default function PreQuestionnaireScreen({ navigation, route }: any) {
         abstinenceDays: parseInt(abstinenceDays, 10),
         restTimeConfirmed: !!route?.params?.restTimeConfirmed,
         sampleComplete: !!yesNoAnswers.sampleComplete,
-        sampleVolume: parseInt(sampleVolume, 10),
+        // sampleVolume 現在是分類標籤（"<1"、"3"、">7" 這種字串），
+        // 不再是可以直接轉整數的數值，改成直接存字串本身，
+        // 不能再用 parseInt（"<1"、">7" 轉出來會是 NaN）。
+        sampleVolume,
         usedLubricant: !!yesNoAnswers.usedLubricant,
         hadFever: !!yesNoAnswers.hadFever,
         newMedication: !!yesNoAnswers.newMedication,
@@ -229,7 +237,7 @@ export default function PreQuestionnaireScreen({ navigation, route }: any) {
           visible={showVolumePicker}
           title="檢體總量"
           value={sampleVolume || '3'}
-          items={Array.from({ length: 10 }, (_, i) => String(i + 1))}
+          items={sampleVolumeOpts}
           unit=" mL"
           onConfirm={(val) => {
             setSampleVolume(val)
