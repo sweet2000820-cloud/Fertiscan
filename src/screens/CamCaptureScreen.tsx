@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { colors, typography } from '../theme'
 import { auth } from '../firebase'
+import * as ImageManipulator from 'expo-image-manipulator'
 
 export default function CamCaptureScreen({ navigation, route }: any) {
   const [permission, requestPermission] = useCameraPermissions()
@@ -45,22 +46,65 @@ async function takePicture() {
       const results = []
       
       for (let i = 0; i < 3; i++) {
+        console.log(`[CamCapture] 準備拍第 ${i+1} 張`)
         // 拍照
         const photo = await cameraRef.current.takePictureAsync({ 
-          quality: 0.8,
-          base64: false
+          quality: 1,
+          skipProcessing: true
         })
+        console.log(`[CamCapture] 第 ${i+1} 張拍照完成，photo.uri:`, photo?.uri)
         
         if (!photo) throw new Error('拍照失敗')
+          console.log(`[CamCapture] 開始讀取檔案轉 blob`)
+        // ====== 加在這裡 ======
+          const { width, height } = photo
+
+          // 👉 你的 UI 框（寫死的）
+          const FRAME_W = 280
+          const FRAME_H = 160
+
+          // 👉 畫面比例（假設全螢幕）
+          const SCREEN_W = 360
+          const SCREEN_H = 640
+
+          // 👉 換算比例
+          const cropWidth = width * (FRAME_W / SCREEN_W)
+          const cropHeight = height * (FRAME_H / SCREEN_H)
+
+          // 👉 中間裁切（因為你的框在正中間）
+          const originX = (width - cropWidth) / 2
+          const originY = (height - cropHeight) / 2
+
+          // ✂️ Crop + 放大
+          const cropped = await ImageManipulator.manipulateAsync(
+            photo.uri,
+            [
+              {
+                crop: {
+                  originX,
+                  originY,
+                  width: cropWidth,
+                  height: cropHeight
+                }
+              },
+              {
+                resize: {
+                  width: cropWidth * 2,
+                  height: cropHeight * 2
+                }
+              }
+            ],
+            { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG }
+          )
 
         // 送 API
+        const fileResponse = await fetch(cropped.uri)
+        const blob = await fileResponse.blob()
+        console.log(`[CamCapture] blob 轉換完成，大小:`, blob.size)
         const formData = new FormData()
-        formData.append('file', {
-          uri: photo.uri,
-          type: 'image/jpeg',
-          name: `strip_${i}.jpg`,
-        } as any)
+        formData.append('file', blob, `strip_${i}.jpg`)
 
+        console.log(`[CamCapture] 開始呼叫 API`)
         const response = await fetch(API_URL, {
           method: 'POST',
           body: formData,
@@ -69,6 +113,7 @@ async function takePicture() {
             'Authorization': `Bearer ${idToken}`,
           },
         })
+        console.log(`[CamCapture] API 回應狀態:`, response.status)
 
         if (response.status === 401) {
           setIsProcessing(false)
@@ -132,6 +177,7 @@ async function takePicture() {
       navigation.navigate('Analysis', { analysisResult: avgResult, ...route?.params })
 
     } catch (e) {
+      console.log('[CamCapture] 真正的錯誤:', e)
       setIsProcessing(false)
       Alert.alert('錯誤', '網路連線失敗或拍攝失敗，請再試一次')
       setCaptured(false)

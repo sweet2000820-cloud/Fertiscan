@@ -3,24 +3,13 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { colors, typography } from '../theme'
 import { Ionicons } from '@expo/vector-icons'
 import type { ComponentProps } from 'react'
-
-type IoniconName = ComponentProps<typeof Ionicons>['name']
 import { getRecords, TestRecord } from '../storage'
 import { getBaziFromYear, elementColors, elementReadings, getDailyFortune, luckyColorHex } from '../utils/bazi'
 import { doc, getDoc } from 'firebase/firestore'
 import { auth, db } from '../firebase'
 import { getZodiacSign, zodiacColors, zodiacReadings } from '../utils/zodiac'
 
-// ────────────────────────────────────────────────────────────
-// 注意：以下顏色需加入 theme.ts 的 colors 物件，本檔案才能正常引用：
-//
-//   easterEgg: '#B0559A',
-//   easterEggBorder: '#D4A5D8',
-//
-// 其餘用到的顏色（primary/primaryLight/success/successLight/
-// warning/warningLight/danger/gray100~500/gray900/white/background）
-// 皆已存在於原本的 colors 物件中。
-// ────────────────────────────────────────────────────────────
+type IoniconName = ComponentProps<typeof Ionicons>['name']
 
 const sleepLabels: Record<string, string> = {
   lt5: '少於 5 小時', '5to6': '5–6 小時', '7to8': '7–8 小時', gt9: '超過 9 小時',
