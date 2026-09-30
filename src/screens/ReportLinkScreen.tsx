@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { colors, typography } from '../theme'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch, Share, Linking } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch, Share, Linking, TextInput, ActivityIndicator } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
 import * as Print from 'expo-print'
 import * as Sharing from 'expo-sharing'
@@ -12,6 +12,15 @@ import { getRecords } from '../storage'
 import { Ionicons } from '@expo/vector-icons'
 
 const API_BASE = 'https://fertiscan-api.onrender.com'
+
+// [修改] 有效期限改用畫面上的選項按鈕：原本用 Alert 列出 4 個選項，Android 的 Alert 最多只顯示 3 個按鈕
+const EXPIRY_OPTIONS: { label: string, hours: number }[] = [
+  { label: '24 小時', hours: 24 },
+  { label: '3 天', hours: 72 },
+  { label: '7 天', hours: 168 },
+  { label: '30 天', hours: 720 },
+]
+const MIN_PASSWORD = 4
 
 function generateAnonId(uid: string): string {
   let hash = 0
@@ -26,16 +35,6 @@ function getStatusBadgeColors(status: string) {
   if (status === '正常') return { bg: '#EAF3DE', text: '#3B6D11' }
   if (status === '邊緣') return { bg: '#FAEEDA', text: '#854F0B' }
   return { bg: '#FCEBEB', text: '#A32D2D' }
-}
-
-function expiryToHours(label: string): number {
-  switch (label) {
-    case '24 小時': return 24
-    case '3 天': return 72
-    case '7 天': return 168
-    case '30 天': return 720
-    default: return 168
-  }
 }
 
 const sleepLabels: Record<string, string> = { lt5: '少於 5 小時', '5to6': '5–6 小時', '7to8': '7–8 小時', gt9: '超過 9 小時' }
@@ -59,15 +58,43 @@ function getScoreColor(s: number) {
   return '#A32D2D'
 }
 
+// [新增] 整理要送給後端的資料：只送醫師需要的欄位
+function toSharePayload(r: any, includeSurvey: boolean) {
+  const s = r.preTestSurvey
+  const num = (v: any) => (v != null && !isNaN(Number(v)) ? Number(v) : null)
+  return {
+    date: String(r.date ?? ''),
+    time: String(r.time ?? ''),
+    tc: String(r.tc ?? ''),
+    status: String(r.status ?? ''),
+    lot: String(r.lot ?? ''),
+    cIntensity: num(r.cIntensity),
+    tIntensity: num(r.tIntensity),
+    survey: includeSurvey && s ? {
+      abstinenceDays: num(s.abstinenceDays),
+      sampleComplete: s.sampleComplete ?? null,
+      sampleVolume: s.sampleVolume ?? null,
+      usedLubricant: s.usedLubricant ?? null,
+      hadFever: s.hadFever ?? null,
+      newMedication: s.newMedication ?? null,
+      heavyDrinking: s.heavyDrinking ?? null,
+    } : null,
+  }
+}
+
 export default function ReportLinkScreen({ navigation, route }: any) {
   const [pwEnabled, setPwEnabled] = useState(false)
   const [password, setPassword] = useState('')
-  const [expiry, setExpiry] = useState('7 天')
+  const [expiryHours, setExpiryHours] = useState(168)
+  const [includeSurvey, setIncludeSurvey] = useState(true) // [新增]
   const [anonId, setAnonId] = useState('FS-------')
   const [shareUrl, setShareUrl] = useState<string | null>(null)
+  const [shareExpiresAt, setShareExpiresAt] = useState<string | null>(null)
   const [shareLoading, setShareLoading] = useState(false)
-  const [shareError, setShareError] = useState(false)
+  const [shareError, setShareError] = useState<string | null>(null)
+  const shareIdRef = useRef<string | null>(null)
   const records = route?.params?.records || []
+  const hasSurvey = records.some((r: any) => r.preTestSurvey)
 
   useEffect(() => {
     const user = auth.currentUser
@@ -76,15 +103,47 @@ export default function ReportLinkScreen({ navigation, route }: any) {
     }
   }, [])
 
+  // [新增] 撤回連結：連結立刻失效，後端資料一併刪除
+  async function revokeShare(shareId: string) {
+    const user = auth.currentUser
+    if (!user) return
+    try {
+      const idToken = await user.getIdToken()
+      await fetch(`${API_BASE}/share/${encodeURIComponent(shareId)}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${idToken}` },
+      })
+    } catch (e) {
+      // 撤回失敗不影響畫面；連結仍會在到期後失效
+      console.log('[ReportLink] 撤回連結失敗:', e)
+    }
+  }
+
+  // [新增] 設定改變時，把已經產生的連結撤回，避免留下多個仍可開啟的舊連結
+  function invalidateLink() {
+    const oldId = shareIdRef.current
+    if (oldId) {
+      shareIdRef.current = null
+      setShareUrl(null)
+      setShareExpiresAt(null)
+      revokeShare(oldId)
+    }
+  }
+
+  // [修改] 不再一進頁面就自動產生，改為使用者按下按鈕才建立
   async function generateShareLink() {
-    if (records.length === 0) return
+    if (records.length === 0 || shareLoading) return
+    if (pwEnabled && password.length < MIN_PASSWORD) {
+      setShareError(`密碼至少需要 ${MIN_PASSWORD} 個字元`)
+      return
+    }
     const user = auth.currentUser
     if (!user) {
-      setShareError(true)
+      setShareError('找不到登入狀態，請重新登入')
       return
     }
     setShareLoading(true)
-    setShareError(false)
+    setShareError(null)
     try {
       const idToken = await user.getIdToken()
       const res = await fetch(`${API_BASE}/share`, {
@@ -94,55 +153,61 @@ export default function ReportLinkScreen({ navigation, route }: any) {
           'Authorization': `Bearer ${idToken}`,
         },
         body: JSON.stringify({
-          records: records.map((r: any) => ({
-            date: r.date,
-            time: r.time,
-            tc: r.tc,
-            status: r.status,
-            lot: r.lot,
-            qualityPassed: true,
-          })),
-          expiry_hours: expiryToHours(expiry),
+          records: records.slice(0, 50).map((r: any) => toSharePayload(r, includeSurvey)),
+          expiry_hours: expiryHours,
           password: pwEnabled && password ? password : null,
         }),
       })
-      const data = await res.json()
-      if (data.success) {
+      const data = await res.json().catch(() => null)
+      if (res.ok && data?.success) {
+        shareIdRef.current = data.share_id
         setShareUrl(data.url)
+        setShareExpiresAt(data.expires_at ?? null)
       } else {
-        setShareError(true)
+        setShareError('產生失敗，請稍後再試')
       }
     } catch (e) {
-      setShareError(true)
+      setShareError('網路連線失敗，請稍後再試')
     }
     setShareLoading(false)
   }
 
-  useEffect(() => {
-    generateShareLink()
-  }, [expiry, pwEnabled, password])
-
-  function handleTogglePassword(val: boolean) {
-    if (val) {
-      Alert.prompt(
-        '設定密碼',
-        '請輸入查看此報告所需的密碼',
-        [
-          { text: '取消', style: 'cancel' },
-          { text: '確認', onPress: (pw?: string) => {
-            if (pw && pw.length > 0) {
-              setPassword(pw)
-              setPwEnabled(true)
-            }
-          }},
-        ],
-        'secure-text'
-      )
-    } else {
-      setPwEnabled(false)
-      setPassword('')
-    }
+  function handleRevokePress() {
+    Alert.alert('撤回連結', '撤回後，已經收到連結的人將無法再打開這份報告。', [
+      { text: '取消', style: 'cancel' },
+      { text: '撤回', style: 'destructive', onPress: () => {
+        invalidateLink()
+        Alert.alert('已撤回', '這個連結已經失效。')
+      }},
+    ])
   }
+
+  function changeExpiry(hours: number) {
+    if (hours === expiryHours) return
+    invalidateLink()
+    setExpiryHours(hours)
+  }
+
+  function changeIncludeSurvey(val: boolean) {
+    invalidateLink()
+    setIncludeSurvey(val)
+  }
+
+  // [修改] 密碼改用畫面上的輸入框：原本的 Alert.prompt 只有 iOS 支援，Android 無法設定密碼
+  function togglePassword(val: boolean) {
+    invalidateLink()
+    setPwEnabled(val)
+    if (!val) setPassword('')
+  }
+
+  function changePassword(pw: string) {
+    invalidateLink()
+    setPassword(pw)
+  }
+
+  const expiresText = shareExpiresAt
+    ? new Date(shareExpiresAt).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : null
 
   async function exportPDF() {
     const user = auth.currentUser
@@ -168,9 +233,19 @@ export default function ReportLinkScreen({ navigation, route }: any) {
 
     const generatedAt = new Date().toLocaleString('zh-TW')
 
-    const age = profile?.birthYear ? new Date().getFullYear() - parseInt(profile.birthYear) : null
+    // [修正] 年齡考慮生日是否已過；BMI 用 parseFloat 避免小數被截掉
+    const age = profile?.birthYear
+      ? (() => {
+          const today = new Date()
+          let a = today.getFullYear() - parseInt(profile.birthYear)
+          const bm = profile.birthMonth ? parseInt(profile.birthMonth) : 1
+          const bd = profile.birthDay ? parseInt(profile.birthDay) : 1
+          if (today.getMonth() + 1 < bm || (today.getMonth() + 1 === bm && today.getDate() < bd)) a -= 1
+          return a
+        })()
+      : null
     const bmi = profile?.height && profile?.weight
-      ? (parseInt(profile.weight) / Math.pow(parseInt(profile.height) / 100, 2)).toFixed(1)
+      ? (parseFloat(profile.weight) / Math.pow(parseFloat(profile.height) / 100, 2)).toFixed(1)
       : null
     const bmiNum = bmi ? parseFloat(bmi) : null
     const bmiStatus = bmiNum ? (bmiNum < 18.5 ? '偏輕' : bmiNum < 24 ? '正常' : bmiNum < 27 ? '過重' : '肥胖') : '未填寫'
@@ -235,10 +310,11 @@ export default function ReportLinkScreen({ navigation, route }: any) {
     ` : ''
 
     function buildRecordCard(r: any) {
-      const tcVal = parseFloat(r.tc)
-      const conc = Math.round(22 * tcVal / 0.68)
-      const cLine = Math.round(tcVal * 142 / 0.68)
-      const tLine = Math.round(97 * tcVal / 0.68)
+      // [修正] 原本用 T/C 值乘固定數字算出濃度與 C/T 灰階，PDF 會交給醫師，不能出現推算出來的數字：
+      // 濃度改為「待校準」，C/T 改用實際量到的訊號強度，沒有就顯示「—」
+      const conc = '待校準'
+      const cLine = r.cIntensity != null ? Number(r.cIntensity).toFixed(1) : '—'
+      const tLine = r.tIntensity != null ? Number(r.tIntensity).toFixed(1) : '—'
       const badgeColors = getStatusBadgeColors(r.status)
       const abstinenceDays = r.preTestSurvey?.abstinenceDays
 
@@ -274,9 +350,9 @@ export default function ReportLinkScreen({ navigation, route }: any) {
           </div>
           <div class="tc-big" style="color:${badgeColors.text}">${r.tc}</div>
           <table>
-            <tr><td class="row-label">Control line (C)</td><td class="row-value">灰階 ${cLine}</td></tr>
-            <tr><td class="row-label">Test line (T)</td><td class="row-value">灰階 ${tLine}</td></tr>
-            <tr><td class="row-label">換算濃度</td><td class="row-value">≈ ${conc} mIU/mL</td></tr>
+            <tr><td class="row-label">C 線訊號強度</td><td class="row-value">${cLine}</td></tr>
+            <tr><td class="row-label">T 線訊號強度</td><td class="row-value">${tLine}</td></tr>
+            <tr><td class="row-label">換算濃度</td><td class="row-value">${conc}</td></tr>
             <tr><td class="row-label">禁慾天數</td><td class="row-value">${abstinenceDays != null ? `${abstinenceDays} 天` : '未記錄'}</td></tr>
             <tr><td class="row-label">試紙批號</td><td class="row-value">${r.lot}</td></tr>
           </table>
@@ -312,6 +388,7 @@ export default function ReportLinkScreen({ navigation, route }: any) {
     function pageFooter(pageNum: number) {
       return `
         <div class="footer">
+          <div class="footer-note">居家試紙結果僅供趨勢參考，T/C 比值並非精子濃度，不能取代醫療院所的精液分析。</div>
           <div class="page-num">第 ${pageNum} 頁 ／ 共 ${totalPages} 頁</div>
         </div>
       `
@@ -370,7 +447,7 @@ export default function ReportLinkScreen({ navigation, route }: any) {
           .brand { font-size: 19px; font-weight: 700; color: #0A5C6B; }
           .brand-sub { font-size: 10px; color: #6B7280; margin-top: 1px; }
           .meta { text-align: right; font-size: 10px; color: #4B5563; line-height: 1.5; }
-          .content { width: 100%; padding: 16px 32px; flex: 1; padding-bottom: 80px;}
+          .content { width: 100%; padding: 16px 32px; flex: 1; padding-bottom: 96px;}
           .section-title { font-size: 11px; font-weight: 600; color: #4B5563; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
           .health-section { border: 1px solid #E5E7EB; border-radius: 10px; padding: 20px 24px; margin-bottom: 24px; }
           .chart-section { border: 1px solid #E5E7EB; border-radius: 10px; padding: 20px 24px; margin-bottom: 24px; }
@@ -394,6 +471,7 @@ export default function ReportLinkScreen({ navigation, route }: any) {
           .row-value-sm { text-align: right; color: #111827; font-size: 10px; padding: 2px 0; }
           .trend-note-sm { font-size: 10px; color: #4B5563; margin-top: 4px; line-height: 1.4; }
           .footer { width: 100%; padding: 10px 32px 16px; text-align: center; border-top: 1px solid #E5E7EB; flex-shrink: 0; }
+          .footer-note { font-size: 9px; color: #6B7280; margin-bottom: 4px; }
           .page-num { font-size: 13px; font-weight: 700; color: #0A5C6B; letter-spacing: 0.5px; }
         </style>
       </head>
@@ -442,6 +520,8 @@ export default function ReportLinkScreen({ navigation, route }: any) {
     })
   }
 
+  const canGenerate = records.length > 0 && !shareLoading && (!pwEnabled || password.length >= MIN_PASSWORD)
+
   return (
     <View style={styles.container}>
       <View style={styles.appbar}>
@@ -451,7 +531,7 @@ export default function ReportLinkScreen({ navigation, route }: any) {
         <Text style={styles.appbarTitle}>報告分享連結</Text>
       </View>
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
         <View style={styles.listCard}>
           <Text style={styles.reportTitle}>iMotile 檢測報告</Text>
@@ -475,29 +555,95 @@ export default function ReportLinkScreen({ navigation, route }: any) {
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>分享連結</Text>
-        <View style={styles.linkBox}>
-          <View style={styles.linkUrl}>
-            <Text style={styles.linkText} numberOfLines={1}>
-              {shareLoading ? '產生連結中...' : shareError ? '產生失敗，請稍後再試' : shareUrl || '尚未產生連結'}
-            </Text>
+        {/* [修改] 設定移到產生連結之前：先決定內容與保護方式，再產生 */}
+        <Text style={styles.sectionTitle}>連結設定</Text>
+        <View style={styles.listCard}>
+          <View style={styles.rowStack}>
+            <Text style={styles.rowLabel}>連結有效期限</Text>
+            <View style={styles.chipRow}>
+              {EXPIRY_OPTIONS.map(o => (
+                <TouchableOpacity
+                  key={o.hours}
+                  style={[styles.chip, expiryHours === o.hours && styles.chipActive]}
+                  onPress={() => changeExpiry(o.hours)}
+                >
+                  <Text style={[styles.chipText, expiryHours === o.hours && styles.chipTextActive]}>{o.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
-          <TouchableOpacity
-            style={styles.linkBtn}
-            disabled={!shareUrl || shareLoading}
-            onPress={async () => {
-              if (!shareUrl) return
-              await Clipboard.setStringAsync(shareUrl)
-              Alert.alert('已複製', '連結已複製到剪貼簿')
-            }}
-          >
-            <Text style={[styles.linkBtnText, (!shareUrl || shareLoading) && { opacity: 0.4 }]}>複製連結</Text>
-          </TouchableOpacity>
+
+          {hasSurvey && (
+            <View style={styles.row}>
+              <View style={{ flex: 1, marginRight: 12 }}>
+                <Text style={styles.rowLabel}>附上採樣問卷</Text>
+                <Text style={styles.hint}>禁慾天數、近期發燒、用藥等，可幫助醫師判讀</Text>
+              </View>
+              <Switch value={includeSurvey} onValueChange={changeIncludeSurvey} trackColor={{ true: colors.primary }} />
+            </View>
+          )}
+
+          <View style={[styles.row, !pwEnabled && { borderBottomWidth: 0 }]}>
+            <View style={{ flex: 1, marginRight: 12 }}>
+              <Text style={styles.rowLabel}>需要密碼開啟</Text>
+              <Text style={styles.hint}>{pwEnabled ? '開啟 — 對方需輸入密碼才能查看' : '關閉 — 拿到連結的人都能查看'}</Text>
+            </View>
+            <Switch value={pwEnabled} onValueChange={togglePassword} trackColor={{ true: colors.primary }} />
+          </View>
+          {pwEnabled && (
+            <View style={styles.pwArea}>
+              <TextInput
+                style={styles.pwInput}
+                value={password}
+                onChangeText={changePassword}
+                placeholder={`設定密碼（至少 ${MIN_PASSWORD} 個字元）`}
+                placeholderTextColor={colors.gray400}
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+                maxLength={64}
+              />
+              <Text style={styles.hint}>請另外把密碼告訴醫師，不要跟連結放在同一則訊息。</Text>
+            </View>
+          )}
         </View>
-        {shareError && (
-          <TouchableOpacity onPress={generateShareLink} style={{ marginTop: -8, marginBottom: 14 }}>
-            <Text style={{ fontSize: typography.sizes.sm, color: colors.primary }}>重新產生連結 ›</Text>
-          </TouchableOpacity>
+
+        <Text style={styles.sectionTitle}>分享連結</Text>
+        {!shareUrl ? (
+          <>
+            <TouchableOpacity
+              style={[styles.generateBtn, !canGenerate && { opacity: 0.4 }]}
+              onPress={generateShareLink}
+              disabled={!canGenerate}
+            >
+              {shareLoading
+                ? <ActivityIndicator color={colors.white} />
+                : <Text style={styles.generateBtnText}>產生分享連結</Text>}
+            </TouchableOpacity>
+            {shareError && <Text style={styles.errorText}>{shareError}</Text>}
+            <Text style={[styles.hint, { marginBottom: 14 }]}>連結內含你的檢測結果，請只傳給信任的醫療人員。</Text>
+          </>
+        ) : (
+          <>
+            <View style={styles.linkBox}>
+              <View style={styles.linkUrl}>
+                <Text style={styles.linkText} numberOfLines={1}>{shareUrl}</Text>
+                {expiresText && <Text style={styles.linkExpiry}>有效至 {expiresText}</Text>}
+              </View>
+              <TouchableOpacity
+                style={styles.linkBtn}
+                onPress={async () => {
+                  await Clipboard.setStringAsync(shareUrl)
+                  Alert.alert('已複製', '連結已複製到剪貼簿')
+                }}
+              >
+                <Text style={styles.linkBtnText}>複製連結</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity onPress={handleRevokePress} style={styles.revokeBtn}>
+              <Text style={styles.revokeText}>撤回這個連結</Text>
+            </TouchableOpacity>
+          </>
         )}
 
         <Text style={styles.sectionTitle}>快速傳送管道</Text>
@@ -543,29 +689,6 @@ export default function ReportLinkScreen({ navigation, route }: any) {
               <Text style={styles.channelName}>更多</Text>
             </TouchableOpacity>
           </View>
-
-        <Text style={styles.sectionTitle}>連結設定</Text>
-        <View style={styles.listCard}>
-          <View style={styles.row}>
-            <View>
-              <Text style={styles.rowLabel}>連結有效期限</Text>
-              <Text style={styles.hint}>連結過期後自動失效</Text>
-            </View>
-            <TouchableOpacity onPress={() => {
-              const options = ['24 小時', '3 天', '7 天', '30 天']
-              Alert.alert('選擇有效期限', '', options.map(o => ({ text: o, onPress: () => setExpiry(o) })))
-            }}>
-              <Text style={styles.expiryValue}>{expiry} ›</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={[styles.row, { borderBottomWidth: 0 }]}>
-            <View style={{ flex: 1, marginRight: 12 }}>
-              <Text style={styles.rowLabel}>需要密碼開啟</Text>
-              <Text style={styles.hint}>{pwEnabled ? '開啟 — 分享連結需輸入密碼查看' : '關閉 — 任何人可查閱分享連結'}</Text>
-            </View>
-            <Switch value={pwEnabled} onValueChange={handleTogglePassword} trackColor={{ true: colors.primary }} />
-          </View>
-        </View>
 
         <TouchableOpacity style={styles.pdfBtn} onPress={handleExportPDF}>
           <Ionicons name="document-text-outline" size={16} color={colors.primary} />
@@ -618,6 +741,7 @@ const styles = StyleSheet.create({
   linkBox: { borderWidth: 1.5, borderColor: colors.primary, borderRadius: 16, overflow: 'hidden', marginBottom: 6 },
   linkUrl: { backgroundColor: colors.primaryLight, padding: 12 },
   linkText: { fontSize: typography.sizes.xs, color: colors.primary, fontFamily: 'monospace' },
+  linkExpiry: { fontSize: typography.sizes.xs, color: colors.gray500, marginTop: 4 }, // [新增]
   linkBtn: { height: 40, alignItems: 'center', justifyContent: 'center' },
   linkBtnText: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.primary },
   channelRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
@@ -630,7 +754,6 @@ const styles = StyleSheet.create({
     paddingVertical: 11, borderBottomWidth: 0.5, borderBottomColor: colors.gray100,
   },
   rowLabel: { fontSize: typography.sizes.md, color: colors.gray900 },
-  expiryValue: { fontSize: typography.sizes.md, color: colors.primary, fontWeight: typography.weights.medium },
   pdfBtn: {
     height: 46, borderRadius: 23,
     borderWidth: 1.5, borderColor: colors.primary,
@@ -652,4 +775,25 @@ const styles = StyleSheet.create({
   recordDate: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray900 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
   badgeText: { fontSize: typography.sizes.xs, fontWeight: typography.weights.medium },
+
+  // ── [新增] ──
+  rowStack: { paddingVertical: 11, borderBottomWidth: 0.5, borderBottomColor: colors.gray100 },
+  chipRow: { flexDirection: 'row', gap: 6, marginTop: 8 },
+  chip: { flex: 1, alignItems: 'center', paddingVertical: 7, borderRadius: 12, borderWidth: 0.5, borderColor: colors.gray200 },
+  chipActive: { backgroundColor: colors.primaryLight, borderColor: colors.primary },
+  chipText: { fontSize: typography.sizes.sm, color: colors.gray500 },
+  chipTextActive: { color: colors.primary, fontWeight: '600' },
+  pwArea: { paddingTop: 4, paddingBottom: 6 },
+  pwInput: {
+    height: 42, borderWidth: 0.5, borderColor: colors.gray300, borderRadius: 12,
+    paddingHorizontal: 12, fontSize: typography.sizes.md, color: colors.gray900, marginBottom: 4,
+  },
+  generateBtn: {
+    height: 46, borderRadius: 23, backgroundColor: colors.primary,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 6,
+  },
+  generateBtnText: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.white },
+  errorText: { fontSize: typography.sizes.sm, color: colors.danger, marginBottom: 4 },
+  revokeBtn: { alignSelf: 'flex-start', paddingVertical: 6, marginBottom: 12 },
+  revokeText: { fontSize: typography.sizes.sm, color: colors.danger },
 })

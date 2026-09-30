@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'rea
 import { colors, typography } from '../theme'
 import { saveRecord } from '../storage'
 import { getInventory, setLastTestDate, setStrips as setStripsRemote } from '../inventory'
-import { getClinics, addSharedHistoryEntry } from '../clinics'
 
 export default function AnalysisScreen({ navigation, route }: any) {
   const [progress, setProgress] = useState(0)
@@ -62,17 +61,8 @@ export default function AnalysisScreen({ navigation, route }: any) {
         quizResult,
       })
       await setLastTestDate(now.toISOString())
-      // 自動分享（改用 Firestore 版本的診所資料）
-      const clinics = await getClinics()
-      for (const clinic of clinics) {
-        if (clinic.autoShare) {
-          await addSharedHistoryEntry({
-            date, time, tc,
-            clinicName: clinic.name,
-            sharedAt: new Date().toISOString(),
-          })
-        }
-      }
+      // [移除 2026/09/30] 原本的「自動分享給已連結診所」只寫入本機紀錄、並未真的送到診所；
+      // 改為在「諮詢專業醫師 → 診所資訊」由使用者逐次確認分享
       const newStrips = Math.max(0, currentStrips - 1)
       await setStripsRemote(newStrips)
       navigation.navigate('ReportOverview', {

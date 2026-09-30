@@ -11,7 +11,8 @@ import { useCallback } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import { Image } from 'react-native'
 import { getUserPlan } from '../plan'
-import { getClinics } from '../clinics'
+// [修改 2026/09/30] 改讀後端「我的診所」預約，不再用本機的 clinics.ts
+import { fetchMyAppointments, isActiveAppointment } from '../clinicApi'
 import { useMeasureTargets } from '../hooks/useMeasureTargets'
 import { useFeatureTour, TourStep } from '../context/FeatureTourContext'
 
@@ -28,7 +29,7 @@ const SETTINGS_TARGET_KEYS = ['profile', 'plan', 'clinic', 'notify', 'logout']
 export default function SettingsScreen({ navigation }: any) {
   const [notifyEnabled, setNotifyEnabled] = useState(true)
   const [reminderWeeks, setReminderWeeks] = useState(4)
-  const [clinicCount, setClinicCount] = useState(0)
+  const [clinicCount, setClinicCount] = useState(0) // 進行中的預約數
   const [userName, setUserName] = useState('')
   const [userEmail, setUserEmail] = useState('')
   const [avatar, setAvatar] = useState<string | null>(null)
@@ -45,7 +46,7 @@ export default function SettingsScreen({ navigation }: any) {
       const t = await measureAll()
       const steps: TourStep[] = [
       ...(t.plan ? [{ key: 'plan', label: '升級訂閱方案可以獲得AI趨勢解讀與PDF報告', rect: t.plan as any }] : []),
-      ...(t.clinic ? [{ key: 'clinic', label: '連結診所後可以直接分享報告', rect: t.clinic as any }] : []),
+      ...(t.clinic ? [{ key: 'clinic', label: '在這裡查看預約的合作診所與分享過的報告', rect: t.clinic as any }] : []),
       ...(t.notify ? [{ key: 'notify', label: '開啟通知，提醒您定期複測', rect: t.notify as any }] : []),
       ...(t.logout ? [{ key: 'logout', label: '需要登出帳號時，在這裡操作', rect: t.logout as any }] : []),
       ...(t.profile ? [{
@@ -66,7 +67,9 @@ export default function SettingsScreen({ navigation }: any) {
 
   useFocusEffect(
     useCallback(() => {
-      getClinics().then(list => setClinicCount(list.length))
+      fetchMyAppointments()
+        .then(list => setClinicCount(list.filter(isActiveAppointment).length))
+        .catch(() => setClinicCount(0))
       AsyncStorage.getItem('reminderWeeks').then(val => { if (val) setReminderWeeks(parseInt(val)) })
       getUserPlan().then(({ plan }) => setUserPlan(plan))
 
@@ -159,8 +162,8 @@ export default function SettingsScreen({ navigation }: any) {
             <Ionicons name="business-outline" size={20} color={colors.primary} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.clinicBannerTitle}>連結診所</Text>
-            <Text style={styles.clinicBannerSub}>{clinicCount > 0 ? `已連結 ${clinicCount} 間診所 · 點擊管理` : '尚未連結診所 · 點擊新增'}</Text>
+            <Text style={styles.clinicBannerTitle}>我的診所</Text>
+            <Text style={styles.clinicBannerSub}>{clinicCount > 0 ? `${clinicCount} 筆預約進行中 · 點擊查看` : '尚無預約 · 檢測後可諮詢合作診所'}</Text>
           </View>
           <Text style={styles.clinicBannerArrow}>›</Text>
         </TouchableOpacity>

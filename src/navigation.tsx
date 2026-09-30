@@ -48,6 +48,9 @@ import ShopScreen from './screens/ShopScreen'
 import OrderConfirmScreen from './screens/OrderConfirmScreen'
 import PaymentScreen from './screens/PaymentScreen'
 import RestTimerScreen from './screens/RestTimerScreen'
+// [新增 2026/09/30] 合作診所預約
+import ClinicDetailScreen from './screens/ClinicDetailScreen'
+import BookingScreen from './screens/BookingScreen'
 
 
 
@@ -148,6 +151,8 @@ export default function Navigation({ onLogin }: any) {
             <Stack.Screen name="ClinicQR" component={ClinicQRScreen} />
             <Stack.Screen name="ClinicCode" component={ClinicCodeScreen} />
             <Stack.Screen name="ClinicSearch" component={ClinicSearchScreen} />
+            <Stack.Screen name="ClinicDetail" component={ClinicDetailScreen} />
+            <Stack.Screen name="Booking" component={BookingScreen} />
             <Stack.Screen name="Consent" component={ConsentScreen} />
             <Stack.Screen name="ClinicConfirm" component={ClinicConfirmScreen} />
             <Stack.Screen name="ClinicSuccess" component={ClinicSuccessScreen} />

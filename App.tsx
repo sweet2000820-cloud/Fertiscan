@@ -12,7 +12,7 @@ export default function App() {
           onLogin={() => AsyncStorage.setItem('isLoggedIn', 'true')}
         />
       </View>
-      <StatusBar style="dark" backgroundColor="#fff" />
+      <StatusBar style="dark" />
     </SafeAreaProvider>
   )
 }
