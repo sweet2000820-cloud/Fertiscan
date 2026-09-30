@@ -15,6 +15,11 @@ import * as Sharing from 'expo-sharing'
 //  兩者換算成螢幕比例差了 5.5%，裁切範圍整個往下偏移）。
 const FRAME_TOP_PERCENT = 0.35
 
+// [修改] 原本固定連拍 3 張再取平均，等待時間太長。
+// 改為只拍 1 張；只有辨識失敗時才自動補拍，最多拍 MAX_ATTEMPTS 張。
+// 設成 1 = 完全不補拍，失敗就請使用者重按。
+const MAX_ATTEMPTS = 2
+
 export default function CamCaptureScreen({ navigation, route }: any) {
   const [permission, requestPermission] = useCameraPermissions()
   const [captured, setCaptured] = useState(false)
@@ -65,7 +70,7 @@ export default function CamCaptureScreen({ navigation, route }: any) {
     if (cameraRef.current && !captured) {
       setCaptured(true)
       setIsProcessing(true)
-      setProcessStep('拍攝第 1 張...')
+      setProcessStep('拍攝中...')
       try {
         // 取得目前登入使用者的憑證，之後每次呼叫 API 都要附上
         const user = auth.currentUser
@@ -77,22 +82,20 @@ export default function CamCaptureScreen({ navigation, route }: any) {
         }
         const idToken = await user.getIdToken()
 
-        const results = []
-        // 收集這次拍攝流程裡每一張失敗案例的 debug_fail_image，
-        // 全部失敗時可以讓使用者選擇要匯出哪一張
+        let result: any = null
+        // 收集失敗案例的 debug_fail_image，全部失敗時可以讓使用者匯出排查
         const failedDebugImages: string[] = []
 
-        for (let i = 0; i < 3; i++) {
-          console.log(`[CamCapture] 準備拍第 ${i+1} 張`)
-          // 拍照
+        // [修改] 成功就停；失敗才自動再拍一次
+        for (let i = 0; i < MAX_ATTEMPTS; i++) {
+          console.log(`[CamCapture] 第 ${i + 1} 次拍攝`)
           const photo = await cameraRef.current.takePictureAsync({
             quality: 1,
             skipProcessing: true
           })
-          console.log(`[CamCapture] 第 ${i+1} 張拍照完成，photo.uri:`, photo?.uri)
+          console.log(`[CamCapture] 第 ${i + 1} 次拍照完成，photo.uri:`, photo?.uri)
 
           if (!photo) throw new Error('拍照失敗')
-          console.log(`[CamCapture] 開始讀取檔案轉 blob`)
 
           const { width, height } = photo
 
@@ -140,6 +143,8 @@ export default function CamCaptureScreen({ navigation, route }: any) {
             { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG }
           )
 
+          setProcessStep(i === 0 ? '分析中...' : '重新分析中...')
+
           // 送 API
           const fileResponse = await fetch(cropped.uri)
           const blob = await fileResponse.blob()
@@ -165,28 +170,29 @@ export default function CamCaptureScreen({ navigation, route }: any) {
             return
           }
 
-          const result = await response.json()
+          const json = await response.json()
+          console.log(`第 ${i + 1} 次結果:`, json.success ? 'success' : `失敗原因: ${json.error}`)
 
-          console.log(`第 ${i+1} 張結果:`, result.success ? 'success' : `失敗原因: ${result.error}`)
-
-          if (result.success) {
-            results.push(result.data)
-          } else if (result.debug_fail_image) {
+          if (json.success) {
+            result = json.data
+            break // [新增] 成功就不再拍
+          }
+          if (json.debug_fail_image) {
             // 後端實際收到、拿去分析失敗的那張原圖，先收集起來
-            failedDebugImages.push(result.debug_fail_image)
+            failedDebugImages.push(json.debug_fail_image)
           }
 
-          // 下一張
-          if (i < 2) {
-            setProcessStep(`拍攝第 ${i + 2} 張...`)
+          // 失敗且還有補拍機會：提示使用者保持不動，稍等再拍
+          if (i < MAX_ATTEMPTS - 1) {
+            setProcessStep('沒有辨識成功，請保持不動，自動重拍中...')
             await new Promise(r => setTimeout(r, 500))
           }
         }
 
         setIsProcessing(false)
 
-        if (results.length === 0) {
-          // 三張全失敗：問要不要匯出後端實際收到的原圖來排查問題，
+        if (!result) {
+          // 全部失敗：問要不要匯出後端實際收到的原圖來排查問題，
           // 而不是只顯示「請重新拍攝」讓人猜不到哪裡出錯
           if (failedDebugImages.length > 0) {
             Alert.alert(
@@ -210,32 +216,15 @@ export default function CamCaptureScreen({ navigation, route }: any) {
           return
         }
 
-        // 過濾異常值：排除偏差超過 50% 的結果
-        const tcValues = results.map(r => r.tc_ratio)
-        const medianTC = tcValues.sort((a, b) => a - b)[Math.floor(tcValues.length / 2)]
-        const filteredResults = results.filter(r =>
-          Math.abs(r.tc_ratio - medianTC) / medianTC < 0.5
-        )
-
-        const validResults = filteredResults.length > 0 ? filteredResults : results
-
-        const avgTC = validResults.reduce((sum, r) => sum + r.tc_ratio, 0) / validResults.length
-        const avgC = validResults.reduce((sum, r) => sum + r.c_intensity, 0) / validResults.length
-        const avgT = validResults.reduce((sum, r) => sum + r.t_intensity, 0) / validResults.length
-
-        // 取最接近中位數那張的 debug 圖片作為代表（三張圖沒辦法平均，只能選一張）
-        const representative = validResults.reduce((closest, r) =>
-          Math.abs(r.tc_ratio - medianTC) < Math.abs(closest.tc_ratio - medianTC) ? r : closest
-        , validResults[0])
-
+        // [修改] 只有一張結果，不再需要中位數過濾與平均
         const avgResult = {
-          tc_ratio: Math.round(avgTC * 1000) / 1000,
-          c_intensity: Math.round(avgC * 100) / 100,
-          t_intensity: Math.round(avgT * 100) / 100,
+          tc_ratio: Math.round(result.tc_ratio * 1000) / 1000,
+          c_intensity: Math.round(result.c_intensity * 100) / 100,
+          t_intensity: Math.round(result.t_intensity * 100) / 100,
           qc_pass: true,
-          sample_count: results.length,
-          debug_inner: representative.debug_inner,
-          debug_full: representative.debug_full,
+          sample_count: 1,
+          debug_inner: result.debug_inner,
+          debug_full: result.debug_full,
         }
 
         setCaptured(false)
@@ -262,7 +251,14 @@ export default function CamCaptureScreen({ navigation, route }: any) {
           <View style={[styles.corner, styles.cornerTR]} />
           <View style={[styles.corner, styles.cornerBL]} />
           <View style={[styles.corner, styles.cornerBR]} />
-          <Text style={styles.frameHint}>將試紙對準框內</Text>
+          {/* 虛線參考框：實際試紙的黑色邊框比整個取景框小很多，
+              沒有這個參考的話使用者不知道該把黑框對準框的哪個位置
+              （邊緣？中心？），容易對準得太鬆散，導致送到後端的照片
+              判讀窗位置跑掉。這個虛線框尺寸抓真實黑框量到的長寬比
+              （約1.68），讓使用者直接把黑框套進這個虛線裡，
+              對準目標明確很多。*/}
+          <View style={styles.innerGuide} />
+          <Text style={styles.frameHint}>將試紙黑框對準虛線</Text>
         </View>
         <View style={styles.maskSide} />
       </View>
@@ -336,7 +332,12 @@ const styles = StyleSheet.create({
   cornerTR: { top: -1, right: -1, borderTopWidth: 2, borderRightWidth: 2, borderTopRightRadius: 4 },
   cornerBL: { bottom: -1, left: -1, borderBottomWidth: 2, borderLeftWidth: 2, borderBottomLeftRadius: 4 },
   cornerBR: { bottom: -1, right: -1, borderBottomWidth: 2, borderRightWidth: 2, borderBottomRightRadius: 4 },
-  frameHint: { color: 'rgba(255,255,255,0.5)', fontSize: typography.sizes.xs, textAlign: 'center' },
+  frameHint: { color: 'rgba(255,255,255,0.5)', fontSize: typography.sizes.xs, textAlign: 'center', marginTop: 10 },
+  innerGuide: {
+    width: 200, height: 119,
+    borderWidth: 1.5, borderStyle: 'dashed', borderColor: 'rgba(74,222,128,0.7)',
+    borderRadius: 40,
+  },
   hintText: { color: 'rgba(255,255,255,0.5)', fontSize: typography.sizes.xs, textAlign: 'center', marginBottom: 16 },
   captureRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 40 },
   sideBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },

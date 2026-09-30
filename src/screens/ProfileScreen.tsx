@@ -14,11 +14,39 @@ const occupationOpts = [
   { label: '高溫作業', value: 'highHeat' },
   { label: '其他', value: 'other' },
 ]
+// [修改] 生育計畫改為四個選項；原本的 'yes' / 'no' / 'undecided' 保留，舊資料不用搬
 const tryingOpts = [
-  { label: '是', value: 'yes' },
-  { label: '否', value: 'no' },
+  { label: '正在備孕', value: 'yes' },
+  { label: '1–3 年內可能', value: 'planning' },
+  { label: '目前沒有計畫', value: 'no' },
   { label: '尚未決定', value: 'undecided' },
 ]
+
+// [新增] 出生時辰（選填）。存到 Firestore 的是每個時辰的代表整點，未填為 null
+const BIRTH_HOUR_UNKNOWN = '不清楚'
+const birthHourOpts: { label: string, short: string, value: number }[] = [
+  { label: '子時 23:00–01:00', short: '子時（23–01 點）', value: 0 },
+  { label: '丑時 01:00–03:00', short: '丑時（01–03 點）', value: 2 },
+  { label: '寅時 03:00–05:00', short: '寅時（03–05 點）', value: 4 },
+  { label: '卯時 05:00–07:00', short: '卯時（05–07 點）', value: 6 },
+  { label: '辰時 07:00–09:00', short: '辰時（07–09 點）', value: 8 },
+  { label: '巳時 09:00–11:00', short: '巳時（09–11 點）', value: 10 },
+  { label: '午時 11:00–13:00', short: '午時（11–13 點）', value: 12 },
+  { label: '未時 13:00–15:00', short: '未時（13–15 點）', value: 14 },
+  { label: '申時 15:00–17:00', short: '申時（15–17 點）', value: 16 },
+  { label: '酉時 17:00–19:00', short: '酉時（17–19 點）', value: 18 },
+  { label: '戌時 19:00–21:00', short: '戌時（19–21 點）', value: 20 },
+  { label: '亥時 21:00–23:00', short: '亥時（21–23 點）', value: 22 },
+]
+
+// 任意整點換算成所屬時辰的代表值（例如 9 點 → 辰時 8）
+function normalizeBirthHour(hour: any): number | null {
+  if (hour == null || hour === '') return null
+  const h = Number(hour)
+  if (isNaN(h) || h < 0 || h > 23) return null
+  if (h === 23) return 0
+  return Math.floor((h + 1) / 2) * 2
+}
 
 export default function ProfileScreen({ navigation }: any) {
   const [name, setName] = useState('')
@@ -31,7 +59,9 @@ export default function ProfileScreen({ navigation }: any) {
   const [birthYear, setBirthYear] = useState('')
   const [birthMonth, setBirthMonth] = useState('')
   const [birthDay, setBirthDay] = useState('')
+  const [birthHour, setBirthHour] = useState<number | null>(null) // [新增]
   const [showDatePicker, setShowDatePicker] = useState(false)
+  const [showBirthHourPicker, setShowBirthHourPicker] = useState(false) // [新增]
   const [showHeightPicker, setShowHeightPicker] = useState(false)
   const [showWeightPicker, setShowWeightPicker] = useState(false)
   const [avatar, setAvatar] = useState<string | null>(null)
@@ -59,6 +89,7 @@ export default function ProfileScreen({ navigation }: any) {
           if (data.birthYear) setBirthYear(data.birthYear)
           if (data.birthMonth) setBirthMonth(data.birthMonth)
           if (data.birthDay) setBirthDay(data.birthDay)
+          setBirthHour(normalizeBirthHour(data.birthHour)) // [新增]
           if (data.height) setHeight(data.height)
           if (data.weight) setWeight(data.weight)
           if (data.smoke !== undefined) setSmoke(data.smoke)
@@ -92,6 +123,7 @@ export default function ProfileScreen({ navigation }: any) {
         birthYear,
         birthMonth,
         birthDay,
+        birthHour, // [新增] 未填為 null
         height,
         weight,
         smoke,
@@ -149,6 +181,10 @@ export default function ProfileScreen({ navigation }: any) {
   const birthDisplay = birthYear && birthMonth && birthDay
     ? `${birthYear}/${birthMonth.padStart(2, '0')}/${birthDay.padStart(2, '0')}`
     : '未設定'
+
+  // [新增]
+  const selectedBirthHour = birthHourOpts.find(o => o.value === birthHour)
+  const birthHourDisplay = selectedBirthHour ? selectedBirthHour.short : '未填寫'
 
   function YesNoRow({ label, value, onChange }: { label: string, value: boolean | null, onChange: (v: boolean) => void }) {
     return (
@@ -222,9 +258,17 @@ export default function ProfileScreen({ navigation }: any) {
               <Text style={styles.verifiedBadge}>✓ 已驗證</Text>
             </View>
           </View>
-          <TouchableOpacity style={[styles.fieldRow, { borderBottomWidth: 0 }]} onPress={() => setShowDatePicker(true)}>
+          {/* [修改] 移除 borderBottomWidth: 0，因為下面多了出生時辰一行 */}
+          <TouchableOpacity style={styles.fieldRow} onPress={() => setShowDatePicker(true)}>
             <Text style={styles.fieldLabel}>出生年月日</Text>
             <Text style={[styles.fieldValue, { color: colors.primary }]}>{birthDisplay} ›</Text>
+          </TouchableOpacity>
+          {/* [新增] 出生時辰（選填） */}
+          <TouchableOpacity style={[styles.fieldRow, { borderBottomWidth: 0 }]} onPress={() => setShowBirthHourPicker(true)}>
+            <Text style={styles.fieldLabel}>
+              出生時辰<Text style={styles.optionalTag}>（選填）</Text>
+            </Text>
+            <Text style={[styles.fieldValue, selectedBirthHour && { color: colors.primary }]}>{birthHourDisplay} ›</Text>
           </TouchableOpacity>
         </View>
 
@@ -314,7 +358,8 @@ export default function ProfileScreen({ navigation }: any) {
           </View>
 
           <View style={styles.fieldRow}>
-            <Text style={styles.fieldLabel}>是否正在備孕</Text>
+            {/* [修改] 標題改為「生育計畫」，搭配四個選項 */}
+            <Text style={styles.fieldLabel}>生育計畫</Text>
           </View>
           <View style={[styles.fieldRow, { borderBottomWidth: 0, paddingTop: 0 }]}>
             <View style={styles.optRowWrap}>
@@ -369,6 +414,20 @@ export default function ProfileScreen({ navigation }: any) {
             setShowDatePicker(false)
           }}
           onCancel={() => setShowDatePicker(false)}
+        />
+        {/* [新增] 出生時辰選擇器：第一個選項「不清楚」會清除時辰 */}
+        <PickerModal
+          visible={showBirthHourPicker}
+          title="出生時辰（選填）"
+          value={selectedBirthHour ? selectedBirthHour.label : BIRTH_HOUR_UNKNOWN}
+          items={[BIRTH_HOUR_UNKNOWN, ...birthHourOpts.map(o => o.label)]}
+          unit=""
+          onConfirm={(val) => {
+            const picked = birthHourOpts.find(o => o.label === val)
+            setBirthHour(picked ? picked.value : null)
+            setShowBirthHourPicker(false)
+          }}
+          onCancel={() => setShowBirthHourPicker(false)}
         />
         <PickerModal
           visible={showHeightPicker}
@@ -435,6 +494,7 @@ const styles = StyleSheet.create({
     paddingVertical: 11, borderBottomWidth: 0.5, borderBottomColor: colors.gray100,
   },
   fieldLabel: { fontSize: typography.sizes.md, color: colors.gray900 },
+  optionalTag: { fontSize: typography.sizes.sm, color: colors.gray400 }, // [新增]
   fieldInput: { fontSize: typography.sizes.md, color: colors.gray900, minWidth: 80 },
   fieldRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   fieldValue: { fontSize: typography.sizes.md, color: colors.gray500 },

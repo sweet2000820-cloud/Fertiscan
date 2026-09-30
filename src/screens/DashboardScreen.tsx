@@ -283,10 +283,10 @@ const styles = StyleSheet.create({
   },
   scroll: { flex: 1, paddingHorizontal: 18 },
   tealCard: { backgroundColor: colors.primaryLight, borderRadius: 20, padding: 16, marginTop: 6, marginBottom: 10 },
-  cardTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.primary, marginBottom: 10 },
+  cardTitle: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.primary, marginBottom: 10 },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   tealHint: { fontSize: typography.sizes.sm, color: colors.primary },
-  hint: { fontSize: typography.sizes.sm, color: colors.gray500, marginTop: 4 },
+  hint: { fontSize: typography.sizes.md, color: colors.gray500, marginTop: 4 },
   avgValue: { fontSize: typography.sizes.lg, fontWeight: typography.weights.medium, color: colors.primary },
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   statCard: {

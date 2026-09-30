@@ -38,12 +38,38 @@ const nayinTable: Record<string, string> = {
 }
 
 /**
+ * [新增] 計算某年立春在 2 月的哪一天（國曆）
+ * 使用節氣通用公式：[Y × 0.2422 + C] − L
+ *   Y = 年份後兩位；C = 20 世紀 4.6295、21 世紀 3.87；
+ *   L = 閏年數，因為立春在 2/29 之前，當年的閏日不計入，所以用 (Y − 1) / 4
+ * 已與 iztro（立春分界模式）比對 1920–2060 年，結果全部一致。
+ * 1947 年立春在 2/4 深夜 23:55，依慣例視為 2/4（公式會算成 2/5，特別修正）。
+ */
+function getLichunDay(year: number): number {
+  const Y = year % 100
+  const C = year >= 2000 ? 3.87 : 4.6295
+  let day = Math.floor(Y * 0.2422 + C) - Math.floor((Y - 1) / 4)
+  if (year === 1947) day -= 1
+  return day
+}
+
+/**
  * 依出生年份計算天干地支與納音五行
  * 甲子年為西元 1984、1924、2044... （每 60 年一循環，1984 為基準年）
+ *
+ * [修改] 干支年是從「立春」才換年，不是從 1/1。
+ * 有傳入月、日時，立春之前出生的人會算成前一年（例如 1995/1/20 → 甲戌年，而不是乙亥年）。
+ * 沒傳月、日時維持舊行為，只看西元年。
  */
-export function getBaziFromYear(year: number) {
+export function getBaziFromYear(year: number, month?: number, day?: number) {
+  let ganzhiYear = year
+  if (month != null && day != null && !isNaN(month) && !isNaN(day)) {
+    const beforeLichun = month === 1 || (month === 2 && day < getLichunDay(year))
+    if (beforeLichun) ganzhiYear = year - 1
+  }
+
   // 1984 年為甲子年（天干索引0、地支索引0）
-  const offset = ((year - 1984) % 60 + 60) % 60
+  const offset = ((ganzhiYear - 1984) % 60 + 60) % 60
   const stem = heavenlyStems[offset % 10]
   const branch = earthlyBranches[offset % 12]
   const ganzhi = `${stem}${branch}`

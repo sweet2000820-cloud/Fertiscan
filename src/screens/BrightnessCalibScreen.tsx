@@ -1,26 +1,57 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import * as Brightness from 'expo-brightness'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native'
 import { colors, typography } from '../theme'
 import Button from '../components/Button'
 
+// [修正] 亮度控制改用 setBrightnessAsync：
+// - 只影響本 App 畫面，iOS / Android 都能用，不需要權限
+// - 原本的 setSystemBrightnessAsync 只支援 Android，且會改掉使用者手機的全域亮度、
+//   關閉自動亮度，離開 App 後也不會恢復
+// - 原本的 useSystemBrightnessAsync 在新版 expo-brightness 已移除（改名為 restoreSystemBrightnessAsync）
+
+async function applyBrightness(percent: number) {
+  try {
+    await Brightness.setBrightnessAsync(percent / 100)
+  } catch (e) {
+    // 少數裝置不支援調整亮度，不影響後續流程
+  }
+}
 
 export default function BrightnessCalibScreen({ navigation, route }: any) {
-  const [brightness, setBrightness] = useState(88)
+  const [brightness, setBrightness] = useState(100)
+  const originalBrightness = useRef<number | null>(null)
 
   useEffect(() => {
     async function setupBrightness() {
-      const { status } = await Brightness.requestPermissionsAsync()
-      if (status === 'granted') {
-        await Brightness.setSystemBrightnessAsync(1.0)
-        setBrightness(100)
+      try {
+        // 記下進來前的亮度，離開時還原（iOS 用）
+        originalBrightness.current = await Brightness.getBrightnessAsync()
+      } catch (e) {
+        originalBrightness.current = null
       }
+      await applyBrightness(100)
+      setBrightness(100)
     }
     setupBrightness()
+
     return () => {
-      Brightness.useSystemBrightnessAsync()
+      // 離開校準流程時還原亮度
+      if (Platform.OS === 'android') {
+        // Android：取消 App 的亮度覆寫，回到使用者的系統亮度
+        Brightness.restoreSystemBrightnessAsync().catch(() => {})
+      } else if (originalBrightness.current != null) {
+        // iOS：設回進來前的亮度
+        Brightness.setBrightnessAsync(originalBrightness.current).catch(() => {})
+      }
     }
   }, [])
+
+  async function changeBrightness(delta: number) {
+    const newVal = Math.max(0, Math.min(100, brightness + delta))
+    setBrightness(newVal)
+    await applyBrightness(newVal)
+  }
 
   return (
     <View style={styles.container}>
@@ -59,17 +90,10 @@ export default function BrightnessCalibScreen({ navigation, route }: any) {
             <View style={[styles.sliderFill, { width: `${brightness}%` }]} />
           </View>
           <View style={styles.sliderBtns}>
-           <TouchableOpacity onPress={async () => {
-            const newVal = Math.max(0, brightness - 5)
-            setBrightness(newVal)
-            await Brightness.setSystemBrightnessAsync(newVal / 100)}} style={styles.sliderBtn}>
+            <TouchableOpacity onPress={() => changeBrightness(-5)} style={styles.sliderBtn}>
               <Text style={styles.sliderBtnText}>−</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={async () => {
-              const newVal = Math.min(100, brightness + 5)
-              setBrightness(newVal)
-              await Brightness.setSystemBrightnessAsync(newVal / 100)
-            }} style={styles.sliderBtn}>
+            <TouchableOpacity onPress={() => changeBrightness(5)} style={styles.sliderBtn}>
               <Text style={styles.sliderBtnText}>+</Text>
             </TouchableOpacity>
           </View>

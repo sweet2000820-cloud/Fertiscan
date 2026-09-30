@@ -4,10 +4,11 @@ import { colors, typography } from '../theme'
 import { Ionicons } from '@expo/vector-icons'
 import type { ComponentProps } from 'react'
 import { getRecords, TestRecord } from '../storage'
-import { getBaziFromYear, elementColors, elementReadings, getDailyFortune, luckyColorHex } from '../utils/bazi'
+import { getBaziFromYear, getDailyFortune, luckyColorHex } from '../utils/bazi'
 import { doc, getDoc } from 'firebase/firestore'
 import { auth, db } from '../firebase'
-import { getZodiacSign, zodiacColors, zodiacReadings } from '../utils/zodiac'
+// [新增] 孕事小語／相處小語的文字內容
+import { getCoupleReading, getWeeklyLuckyDay, getWeeklyCoupleTask, NoteSection, BirthInfo } from '../utils/coupleNotes'
 
 type IoniconName = ComponentProps<typeof Ionicons>['name']
 
@@ -26,6 +27,16 @@ const occupationLabels: Record<string, string> = {
 
 function avg(arr: number[]) {
   return arr.reduce((a, b) => a + b, 0) / arr.length
+}
+
+// ── [新增] 生育計畫狀態 ──
+// 個人資料頁存的值：'yes'（正在備孕）/ 'planning'（1–3 年內可能）/ 'no'（目前沒有計畫）/ 'undecided'（尚未決定）
+type ConceiveStatus = 'trying' | 'planning' | 'notNow'
+
+function getConceiveStatus(raw: any): ConceiveStatus {
+  if (raw === 'yes' || raw === true || raw === 'true' || raw === 'trying') return 'trying'
+  if (raw === 'planning') return 'planning'
+  return 'notNow' // 'no'、'undecided'、未填
 }
 
 // 信度等級：樣本數過少的洞察不該用跟高信度洞察一樣的呈現方式
@@ -97,11 +108,12 @@ function correlationInsight(
 
 // 依問卷結果與個人健康資訊，收集所有符合的飲食建議面向，全部符合的都會顯示
 // 若都沒有特別不利因素，回傳一條通用的均衡飲食建議
+// [修改] 第四個參數改為生育計畫狀態，依狀態給不同的備孕營養建議
 function getDietTips(
   survey: NonNullable<TestRecord['preTestSurvey']>,
   bmiNum: number | null,
   isSmoker: boolean,
-  isTryingToConceive: boolean
+  conceiveStatus: ConceiveStatus
 ) {
   const tips: { title: string, text: string, icon: IoniconName }[] = []
 
@@ -154,24 +166,147 @@ function getDietTips(
       text: '吸菸會增加體內氧化壓力，建議多攝取富含維生素C、E的蔬果（芭樂、奇異果、堅果），有助減少對精子DNA的潛在影響；長期而言仍建議諮詢專業戒菸資源。',
     })
   }
-  if (isTryingToConceive) {
+  // [修改] 依生育計畫狀態區分
+  if (conceiveStatus === 'trying') {
     tips.push({
       icon: 'heart-outline',
-      title: '加強備孕相關營養素攝取',
-      text: '若正在積極備孕，建議額外留意鋅（牡蠣、南瓜籽）與葉酸（深綠色蔬菜、豆類）的攝取，這兩項是生殖健康領域較常被提及的營養素，可與伴侶一起調整飲食習慣。',
+      title: '備孕期間：留意鋅的攝取，並提醒伴侶補充葉酸',
+      text: '鋅參與精子生成，可從牡蠣、瘦肉、南瓜籽攝取。伴侶建議在懷孕前至少 1 個月開始每天補充 400 微克葉酸，可降低胎兒神經管缺陷風險。飲食調整約需 3 個月才會反映在精子品質上。',
+    })
+  } else if (conceiveStatus === 'planning') {
+    tips.push({
+      icon: 'calendar-outline',
+      title: '提早 3 個月開始調整飲食',
+      text: '精子從生成到成熟約需 2.5–3 個月，現在開始均衡飲食、減少含糖飲料與加工肉品，到準備生育時就是最好的狀態。',
     })
   }
 
   if (tips.length === 0) {
     tips.push({
       icon: 'nutrition-outline',
-      title: '維持均衡飲食，補充生殖健康營養素',
-      text: '目前生活習慣狀況良好，建議持續維持均衡飲食，適量攝取鋅（牡蠣、瘦肉）、Omega-3（深海魚類）與充足水分，有助維持精子品質穩定。',
+      title: conceiveStatus === 'notNow' ? '維持均衡飲食，照顧整體健康' : '維持均衡飲食，補充生殖健康營養素',
+      text: conceiveStatus === 'notNow'
+        ? '目前生活習慣狀況良好，建議持續均衡飲食、控制含糖飲料與油炸食物，對體力、代謝與整體健康都有幫助。'
+        : '目前生活習慣狀況良好，建議持續維持均衡飲食，適量攝取鋅（牡蠣、瘦肉）、Omega-3（深海魚類）與充足水分，有助維持精子品質穩定。',
     })
   }
 
   return tips
 }
+
+// ── [新增] 醫師觀點（規則產生，非真人醫師） ──
+interface DoctorAdvice {
+  summary: string
+  points: { icon: IoniconName, title: string, text: string }[]
+  alert: { title: string, text: string }
+  fixedNotice: string | null
+}
+
+function getDoctorAdvice(params: {
+  status: string
+  trend: string
+  survey: TestRecord['preTestSurvey'] | undefined
+  isSmoker: boolean
+  riskFactors: string[]
+  age: number | null
+  conceiveStatus: ConceiveStatus
+}): DoctorAdvice {
+  const { status, trend, survey, isSmoker, riskFactors, age, conceiveStatus } = params
+  const clinic = conceiveStatus === 'notNow' ? '泌尿科' : '泌尿科或生殖醫學門診'
+
+  let summary: string
+  if (status === '正常') {
+    summary = `本次數值在正常範圍${trend === '上升' ? '，且比之前上升，整體方向不錯' : trend === '下降' ? '，但比之前下降，建議留意近期生活作息的變化' : ''}。`
+  } else if (status === '邊緣') {
+    summary = '本次數值落在邊緣範圍。單次結果容易受當下狀態影響，建議在禁慾 2–7 天的條件下再測一次確認。'
+  } else {
+    summary = `本次數值低於參考範圍。單次結果不等於診斷，建議在禁慾 2–7 天的條件下重測；若仍偏低，請到${clinic}做完整的精液分析。`
+  }
+
+  const points: DoctorAdvice['points'] = []
+  if (survey?.hadFever) {
+    points.push({
+      icon: 'thermometer-outline',
+      title: '發燒的影響可能延後 1–3 個月才出現',
+      text: '精子從生成到成熟約需 2.5–3 個月，近期發燒可能讓之後幾次的數值暫時下降，屬常見現象。建議 4–6 週後再測一次比較。',
+    })
+  }
+  if (survey?.newMedication) {
+    points.push({
+      icon: 'medkit-outline',
+      title: '近期有調整用藥',
+      text: '部分藥物可能影響精子生成。回診時可以主動告知醫師正在追蹤這項數值，請不要自行停藥。',
+    })
+  }
+  if (isSmoker) {
+    points.push({
+      icon: 'ban-outline',
+      title: '戒菸是最值得優先處理的一項',
+      text: '吸菸可能降低精子數量與活動力，並增加 DNA 損傷。戒菸後約 3 個月，可望在數值上看到變化。',
+    })
+  }
+  const medicalHistory = riskFactors.filter(f => !f.startsWith('吸菸') && f !== '高溫作業環境')
+  if (medicalHistory.length > 0) {
+    points.push({
+      icon: 'clipboard-outline',
+      title: '有相關病史，建議定期追蹤',
+      text: `您記錄了${medicalHistory.join('、')}，這些都可能影響精液品質，建議定期到${clinic}追蹤。`,
+    })
+  }
+  if (conceiveStatus === 'trying') {
+    points.push({
+      icon: 'heart-outline',
+      title: '把握易孕期',
+      text: '排卵前 5 天到排卵日是易孕期，這段期間建議每 1–2 天行房一次，不需要刻意「存精」。',
+    })
+  } else if (conceiveStatus === 'planning') {
+    points.push({
+      icon: 'calendar-outline',
+      title: '預留 3 個月的準備期',
+      text: '生活習慣的改變約 3 個月後才會反映在精子品質上，建議在開始備孕前 3 個月就調整作息、戒菸、減少飲酒。',
+    })
+  } else {
+    points.push({
+      icon: 'hand-left-outline',
+      title: '每月一次睪丸自我檢查',
+      text: '洗澡時用手指輕輕觸摸兩側睪丸，留意有沒有硬塊、腫脹或疼痛。睪丸癌好發於年輕男性，早期發現治癒率很高。',
+    })
+  }
+  if (age != null && age >= 40 && conceiveStatus !== 'notNow') {
+    points.push({
+      icon: 'time-outline',
+      title: '年齡也是考量因素之一',
+      text: '男性生育力雖然下降得較慢，但年齡增長仍可能影響精液品質，生育計畫不宜一拖再拖。',
+    })
+  }
+
+  let alert: DoctorAdvice['alert']
+  if (conceiveStatus === 'trying') {
+    alert = {
+      title: '什麼時候該就醫？',
+      text: '規律行房一年仍未懷孕（女方 35 歲以上為半年），建議夫妻一起到生殖醫學門診檢查。居家試紙適合追蹤趨勢，不能取代醫院的完整精液分析。',
+    }
+  } else if (conceiveStatus === 'planning') {
+    alert = {
+      title: '開始備孕前',
+      text: '可以考慮夫妻一起做孕前健康檢查。居家試紙適合追蹤趨勢，不能取代醫院的完整精液分析。',
+    }
+  } else {
+    alert = {
+      title: '什麼時候該就醫？',
+      text: '若數值連續多次偏低，或自我檢查發現睪丸有硬塊、腫脹、疼痛，建議到泌尿科檢查。',
+    }
+  }
+
+  // 固定顯示、不交給 AI 產生的安全提醒
+  const fixedNotice = conceiveStatus === 'trying'
+    ? null
+    : '試紙數值偏低，不代表不會讓伴侶懷孕，不能作為避孕的依據。'
+
+  return { summary, points, alert, fixedNotice }
+}
+
+type AdviceTab = 'doctor' | 'nutrition' | 'notes'
 
 export default function AIAdviceScreen({ navigation, route }: any) {
   const record: TestRecord = route?.params?.record
@@ -181,6 +316,7 @@ export default function AIAdviceScreen({ navigation, route }: any) {
   const [profile, setProfile] = useState<any>(null)
   const [loadingProfile, setLoadingProfile] = useState(true)
   const [profileError, setProfileError] = useState(false)
+  const [activeTab, setActiveTab] = useState<AdviceTab>('doctor') // [新增]
 
   useEffect(() => {
     getRecords().then(setAllRecords).catch(() => {})
@@ -198,6 +334,8 @@ export default function AIAdviceScreen({ navigation, route }: any) {
             userBirthYear: data.birthYear || null,
             userBirthMonth: data.birthMonth || null,
             userBirthDay: data.birthDay || null,
+            // [新增] 出生時辰（選填）：0–23 的整點，未填為 null → 排盤時預設午時
+            userBirthHour: data.birthHour != null && data.birthHour !== '' ? Number(data.birthHour) : null,
             userHeight: data.height || null,
             userWeight: data.weight || null,
             userSmoke: data.smoke ? 'true' : 'false',
@@ -207,7 +345,9 @@ export default function AIAdviceScreen({ navigation, route }: any) {
             userEndocrineDisease: data.endocrineDisease ? 'true' : 'false',
             userHadSemenTest: data.hadSemenTest ? 'true' : 'false',
             userOccupationType: data.occupationType || null,
-            userTryingToConceive: data.tryingToConceive || null,
+            // [修正] 原本 `data.tryingToConceive || null` 若存的是 boolean true，
+            // 之後跟字串 'true' 比對永遠不成立，備孕建議從來不會出現。改為保留原值交給 getConceiveStatus 判斷
+            userTryingToConceive: data.tryingToConceive ?? null,
           })
         }
       } catch (e) {
@@ -233,13 +373,39 @@ export default function AIAdviceScreen({ navigation, route }: any) {
         return a
       })()
     : null
-  const baziInfo = profile?.userBirthYear ? getBaziFromYear(parseInt(profile.userBirthYear)) : null
-  const zodiacInfo = (profile?.userBirthMonth && profile?.userBirthDay)
-    ? getZodiacSign(parseInt(profile.userBirthMonth), parseInt(profile.userBirthDay))
+  // 八字只用來算幸運色，畫面上不顯示年柱、五行（星座已移除）
+  // [修正] 傳入出生月日，立春前出生的人才會算成前一年
+  const baziInfo = profile?.userBirthYear
+    ? getBaziFromYear(
+        parseInt(profile.userBirthYear),
+        profile.userBirthMonth ? parseInt(profile.userBirthMonth) : undefined,
+        profile.userBirthDay ? parseInt(profile.userBirthDay) : undefined
+      )
     : null
   const dailyFortune = baziInfo && record?.date ? getDailyFortune(baziInfo.element, record.date) : null
+
+  // [新增] 孕事小語／相處小語：依生日排盤（沒填時辰用午時）；沒填生日就用帳號 uid 固定挑一種類型
+  const birthKey = (profile?.userBirthYear && profile?.userBirthMonth && profile?.userBirthDay)
+    ? `${profile.userBirthYear}-${profile.userBirthMonth}-${profile.userBirthDay}`
+    : null
+  const birthInfo: BirthInfo | null = birthKey
+    ? {
+        year: parseInt(profile.userBirthYear),
+        month: parseInt(profile.userBirthMonth),
+        day: parseInt(profile.userBirthDay),
+        hour: profile.userBirthHour,
+      }
+    : null
+  const noteSeed = birthKey || auth.currentUser?.uid || 'guest'
+  const weekDate = (() => {
+    const d = record?.date ? new Date(String(record.date).replace(/\//g, '-')) : new Date()
+    return isNaN(d.getTime()) ? new Date() : d
+  })()
+  const luckyDay = getWeeklyLuckyDay(noteSeed, weekDate)
+
+  // [修正] 身高體重改用 parseFloat，避免 72.5 kg 被截成 72
   const bmi = profile?.userHeight && profile?.userWeight
-    ? (parseInt(profile.userWeight) / Math.pow(parseInt(profile.userHeight) / 100, 2)).toFixed(1)
+    ? (parseFloat(profile.userWeight) / Math.pow(parseFloat(profile.userHeight) / 100, 2)).toFixed(1)
     : null
   const bmiNum = bmi ? parseFloat(bmi) : null
   const bmiStatus = bmiNum ? (bmiNum < 18.5 ? '偏輕' : bmiNum < 24 ? '正常' : bmiNum < 27 ? '過重' : '肥胖') : '未填寫'
@@ -254,7 +420,7 @@ export default function AIAdviceScreen({ navigation, route }: any) {
   if (profile?.userOccupationType === 'highHeat') riskFactors.push('高溫作業環境')
 
   const isSmoker = profile?.userSmoke === 'true'
-  const isTryingToConceive = profile?.userTryingToConceive === 'true'
+  const conceiveStatus = getConceiveStatus(profile?.userTryingToConceive) // [修改]
 
   const currentAbstinence = survey?.abstinenceDays
   const comparableRecords = currentAbstinence != null
@@ -338,12 +504,13 @@ export default function AIAdviceScreen({ navigation, route }: any) {
       '飲酒', '未大量飲酒', '有大量飲酒'),
   ].filter((x): x is CorrelationInsight => x !== null)
 
-  const factors = survey ? [
-    { label: '睡眠', value: sleepLabels[survey.sleepHours] || '未填寫', good: survey.sleepHours === '7to8' || survey.sleepHours === 'gt9' },
-    { label: '壓力', value: stressLabels[survey.stressLevel] || '未填寫', good: survey.stressLevel === 'low' },
-    { label: '高溫暴露', value: heatLabels[survey.heatExposure] || '未填寫', good: survey.heatExposure === 'never' || survey.heatExposure === 'occasional' },
-    { label: '飲酒', value: survey.heavyDrinking ? '近48小時有大量飲酒' : '近48小時無大量飲酒', good: !survey.heavyDrinking },
-  ] : []
+  // [修正] 「各面向詳細分析」的好壞判斷改為直接沿用評分結果（≥ 70% 視為良好），
+  // 原本高溫「偶爾」在評分條是黃色、在這裡卻是綠色，兩邊不一致
+  const factors = scoreItems.map(item => ({
+    label: item.label,
+    value: item.detail,
+    good: item.score / item.max >= 0.7,
+  }))
 
   const actionList = survey ? [
     !(survey.sleepHours === '7to8' || survey.sleepHours === 'gt9') && { title: '固定就寢時間，目標 7–8 小時', text: '從今晚起設定固定就寢時間，睡前 30 分鐘避免使用螢幕。' },
@@ -351,7 +518,33 @@ export default function AIAdviceScreen({ navigation, route }: any) {
     (survey.heatExposure === 'often' || survey.heatExposure === 'almostDaily') && { title: '減少高溫暴露頻率', text: '減少三溫暖、熱水澡或久坐時間，每小時起身活動。' },
   ].filter(Boolean) as { title: string, text: string }[] : []
 
-  const dietTips = survey ? getDietTips(survey, bmiNum, isSmoker, isTryingToConceive) : []
+  const dietTips = survey ? getDietTips(survey, bmiNum, isSmoker, conceiveStatus) : []
+
+  // [新增] 三方觀點
+  const doctorAdvice = getDoctorAdvice({ status, trend, survey, isSmoker, riskFactors, age, conceiveStatus })
+
+  const perspectiveTitle = conceiveStatus === 'trying' ? '備孕建議'
+    : conceiveStatus === 'planning' ? '生育準備建議' : '健康建議'
+  const perspectiveBanner = conceiveStatus === 'trying'
+    ? '依您「正在備孕」的狀態，整理本次結果與接下來可以做的事。'
+    : conceiveStatus === 'planning'
+      ? '依您「1–3 年內可能」生育的狀態，整理現在就可以開始準備的事。'
+      : '依本次結果，整理日常可以留意的健康重點。'
+  // 第三分頁只談生育與伴侶相處：
+  // 備孕／準備中看「兩人相處」＋「家庭與孕事」；目前沒有計畫看「感情裡的你」＋「兩人相處」
+  const noteSections: NoteSection[] = conceiveStatus === 'notNow'
+    ? ['self', 'couple']
+    : ['couple', 'family']
+  const noteContext = conceiveStatus === 'notNow' ? 'general' : 'ttc'
+  const sectionLabel: Record<NoteSection, string> = { self: '感情裡的你', couple: '兩人相處', family: '家庭與孕事' }
+  const sectionIcon: Record<NoteSection, IoniconName> = { self: 'person-outline', couple: 'people-outline', family: 'home-outline' }
+  const coupleTask = getWeeklyCoupleTask(noteSeed, weekDate, noteContext)
+
+  const tabs: { key: AdviceTab, label: string, icon: IoniconName, color: string }[] = [
+    { key: 'doctor', label: '身體狀況', icon: 'pulse-outline', color: colors.primary },
+    { key: 'nutrition', label: '飲食調理', icon: 'restaurant-outline', color: colors.success },
+    { key: 'notes', label: conceiveStatus === 'notNow' ? '相處小語' : '孕事小語', icon: 'heart-outline', color: colors.easterEgg },
+  ]
 
   return (
     <View style={styles.container}>
@@ -502,25 +695,36 @@ export default function AIAdviceScreen({ navigation, route }: any) {
         {insights.length > 0 && (
           <View style={styles.adviceCard}>
             <Text style={styles.adviceTitle}>與生活習慣的關聯</Text>
-            {insights.map((item, i) => (
-              <View key={i} style={[styles.insightRow, i === insights.length - 1 && { borderBottomWidth: 0, marginBottom: 0, paddingBottom: 0 }]}>
-                <Text style={styles.insightLabel}>與{item.label}的關聯</Text>
-                <View style={styles.insightNumRow}>
-                  <Text style={[styles.insightPct, { color: item.diffPct > 0 ? colors.success : colors.danger }]}>
-                    {item.diffPct > 0 ? '+' : ''}{item.diffPct}%
-                  </Text>
-                  <Text style={styles.insightDesc}>{item.diffPct > 0 ? item.goodDesc : item.badDesc}時數值較高</Text>
-                </View>
-                <View style={styles.confidenceRow}>
-                  <View style={styles.confidenceBarBg}>
-                    <View style={[styles.confidenceBarFill, { width: `${confidenceBarPct[item.confidence]}%` }]} />
+            {insights.map((item, i) => {
+              // [修正] 原本負數時顯示「-15%・壓力較高時數值較高」，負號加上「較高」讀起來像矛盾。
+              // 改為一律顯示正數，描述「哪一組平均較高多少」；結果與一般認知相反時用灰色，不用紅色
+              const goodHigher = item.diffPct > 0
+              const pct = Math.abs(item.diffPct)
+              return (
+                <View key={i} style={[styles.insightRow, i === insights.length - 1 && { borderBottomWidth: 0, marginBottom: 0, paddingBottom: 0 }]}>
+                  <Text style={styles.insightLabel}>與{item.label}的關聯</Text>
+                  <View style={styles.insightNumRow}>
+                    <Text style={[styles.insightPct, { color: goodHigher ? colors.success : colors.gray400 }]}>
+                      {pct}%
+                    </Text>
+                    <Text style={styles.insightDesc}>
+                      {goodHigher ? item.goodDesc : item.badDesc}時，數值平均高 {pct}%
+                    </Text>
                   </View>
-                  <Text style={styles.confidenceText}>
-                    {item.goodCount + item.badCount} 筆紀錄 · {confidenceLabel[item.confidence]}
-                  </Text>
+                  {!goodHigher && (
+                    <Text style={styles.insightNote}>這個結果與一般研究方向不同，可能是紀錄筆數還不夠多，持續記錄後會更準確。</Text>
+                  )}
+                  <View style={styles.confidenceRow}>
+                    <View style={styles.confidenceBarBg}>
+                      <View style={[styles.confidenceBarFill, { width: `${confidenceBarPct[item.confidence]}%` }]} />
+                    </View>
+                    <Text style={styles.confidenceText}>
+                      {item.goodCount + item.badCount} 筆紀錄 · {confidenceLabel[item.confidence]}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            ))}
+              )
+            })}
           </View>
         )}
 
@@ -541,78 +745,141 @@ export default function AIAdviceScreen({ navigation, route }: any) {
           </View>
         )}
 
-        {dietTips.length > 0 && (
+        {/* ── [新增] 三方觀點（取代原本的「飲食建議」卡與「小彩蛋」區塊） ── */}
+        {!loadingProfile && (
           <View style={styles.adviceCard}>
-            <Text style={styles.adviceTitle}>飲食建議</Text>
-            {dietTips.map((item, i) => (
-              <View key={i} style={[styles.actionRow, i === dietTips.length - 1 && { borderBottomWidth: 0 }]}>
-                <View style={styles.dietIconWrap}>
-                  <Ionicons name={item.icon} size={16} color={colors.primary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.actionTitle}>{item.title}</Text>
-                  <Text style={styles.dietText}>{item.text}</Text>
-                </View>
-              </View>
-            ))}
-            <Text style={styles.dietDisclaimer}>本建議依本次問卷結果篩選對應面向，屬一般性飲食衛教觀念，如有特殊飲食或健康需求，請諮詢營養師或醫師。</Text>
-          </View>
-        )}
-
-        {baziInfo && (
-          <>
-            <View style={styles.eggDivider}>
-              <View style={styles.eggDividerLine} />
-              <Text style={styles.eggDividerText}>以下為趣味內容 · 非醫學建議</Text>
-              <View style={styles.eggDividerLine} />
+            <Text style={styles.adviceTitle}>{perspectiveTitle}</Text>
+            <View style={styles.pvBanner}>
+              <Text style={styles.pvBannerText}>{perspectiveBanner}</Text>
             </View>
 
-            <View style={styles.baziCard}>
-              <View style={styles.eggHeaderRow}>
-                <Ionicons name="sparkles-outline" size={15} color={colors.easterEgg} />
-                <Text style={styles.eggHeaderText}>小彩蛋</Text>
-              </View>
-              <Text style={[styles.baziValue, { color: elementColors[baziInfo.element] }]}>
-                {baziInfo.ganzhi}年・{baziInfo.nayin}
-              </Text>
-              <View style={styles.baziDivider} />
-              <Text style={styles.baziReadingLabel}>性格特質</Text>
-              <Text style={styles.baziReadingText}>{elementReadings[baziInfo.element]?.trait}</Text>
-              {dailyFortune && (
-                <>
-                  <Text style={[styles.baziReadingLabel, { marginTop: 8 }]}>當日運勢</Text>
-                  <Text style={styles.baziReadingText}>{dailyFortune.text}</Text>
-                  <Text style={[styles.baziReadingLabel, { marginTop: 8 }]}>今日宜忌</Text>
-                  <Text style={styles.baziReadingText}>宜：{dailyFortune.todayActivity}　忌：{dailyFortune.todayCaution}</Text>
-                  <Text style={[styles.baziReadingLabel, { marginTop: 8 }]}>今日幸運色</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 2 }}>
-                    <View style={{
-                      width: 16, height: 16, borderRadius: 8,
-                      backgroundColor: luckyColorHex[dailyFortune.todayLuckyColor] || colors.gray300,
-                      borderWidth: dailyFortune.todayLuckyColor === '白色' ? 1 : 0,
-                      borderColor: colors.gray300,
-                    }} />
-                    <Text style={styles.baziReadingText}>{dailyFortune.todayLuckyColor}</Text>
+            <View style={styles.tabBar}>
+              {tabs.map(t => {
+                const active = activeTab === t.key
+                return (
+                  <TouchableOpacity
+                    key={t.key}
+                    style={[styles.tab, active && styles.tabActive]}
+                    onPress={() => setActiveTab(t.key)}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: active }}
+                  >
+                    <Ionicons name={t.icon} size={18} color={active ? t.color : colors.gray400} />
+                    <Text style={[styles.tabText, active && { color: t.color }]}>{t.label}</Text>
+                  </TouchableOpacity>
+                )
+              })}
+            </View>
+
+            {/* 醫師觀點 */}
+            {activeTab === 'doctor' && (
+              <View>
+                <Text style={styles.pvSub}>依本次檢測與問卷整理的衛教說明 · 非醫療診斷</Text>
+                <View style={[styles.pvQuote, { backgroundColor: colors.primaryLight }]}>
+                  <Text style={styles.pvQuoteText}>{doctorAdvice.summary}</Text>
+                </View>
+                {doctorAdvice.points.map((p, i) => (
+                  <View key={i} style={[styles.actionRow, i === doctorAdvice.points.length - 1 && { borderBottomWidth: 0 }]}>
+                    <View style={styles.dietIconWrap}>
+                      <Ionicons name={p.icon} size={16} color={colors.primary} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.actionTitle}>{p.title}</Text>
+                      <Text style={styles.dietText}>{p.text}</Text>
+                    </View>
                   </View>
-                </>
-              )}
+                ))}
+                <View style={styles.pvAlert}>
+                  <Text style={styles.pvAlertTitle}>{doctorAdvice.alert.title}</Text>
+                  <Text style={styles.pvAlertText}>{doctorAdvice.alert.text}</Text>
+                </View>
+                {doctorAdvice.fixedNotice && (
+                  <View style={styles.pvNotice}>
+                    <Ionicons name="alert-circle-outline" size={16} color={colors.danger} />
+                    <Text style={styles.pvNoticeText}>{doctorAdvice.fixedNotice}</Text>
+                  </View>
+                )}
+                <Text style={styles.dietDisclaimer}>本內容為一般衛教資訊，不構成醫療診斷或處方。</Text>
+              </View>
+            )}
 
-              {zodiacInfo && (
-                <>
-                  <View style={styles.baziDivider} />
-                  <Text style={[styles.baziValue, { color: zodiacColors[zodiacInfo.name] }]}>
-                    {zodiacInfo.name}・{zodiacInfo.element}
-                  </Text>
-                  <Text style={[styles.baziReadingLabel, { marginTop: 8 }]}>星座特質</Text>
-                  <Text style={styles.baziReadingText}>{zodiacReadings[zodiacInfo.name]?.trait}</Text>
-                  <Text style={[styles.baziReadingLabel, { marginTop: 8 }]}>近期運勢</Text>
-                  <Text style={styles.baziReadingText}>{zodiacReadings[zodiacInfo.name]?.fortune}</Text>
-                </>
-              )}
+            {/* 營養師觀點（沿用原本的 getDietTips） */}
+            {activeTab === 'nutrition' && (
+              <View>
+                <Text style={styles.pvSub}>一般飲食衛教 · 非個人化營養處方</Text>
+                {dietTips.length > 0 ? dietTips.map((item, i) => (
+                  <View key={i} style={[styles.actionRow, i === dietTips.length - 1 && { borderBottomWidth: 0 }]}>
+                    <View style={styles.dietIconWrap}>
+                      <Ionicons name={item.icon} size={16} color={colors.primary} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.actionTitle}>{item.title}</Text>
+                      <Text style={styles.dietText}>{item.text}</Text>
+                    </View>
+                  </View>
+                )) : (
+                  <Text style={styles.adviceText}>本次沒有問卷紀錄，完成檢測前問卷後即可看到飲食建議。</Text>
+                )}
+                <Text style={styles.dietDisclaimer}>本建議依本次問卷結果篩選對應面向，屬一般性飲食衛教觀念，如有特殊飲食或健康需求，請諮詢營養師或醫師。</Text>
+              </View>
+            )}
 
-              <Text style={styles.baziDisclaimer}>本區塊為趣味小彩蛋，非醫學或命理專業建議，僅供參考。</Text>
-            </View>
-          </>
+            {/* 孕事小語／相處小語（只談生育與伴侶相處；不顯示年柱、五行、星座、星曜名稱） */}
+            {activeTab === 'notes' && (
+              <View>
+                <Text style={styles.pvSub}>趣味內容 · 僅供娛樂</Text>
+
+                {noteSections.map(section => (
+                  <View key={section} style={styles.zwSection}>
+                    <View style={styles.zwSectionHead}>
+                      <Ionicons name={sectionIcon[section]} size={15} color={colors.easterEgg} />
+                      <Text style={styles.zwSectionTitle}>{sectionLabel[section]}</Text>
+                    </View>
+                    <Text style={styles.zwSectionText}>{getCoupleReading(section, noteContext, birthInfo, noteSeed)}</Text>
+                  </View>
+                ))}
+
+                {/* 本週相處小任務 */}
+                <View style={styles.zwSection}>
+                  <View style={styles.zwSectionHead}>
+                    <Ionicons name="checkbox-outline" size={15} color={colors.easterEgg} />
+                    <Text style={styles.zwSectionTitle}>本週相處小任務：{coupleTask.title}</Text>
+                  </View>
+                  <Text style={styles.zwSectionText}>{coupleTask.text}</Text>
+                </View>
+
+                {(luckyDay || dailyFortune) && (
+                  <View style={styles.luckyRow}>
+                    {luckyDay && (
+                      <View style={styles.luckyBox}>
+                        <Text style={styles.luckyLabel}>本週幸運日</Text>
+                        <Text style={styles.luckyValue}>{luckyDay.day}</Text>
+                        <Text style={styles.luckyHint}>{luckyDay.hint}</Text>
+                      </View>
+                    )}
+                    {dailyFortune && (
+                      <View style={styles.luckyBox}>
+                        <Text style={styles.luckyLabel}>今日幸運色</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                          <View style={{
+                            width: 16, height: 16, borderRadius: 8,
+                            backgroundColor: luckyColorHex[dailyFortune.todayLuckyColor] || colors.gray300,
+                            borderWidth: dailyFortune.todayLuckyColor === '白色' ? 1 : 0,
+                            borderColor: colors.gray300,
+                          }} />
+                          <Text style={styles.luckyValue}>{dailyFortune.todayLuckyColor}</Text>
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                <Text style={styles.baziDisclaimer}>
+                  本區塊僅供娛樂，幸運日與受孕時機無關，也不預測是否懷孕或懷孕時間；生育相關問題請以醫師意見為準。
+                </Text>
+              </View>
+            )}
+          </View>
         )}
 
         <Text style={styles.disclaimer}>以上建議根據本次問卷與檢測結果生成，僅供生活習慣參考，不構成醫療診斷。</Text>
@@ -682,7 +949,9 @@ const styles = StyleSheet.create({
   insightLabel: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray900, marginBottom: 4 },
   insightNumRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginBottom: 6 },
   insightPct: { fontSize: 20, fontWeight: '500' },
-  insightDesc: { fontSize: typography.sizes.sm, color: colors.gray500 },
+  insightDesc: { fontSize: typography.sizes.sm, color: colors.gray500, flex: 1 },
+  // [新增]
+  insightNote: { fontSize: 11, color: colors.gray400, lineHeight: 15, marginBottom: 6 },
   confidenceRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   confidenceBarBg: { flex: 1, height: 4, backgroundColor: colors.gray100, borderRadius: 2, overflow: 'hidden' },
   confidenceBarFill: { height: '100%', backgroundColor: colors.gray300, borderRadius: 2 },
@@ -727,23 +996,51 @@ const styles = StyleSheet.create({
   riskTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray500, marginBottom: 4 },
   riskText: { fontSize: typography.sizes.sm, color: colors.danger, lineHeight: 18 },
 
-  eggDivider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14, marginTop: 2 },
-  eggDividerLine: { flex: 1, height: 1, backgroundColor: colors.gray200, borderStyle: 'dashed', borderWidth: 1, borderColor: colors.gray200 },
-  eggDividerText: { fontSize: 11, color: colors.gray400, flexShrink: 0 },
-
-  baziCard: {
-    backgroundColor: colors.white,
-    borderWidth: 1.5, borderColor: colors.easterEggBorder, borderStyle: 'dashed',
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 14,
-    alignItems: 'center',
-  },
-  eggHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
-  eggHeaderText: { fontSize: typography.sizes.sm, color: colors.easterEgg, fontWeight: typography.weights.medium },
   baziValue: { fontSize: typography.sizes.lg, fontWeight: typography.weights.medium },
   baziDivider: { height: 0.5, backgroundColor: colors.gray200, width: '100%', marginVertical: 8 },
   baziReadingLabel: { fontSize: typography.sizes.md, color: colors.primary, fontWeight: typography.weights.medium },
   baziReadingText: { fontSize: typography.sizes.md, color: colors.gray900, textAlign: 'center', lineHeight: 18 },
-  baziDisclaimer: { fontSize: 12, color: colors.gray500, textAlign: 'center', marginTop: 6, lineHeight: 15 },
+  baziDisclaimer: { fontSize: 12, color: colors.gray500, textAlign: 'center', marginTop: 10, lineHeight: 15 },
+
+  // ── [新增] 三方觀點 ──
+  pvBanner: { backgroundColor: colors.primaryLight, borderRadius: 12, padding: 10, marginBottom: 12 },
+  pvBannerText: { fontSize: typography.sizes.sm, color: colors.primary, lineHeight: 18 },
+  tabBar: { flexDirection: 'row', gap: 6, backgroundColor: colors.gray100, padding: 4, borderRadius: 14, marginBottom: 12 },
+  tab: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 10, gap: 2 },
+  tabActive: {
+    backgroundColor: colors.white,
+    shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  tabText: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.gray500 },
+  pvSub: { fontSize: 11, color: colors.gray400, marginBottom: 8 },
+  pvQuote: { borderRadius: 12, padding: 12, marginBottom: 6 },
+  pvQuoteText: { fontSize: typography.sizes.md, color: colors.gray900, lineHeight: 20 },
+  pvAlert: {
+    backgroundColor: colors.primaryLight, borderLeftWidth: 3, borderLeftColor: colors.primary,
+    borderRadius: 8, padding: 10, marginTop: 10,
+  },
+  pvAlertTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.medium, color: colors.primary, marginBottom: 2 },
+  pvAlertText: { fontSize: typography.sizes.sm, color: colors.gray900, lineHeight: 18 },
+  pvNotice: {
+    flexDirection: 'row', gap: 6, alignItems: 'flex-start',
+    backgroundColor: colors.dangerLight, borderRadius: 8, padding: 10, marginTop: 8,
+  },
+  pvNoticeText: { flex: 1, fontSize: typography.sizes.sm, color: colors.danger, lineHeight: 18 },
+
+  zwSection: {
+    borderWidth: 1, borderStyle: 'dashed', borderColor: colors.easterEggBorder,
+    borderRadius: 12, padding: 12, marginBottom: 10,
+  },
+  zwSectionHead: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
+  zwSectionTitle: { flex: 1, fontSize: typography.sizes.md, fontWeight: typography.weights.medium, color: colors.easterEgg },
+  zwSectionText: { fontSize: typography.sizes.sm, color: colors.gray900, lineHeight: 21 },
+  luckyRow: { flexDirection: 'row', gap: 8, marginTop: 6 },
+  luckyBox: {
+    flex: 1, alignItems: 'center', paddingVertical: 10, paddingHorizontal: 6,
+    borderWidth: 1, borderStyle: 'dashed', borderColor: colors.easterEggBorder, borderRadius: 12,
+  },
+  luckyLabel: { fontSize: 11, color: colors.gray400 },
+  luckyValue: { fontSize: typography.sizes.md, fontWeight: '600', color: colors.easterEgg, marginTop: 2 },
+  luckyHint: { fontSize: 11, color: colors.gray500, textAlign: 'center', marginTop: 4, lineHeight: 15 },
 })

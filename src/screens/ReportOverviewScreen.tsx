@@ -48,6 +48,13 @@ function getStatusBadgeColors(status: string) {
   return { bg: '#FCEBEB', text: '#A32D2D' }
 }
 
+// [修改] 建議文字：男性精液品質的第一站通常是泌尿科，和「諮詢專業醫師」頁的說明一致
+function getAdviceText(status: string, tc: string) {
+  if (status === '正常') return `此次 T/C 比值（${tc}）在正常範圍內（≥0.85）。建議維持目前生活習慣，定期複測追蹤趨勢。`
+  if (status === '邊緣') return `此次 T/C 比值（${tc}）低於正常參考值（≥0.85）。建議 2 週後複測，或諮詢泌尿科、生殖醫學科醫師進行完整評估。`
+  return `此次 T/C 比值（${tc}）明顯偏低。建議儘速諮詢泌尿科或生殖醫學科醫師進行進一步檢查。`
+}
+
 const sleepLabels: Record<string, string> = { lt5: '少於 5 小時', '5to6': '5–6 小時', '7to8': '7–8 小時', gt9: '超過 9 小時' }
 const stressLabels: Record<string, string> = { low: '壓力不大', moderate: '有些壓力', high: '壓力較大', veryHigh: '壓力很大' }
 const heatLabels: Record<string, string> = { never: '從不', occasional: '偶爾', often: '常常', almostDaily: '幾乎每天' }
@@ -77,6 +84,7 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
   const tcVal = parseFloat(record.tc)
   const tcColor = getTCColor(record.status)
   const needlePos = getNeedlePosition(record.tc)
+  const isNormal = record.status === '正常' // [新增]
 
   const badgeStyle = record.status === '正常'
     ? { bg: colors.successLight, text: colors.success, label: '正常值' }
@@ -84,10 +92,16 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
     ? { bg: colors.warningLight, text: colors.warning, label: '邊緣值' }
     : { bg: colors.dangerLight, text: colors.danger, label: '偏低值' }
 
-  const cLine = record.cIntensity ? record.cIntensity.toFixed(1) : Math.round(tcVal * 142 / 0.68)
-  const tLine = record.tIntensity ? record.tIntensity.toFixed(1) : Math.round(97 * tcVal / 0.68)
+  // [修正] 沒有實際訊號強度時顯示「—」，不再用 T/C 值乘固定數字產生示意數值
+  const hasC = record.cIntensity != null
+  const hasT = record.tIntensity != null
+  const cLine = hasC ? Number(record.cIntensity).toFixed(1) : '—'
+  const tLine = hasT ? Number(record.tIntensity).toFixed(1) : '—'
+  const cBarPct = hasC ? Math.min(Number(record.cIntensity) / 170 * 100, 100) : 0
+  const tBarPct = hasT ? Math.min(Number(record.tIntensity) / 170 * 100, 100) : 0
   const conc = '待校準'
   const abstinenceDays = record.preTestSurvey?.abstinenceDays
+  const adviceText = getAdviceText(record.status, record.tc)
 
   async function exportPDF() {
     const user = auth.currentUser
@@ -113,16 +127,11 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
 
     const generatedAt = new Date().toLocaleString('zh-TW')
     const badgeColors = getStatusBadgeColors(record.status)
-    const adviceText = record.status === '正常'
-      ? `此次 T/C 比值（${record.tc}）在正常範圍內（≥0.85）。建議維持目前生活習慣，定期複測追蹤趨勢。`
-      : record.status === '邊緣'
-      ? `此次 T/C 比值（${record.tc}）低於正常參考值（≥0.85）。建議 2 週後複測，或諮詢生殖科醫師進行完整評估。`
-      : `此次 T/C 比值（${record.tc}）明顯偏低。建議儘速諮詢生殖科醫師進行進一步檢查。`
 
     // ── AI 解讀相關計算 ──
     const age = profile?.birthYear ? new Date().getFullYear() - parseInt(profile.birthYear) : null
     const bmi = profile?.height && profile?.weight
-      ? (parseInt(profile.weight) / Math.pow(parseInt(profile.height) / 100, 2)).toFixed(1)
+      ? (parseFloat(profile.weight) / Math.pow(parseFloat(profile.height) / 100, 2)).toFixed(1)
       : null
     const bmiNum = bmi ? parseFloat(bmi) : null
     const bmiStatus = bmiNum ? (bmiNum < 18.5 ? '偏輕' : bmiNum < 24 ? '正常' : bmiNum < 27 ? '過重' : '肥胖') : '未填寫'
@@ -294,7 +303,7 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
         <div class="footer">
           <div class="footer-text">
             本報告由 iMotile App 自動生成，僅供初步參考，不構成醫療診斷。<br/>
-            如有疑慮請諮詢生殖科醫師。
+            如有疑慮請諮詢泌尿科或生殖醫學科醫師。
           </div>
         </div>
       </body>
@@ -323,6 +332,11 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
       }
       exportPDF()
     })
+  }
+
+  // [新增] 前往既有的合作診所搜尋頁（諮詢模式），帶著本次紀錄用於「帶報告去看診」
+  function goConsult() {
+    navigation.navigate('ClinicSearch', { mode: 'consult', record })
   }
 
   return (
@@ -371,14 +385,14 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
             <Text style={[styles.signalValue, { color: '#1a6fbe' }]}>灰階 {cLine}</Text>
           </View>
           <View style={styles.progressBg}>
-            <View style={[styles.progressFill, { width: `${Math.min(cLine / 170 * 100, 100)}%`, backgroundColor: '#1a6fbe' }]} />
+            <View style={[styles.progressFill, { width: `${cBarPct}%`, backgroundColor: '#1a6fbe' }]} />
           </View>
           <View style={styles.signalRow}>
             <Text style={styles.labelDark}>Test line (T) — 樣本反應</Text>
             <Text style={[styles.signalValue, { color: tcColor }]}>灰階 {tLine}</Text>
           </View>
           <View style={styles.progressBg}>
-            <View style={[styles.progressFill, { width: `${Math.min(tLine / 170 * 100, 100)}%`, backgroundColor: tcColor }]} />
+            <View style={[styles.progressFill, { width: `${tBarPct}%`, backgroundColor: tcColor }]} />
           </View>
           <View style={styles.divider} />
           <View style={styles.infoRow}>
@@ -428,26 +442,33 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
 
         <View style={[styles.warnCard, { backgroundColor: badgeStyle.bg }]}>
           <Text style={[styles.warnTitle, { color: badgeStyle.text }]}>
-            {record.status === '正常' ? '✓ 結果說明' : '⚠ 初步建議'}
+            {isNormal ? '✓ 結果說明' : '⚠ 初步建議'}
           </Text>
-          <Text style={[styles.warnText, { color: badgeStyle.text }]}>
-            {record.status === '正常'
-              ? `此次 T/C 比值（${record.tc}）在正常範圍內（≥0.85）。建議維持目前生活習慣，定期複測追蹤趨勢。`
-              : record.status === '邊緣'
-              ? `此次 T/C 比值（${record.tc}）低於正常參考值（≥0.85）。建議 2 週後複測，或諮詢生殖科醫師進行完整評估。`
-              : `此次 T/C 比值（${record.tc}）明顯偏低。建議儘速諮詢生殖科醫師進行進一步檢查。`
-            }
-          </Text>
+          <Text style={[styles.warnText, { color: badgeStyle.text }]}>{adviceText}</Text>
         </View>
 
-        <View style={styles.btnRow}>
-          <TouchableOpacity style={styles.btnSecondary} onPress={() => navigation.navigate('Main', { screen: '紀錄' })}>
-            <Text style={styles.btnSecondaryText}>存入紀錄</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.btnPrimary} onPress={() => navigation.navigate('ShareRecord')}>
-            <Text style={styles.btnPrimaryText}>與診所分享</Text>
-          </TouchableOpacity>
-        </View>
+        {/* [修改] 「與診所分享」改為「諮詢專業醫師」，連到合作診所列表。
+            數值邊緣或偏低時用主要按鈕、獨立一行，讓使用者最需要時最容易看到 */}
+        {isNormal ? (
+          <View style={styles.btnRow}>
+            <TouchableOpacity style={styles.btnSecondary} onPress={() => navigation.navigate('Main', { screen: '紀錄' })}>
+              <Text style={styles.btnSecondaryText}>查看紀錄</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.btnSecondary} onPress={goConsult}>
+              <Text style={styles.btnSecondaryText}>諮詢專業醫師</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
+            <TouchableOpacity style={[styles.btnPrimary, styles.consultBtn]} onPress={goConsult}>
+              <Ionicons name="medkit-outline" size={16} color={colors.white} />
+              <Text style={styles.btnPrimaryText}>諮詢專業醫師</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.btnSecondary, styles.fullBtn]} onPress={() => navigation.navigate('Main', { screen: '紀錄' })}>
+              <Text style={styles.btnSecondaryText}>查看紀錄</Text>
+            </TouchableOpacity>
+          </>
+        )}
 
         <TouchableOpacity
           style={styles.aiBtn}
@@ -563,6 +584,9 @@ const styles = StyleSheet.create({
   btnSecondaryText: { fontSize: typography.sizes.sm, color: colors.primary },
   btnPrimary: { flex: 1, height: 44, borderRadius: 22, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   btnPrimaryText: { fontSize: typography.sizes.sm, color: colors.white, fontWeight: typography.weights.medium },
+  // [新增]
+  consultBtn: { flex: 0, flexDirection: 'row', gap: 6, height: 48, borderRadius: 24, marginBottom: 8 },
+  fullBtn: { flex: 0, marginBottom: 8 },
   btnGray: {
     height: 40, borderRadius: 20, backgroundColor: colors.white, borderWidth: 0.5, borderColor: colors.gray200,
     alignItems: 'center', justifyContent: 'center', marginBottom: 8,
