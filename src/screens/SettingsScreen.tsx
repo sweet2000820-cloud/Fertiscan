@@ -210,7 +210,7 @@ export default function SettingsScreen({ navigation }: any) {
         </View>
 
         <View style={styles.listCard}>
-          <TouchableOpacity ref={setRef('logout')} style={[styles.row, { borderBottomWidth: 0 }]} onPress={() => {
+          <TouchableOpacity ref={setRef('logout')} style={styles.row} onPress={() => {
             Alert.alert('登出帳號', '確定要登出嗎？', [
               { text: '取消', style: 'cancel' },
               { text: '登出', style: 'destructive', onPress: async () => {
@@ -223,6 +223,11 @@ export default function SettingsScreen({ navigation }: any) {
             ])
           }}>
             <Text style={[styles.rowLabel, { color: colors.danger }]}>登出帳號</Text>
+            <Text style={styles.rowHint}>›</Text>
+          </TouchableOpacity>
+          {/* [新增 2026/10/01] 刪除帳號（App Store / Google Play 審核要求） */}
+          <TouchableOpacity style={[styles.row, { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('DeleteAccount')}>
+            <Text style={[styles.rowLabel, { color: colors.gray500 }]}>刪除帳號</Text>
             <Text style={styles.rowHint}>›</Text>
           </TouchableOpacity>
         </View>

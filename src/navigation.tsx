@@ -51,6 +51,8 @@ import RestTimerScreen from './screens/RestTimerScreen'
 // [新增 2026/09/30] 合作診所預約
 import ClinicDetailScreen from './screens/ClinicDetailScreen'
 import BookingScreen from './screens/BookingScreen'
+// [新增 2026/10/01] 刪除帳號
+import DeleteAccountScreen from './screens/DeleteAccountScreen'
 
 
 
@@ -166,6 +168,7 @@ export default function Navigation({ onLogin }: any) {
             <Stack.Screen name="OrderConfirm" component={OrderConfirmScreen} />
             <Stack.Screen name="Payment" component={PaymentScreen} />
             <Stack.Screen name="RestTimer" component={RestTimerScreen} />
+            <Stack.Screen name="DeleteAccount" component={DeleteAccountScreen} />
           </>
         )}
       </Stack.Navigator>
