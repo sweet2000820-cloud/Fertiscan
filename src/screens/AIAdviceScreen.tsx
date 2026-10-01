@@ -203,6 +203,7 @@ interface DoctorAdvice {
 }
 
 function getDoctorAdvice(params: {
+  belowThreshold: boolean
   status: string
   trend: string
   survey: TestRecord['preTestSurvey'] | undefined
@@ -211,11 +212,14 @@ function getDoctorAdvice(params: {
   age: number | null
   conceiveStatus: ConceiveStatus
 }): DoctorAdvice {
-  const { status, trend, survey, isSmoker, riskFactors, age, conceiveStatus } = params
+  const { belowThreshold, status, trend, survey, isSmoker, riskFactors, age, conceiveStatus } = params
   const clinic = conceiveStatus === 'notNow' ? '泌尿科' : '泌尿科或生殖醫學門診'
 
   let summary: string
-  if (status === '正常') {
+  if (belowThreshold) {
+    // [新增 2026/10/01] 試紙未出現 T 線＝濃度可能低於 15 百萬/mL
+    summary = `本次試紙未出現 T 線，代表精子濃度可能低於 15 百萬/mL（接近 WHO 參考下限）。單次結果可能受禁慾天數、樣本是否完整、近期發燒或用藥影響，建議 2–7 天後依採樣說明重測；若再次出現相同結果，請到${clinic}做完整的精液分析。`
+  } else if (status === '正常') {
     summary = `本次數值在正常範圍${trend === '上升' ? '，且比之前上升，整體方向不錯' : trend === '下降' ? '，但比之前下降，建議留意近期生活作息的變化' : ''}。`
   } else if (status === '邊緣') {
     summary = '本次數值落在邊緣範圍。單次結果容易受當下狀態影響，建議在禁慾 2–7 天的條件下再測一次確認。'
@@ -359,6 +363,9 @@ export default function AIAdviceScreen({ navigation, route }: any) {
   }, [])
 
   const tcVal = parseFloat(record?.tc || '0')
+  // [新增 2026/10/01] T 線未顯色（濃度低於 15 百萬/mL）
+  const isBelowThreshold = (r?: TestRecord) => !!r && (r.tLineFaint === true || (r.tIntensity != null && Number(r.tIntensity) <= 0))
+  const belowThreshold = isBelowThreshold(record)
   const status = record?.status || '—'
   const statusColor = status === '正常' ? colors.success : status === '邊緣' ? colors.warning : colors.danger
   const statusBg = status === '正常' ? colors.successLight : status === '邊緣' ? colors.warningLight : colors.dangerLight
@@ -434,7 +441,9 @@ export default function AIAdviceScreen({ navigation, route }: any) {
       : parseFloat(comparableRecords[0].tc) < parseFloat(comparableRecords[1].tc) ? '下降' : '穩定'
     : '資料不足'
   const trendColor = trend === '上升' ? colors.success : trend === '下降' ? colors.danger : colors.warning
-  const avgTC = comparableRecords.length > 0 ? avg(comparableRecords.map(r => parseFloat(r.tc))) : 0
+  // [修改 2026/10/01] 歷史平均不含 T 線未顯色的紀錄（那是「低於門檻」，不是量到 0）
+  const measuredComparable = comparableRecords.filter(r => !isBelowThreshold(r))
+  const avgTC = measuredComparable.length > 0 ? avg(measuredComparable.map(r => parseFloat(r.tc))) : 0
 
   const qualityFlags: string[] = []
   if (currentAbstinence != null && (currentAbstinence < 2 || currentAbstinence > 7)) {
@@ -521,7 +530,7 @@ export default function AIAdviceScreen({ navigation, route }: any) {
   const dietTips = survey ? getDietTips(survey, bmiNum, isSmoker, conceiveStatus) : []
 
   // [新增] 三方觀點
-  const doctorAdvice = getDoctorAdvice({ status, trend, survey, isSmoker, riskFactors, age, conceiveStatus })
+  const doctorAdvice = getDoctorAdvice({ belowThreshold, status, trend, survey, isSmoker, riskFactors, age, conceiveStatus })
 
   const perspectiveTitle = conceiveStatus === 'trying' ? '備孕建議'
     : conceiveStatus === 'planning' ? '生育準備建議' : '健康建議'
@@ -562,12 +571,16 @@ export default function AIAdviceScreen({ navigation, route }: any) {
 
         {/* 摘要卡：方案 A — 大數字聚焦，次要資訊降階至分隔線下方 */}
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryDate}>{record?.date} · T/C 比值</Text>
+          <Text style={styles.summaryDate}>{record?.date} · {belowThreshold ? '檢測結果' : 'T/C 比值'}</Text>
           <View style={styles.summaryMainRow}>
-            <Text style={[styles.summaryBigNumber, { color: statusColor }]}>{record?.tc}</Text>
+            {belowThreshold ? (
+              <Text style={[styles.summaryBigNumber, { color: statusColor, fontSize: 24 }]}>T 線未顯色</Text>
+            ) : (
+              <Text style={[styles.summaryBigNumber, { color: statusColor }]}>{record?.tc}</Text>
+            )}
             <View style={[styles.summaryStatusPill, { backgroundColor: statusBg }]}>
               <Text style={[styles.summaryStatusText, { color: statusColor }]}>
-                {status}{trend !== '資料不足' ? ` · ${trend}` : ''}
+                {belowThreshold ? '低於 15M/mL' : status}{trend !== '資料不足' ? ` · ${trend}` : ''}
               </Text>
             </View>
           </View>

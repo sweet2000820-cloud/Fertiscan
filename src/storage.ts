@@ -18,6 +18,7 @@ export type TestRecord = {
   // 訊號強度數值
   cIntensity?: number
   tIntensity?: number
+  tLineFaint?: boolean  // T 線未顯色＝濃度低於 15 百萬/mL
 
   // 每次檢測當下的問卷脈絡
   preTestSurvey?: {

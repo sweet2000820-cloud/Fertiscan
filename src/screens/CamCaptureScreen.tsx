@@ -225,6 +225,7 @@ export default function CamCaptureScreen({ navigation, route }: any) {
           sample_count: 1,
           debug_inner: result.debug_inner,
           debug_full: result.debug_full,
+          t_line_faint: result.t_line_faint === true,
         }
 
         setCaptured(false)

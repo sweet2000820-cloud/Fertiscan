@@ -52,11 +52,13 @@ export default function AnalysisScreen({ navigation, route }: any) {
       const lotNumber = currentLot || '未知批號'
       // [新增] 靜置等待時的問答成績（從 RestTimerScreen 一路帶過來；沒作答為 null）
       const quizResult = route?.params?.quizResult ?? null
+      const tLineFaint = analysisResult?.t_line_faint === true
 
       await saveRecord({
         date, time, tc, status, lot: lotNumber,
         cIntensity: analysisResult?.c_intensity,
         tIntensity: analysisResult?.t_intensity,
+        tLineFaint, // [新增 2026/10/01] T 線未顯色＝濃度低於 15 百萬/mL
         preTestSurvey: route?.params?.preTestSurvey,
         quizResult,
       })
@@ -70,6 +72,7 @@ export default function AnalysisScreen({ navigation, route }: any) {
           date, time, tc, status, lot: lotNumber,
           cIntensity: analysisResult?.c_intensity,
           tIntensity: analysisResult?.t_intensity,
+          tLineFaint,
           debugInner: analysisResult?.debug_inner,
           debugFull: analysisResult?.debug_full,
           preTestSurvey: route?.params?.preTestSurvey,

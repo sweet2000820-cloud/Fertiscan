@@ -26,6 +26,12 @@ function getStatusColor(status: string) {
   }
 }
 
+// [新增 2026/10/01] T 線未顯色＝濃度低於 15 百萬/mL。
+// 這種紀錄的 T/C 記為 0，但它代表「低於試紙門檻」，不是量到 0，所以不列入平均、不畫進折線
+function isBelowThreshold(r: TestRecord) {
+  return r.tLineFaint === true || (r.tIntensity != null && Number(r.tIntensity) <= 0)
+}
+
 export default function HistoryScreen({ navigation }: any) {
   const [records, setRecords] = useState<TestRecord[]>([])
   const [selectMode, setSelectMode] = useState(false)
@@ -69,9 +75,12 @@ export default function HistoryScreen({ navigation }: any) {
     })
   }, [])
 
-  const avg = records.length > 0 ? (records.reduce((s, r) => s + parseFloat(r.tc), 0) / records.length).toFixed(2) : '—'
-  const max = records.length > 0 ? Math.max(...records.map(r => parseFloat(r.tc))).toFixed(2) : '—'
-  const min = records.length > 0 ? Math.min(...records.map(r => parseFloat(r.tc))).toFixed(2) : '—'
+  // [修改 2026/10/01] 平均／最高／最低只算有量到 T/C 的紀錄
+  const measured = records.filter(r => !isBelowThreshold(r))
+  const belowCount = records.length - measured.length
+  const avg = measured.length > 0 ? (measured.reduce((s, r) => s + parseFloat(r.tc), 0) / measured.length).toFixed(2) : '—'
+  const max = measured.length > 0 ? Math.max(...measured.map(r => parseFloat(r.tc))).toFixed(2) : '—'
+  const min = measured.length > 0 ? Math.min(...measured.map(r => parseFloat(r.tc))).toFixed(2) : '—'
 
   const chartRecords = records.slice(0, 5).reverse()
   const plotLeft = 5
@@ -93,10 +102,19 @@ export default function HistoryScreen({ navigation }: any) {
     const x = chartRecords.length > 1
       ? Math.round(plotLeft + (i / (chartRecords.length - 1)) * (plotRight - plotLeft))
       : Math.round((plotLeft + plotRight) / 2)
-    const y = yFor(parseFloat(r.tc))
-    return { x, y }
+    const below = isBelowThreshold(r)
+    // 低於門檻的點畫在底線上（空心點），不參與折線
+    const y = below ? yFor(0) : yFor(parseFloat(r.tc))
+    return { x, y, below }
   })
-  const polylinePoints = chartPoints.map(p => `${p.x},${p.y}`).join(' ')
+  // 折線遇到低於門檻的點就斷開，避免畫出「掉到 0 再拉回來」的誇張線段
+  const lineSegments: string[] = []
+  let run: string[] = []
+  chartPoints.forEach(p => {
+    if (p.below) { if (run.length >= 2) lineSegments.push(run.join(' ')); run = []; return }
+    run.push(`${p.x},${p.y}`)
+  })
+  if (run.length >= 2) lineSegments.push(run.join(' '))
 
   const gridY0 = yFor(0)
   const gridY05 = yFor(0.5)
@@ -118,11 +136,8 @@ export default function HistoryScreen({ navigation }: any) {
       '請選擇要執行的動作',
       [
         { text: '取消', style: 'cancel' },
-        { text: '分享給診所', onPress: () => {
-          navigation.getParent()?.navigate('ShareRecord')
-          setSelectMode(false)
-          setSelected([])
-        }},
+        // [移除 2026/10/01] 「分享給診所」導向舊的 ShareRecord 流程（資料沒有真的送到診所）。
+        // 現在分享給診所改在「諮詢專業醫師 → 預約」或「我的診所」進行
         { text: '產生分享連結 / PDF', onPress: () => {
           navigation.getParent()?.navigate('ReportLink', { records: selectedRecords })
           setSelectMode(false)
@@ -156,19 +171,24 @@ export default function HistoryScreen({ navigation }: any) {
 
               <Line x1={plotLeft} y1={plotTop - 6} x2={plotLeft} y2={plotBottom} stroke={colors.primary} strokeWidth={0.6} opacity={0.4} />
 
-              <Polyline
-                points={polylinePoints}
-                fill="none"
-                stroke={colors.primary}
-                strokeWidth={2.2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              {lineSegments.map((pts, i) => (
+                <Polyline
+                  key={`seg-${i}`}
+                  points={pts}
+                  fill="none"
+                  stroke={colors.primary}
+                  strokeWidth={2.2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              ))}
               {chartPoints.map((p, i) => (
-                <Circle key={`dot-${i}`} cx={p.x} cy={p.y} r={4} fill={getStatusColor(chartRecords[i].status)} />
+                p.below
+                  ? <Circle key={`dot-${i}`} cx={p.x} cy={p.y} r={4} fill={colors.white} stroke={colors.danger} strokeWidth={1.8} />
+                  : <Circle key={`dot-${i}`} cx={p.x} cy={p.y} r={4} fill={getStatusColor(chartRecords[i].status)} />
               ))}
               {chartPoints.map((p, i) => {
-                const valText = String(chartRecords[i].tc)
+                const valText = p.below ? '<15M' : String(chartRecords[i].tc)
                 const valX = i === 0-2 ? p.x : i === chartPoints.length + 1 ? p.x - valText.length * 6 : p.x - (valText.length * 6) / 2
                 return (
                   <SvgText
@@ -219,6 +239,9 @@ export default function HistoryScreen({ navigation }: any) {
               <Text style={[styles.statValue, { color: colors.danger }]}>{min}</Text>
             </View>
           </View>
+          {belowCount > 0 && (
+            <Text style={styles.belowNote}>另有 {belowCount} 筆 T 線未顯色（濃度可能低於 15 百萬/mL），不列入平均與最高最低。</Text>
+          )}
         </View>
 
         <View ref={setRef('allRecords')}>
@@ -278,8 +301,8 @@ export default function HistoryScreen({ navigation }: any) {
                       <Text style={styles.hint}>{r.time} · {r.lot}</Text>
                     </View>
                     <View style={styles.right}>
-                      <Text style={[styles.tc, { color: getStatusColor(r.status) }]}>T/C {r.tc}</Text>
-                      <Text style={[styles.statusText, { color: getStatusColor(r.status) }]}>{r.status}</Text>
+                      <Text style={[styles.tc, { color: getStatusColor(r.status) }]}>{isBelowThreshold(r) ? 'T 線未顯色' : `T/C ${r.tc}`}</Text>
+                      <Text style={[styles.statusText, { color: getStatusColor(r.status) }]}>{isBelowThreshold(r) ? '低於 15M/mL' : r.status}</Text>
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -333,6 +356,7 @@ const styles = StyleSheet.create({
   tc: { fontSize: typography.sizes.md, fontWeight: typography.weights.medium },
   statusText: { fontSize: typography.sizes.xs, marginTop: 2 },
   emptyCard: { alignItems: 'center', paddingVertical: 40, gap: 6 },
+  belowNote: { fontSize: typography.sizes.xs, color: colors.gray500, textAlign: 'center', marginTop: 8, lineHeight: 16 },
   emptyText: { fontSize: typography.sizes.md, color: colors.gray500 },
   emptyHint: { fontSize: typography.sizes.sm, color: colors.gray400 },
   checkbox: {

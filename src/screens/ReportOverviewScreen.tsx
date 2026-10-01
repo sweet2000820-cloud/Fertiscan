@@ -49,6 +49,10 @@ function getStatusBadgeColors(status: string) {
 }
 
 // [修改] 建議文字：男性精液品質的第一站通常是泌尿科，和「諮詢專業醫師」頁的說明一致
+// [新增 2026/10/01] 試紙未出現 T 線＝濃度低於 15 百萬/mL（試紙的判讀門檻）
+const FAINT_TITLE = '精子濃度可能低於 15 百萬/mL'
+const FAINT_ADVICE = '本次試紙未出現 T 線，代表濃度可能低於 15 × 10⁶/mL（接近 WHO 參考下限）。單次結果可能受禁慾天數、樣本是否完整、近期發燒或用藥影響，建議 2–7 天後依採樣說明再測一次；若再次出現相同結果，建議到泌尿科或生殖醫學科做完整精液分析。'
+
 function getAdviceText(status: string, tc: string) {
   if (status === '正常') return `此次 T/C 比值（${tc}）在正常範圍內（≥0.85）。建議維持目前生活習慣，定期複測追蹤趨勢。`
   if (status === '邊緣') return `此次 T/C 比值（${tc}）低於正常參考值（≥0.85）。建議 2 週後複測，或諮詢泌尿科、生殖醫學科醫師進行完整評估。`
@@ -85,23 +89,25 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
   const tcColor = getTCColor(record.status)
   const needlePos = getNeedlePosition(record.tc)
   const isNormal = record.status === '正常' // [新增]
+  // [新增 2026/10/01] 後端回傳 t_line_faint（T 線未顯色）；舊紀錄沒有這個欄位時，用 T 線強度為 0 判斷
+  const belowThreshold = record.tLineFaint === true || (record.tIntensity != null && Number(record.tIntensity) <= 0)
 
   const badgeStyle = record.status === '正常'
     ? { bg: colors.successLight, text: colors.success, label: '正常值' }
     : record.status === '邊緣'
     ? { bg: colors.warningLight, text: colors.warning, label: '邊緣值' }
-    : { bg: colors.dangerLight, text: colors.danger, label: '偏低值' }
+    : { bg: colors.dangerLight, text: colors.danger, label: belowThreshold ? '低於 15M/mL' : '偏低值' }
 
   // [修正] 沒有實際訊號強度時顯示「—」，不再用 T/C 值乘固定數字產生示意數值
   const hasC = record.cIntensity != null
   const hasT = record.tIntensity != null
   const cLine = hasC ? Number(record.cIntensity).toFixed(1) : '—'
-  const tLine = hasT ? Number(record.tIntensity).toFixed(1) : '—'
+  const tLine = belowThreshold ? '未顯色' : hasT ? Number(record.tIntensity).toFixed(1) : '—'
   const cBarPct = hasC ? Math.min(Number(record.cIntensity) / 170 * 100, 100) : 0
   const tBarPct = hasT ? Math.min(Number(record.tIntensity) / 170 * 100, 100) : 0
   const conc = '待校準'
   const abstinenceDays = record.preTestSurvey?.abstinenceDays
-  const adviceText = getAdviceText(record.status, record.tc)
+  const adviceText = belowThreshold ? FAINT_ADVICE : getAdviceText(record.status, record.tc)
 
   async function exportPDF() {
     const user = auth.currentUser
@@ -256,9 +262,13 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
 
         <div class="content">
           <div class="tc-card">
+            ${belowThreshold ? `
+            <div class="tc-label">檢測結果</div>
+            <div class="tc-value" style="font-size:26px">未出現 T 線</div>
+            <div class="tc-badge">${FAINT_TITLE}</div>` : `
             <div class="tc-label">T/C 比值</div>
             <div class="tc-value">${record.tc}</div>
-            <div class="tc-badge">${badgeStyle.label}</div>
+            <div class="tc-badge">${badgeStyle.label}</div>`}
           </div>
 
           <div class="section">
@@ -274,7 +284,7 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
             <div class="section-title">條線訊號詳情</div>
             <table>
               <tr><td class="row-label">Control line (C)</td><td class="row-value">灰階 ${cLine}</td></tr>
-              <tr><td class="row-label">Test line (T)</td><td class="row-value">灰階 ${tLine}</td></tr>
+              <tr><td class="row-label">Test line (T)</td><td class="row-value">${belowThreshold ? '未顯色' : `灰階 ${tLine}`}</td></tr>
               <tr><td class="row-label">換算濃度</td><td class="row-value">≈ ${conc} mIU/mL</td></tr>
             </table>
           </div>
@@ -283,10 +293,7 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
             <div class="section-title">影像品質確認</div>
             <table>
               <tr><td class="row-label">C line 訊號</td><td class="row-value-ok">✓ 通過</td></tr>
-              <tr><td class="row-label">T line 偵測</td><td class="row-value-ok">✓ 通過</td></tr>
-              <tr><td class="row-label">影像穩定度</td><td class="row-value-ok">✓ 通過</td></tr>
-              <tr><td class="row-label">螢幕亮度</td><td class="row-value-ok">✓ 通過</td></tr>
-              <tr><td class="row-label">批號匹配</td><td class="row-value-ok">✓ 通過</td></tr>
+              <tr><td class="row-label">T line 偵測</td>${belowThreshold ? '<td class="row-value">未顯色</td>' : '<td class="row-value-ok">✓ 通過</td>'}</tr>
             </table>
           </div>
 
@@ -295,7 +302,7 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
           ${actionSectionHtml}
 
           <div class="advice-box">
-            <div class="advice-title">${record.status === '正常' ? '結果說明' : '初步建議'}</div>
+            <div class="advice-title">${belowThreshold ? FAINT_TITLE : record.status === '正常' ? '結果說明' : '初步建議'}</div>
             <div class="advice-text">${adviceText}</div>
           </div>
         </div>
@@ -366,7 +373,11 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
             <Text style={[styles.gaugeNum, { color: tcColor, fontSize: 44 }]}>{getIndexLabel(record.status)}</Text>
           </View>
           <View style={styles.tcPill}>
-            <Text style={styles.tcPillText}>T/C 比值 <Text style={styles.tcPillValue}>{record.tc}</Text></Text>
+            {belowThreshold ? (
+              <Text style={styles.tcPillText}>T 線<Text style={styles.tcPillValue}>未顯色</Text>・低於 15 百萬/mL</Text>
+            ) : (
+              <Text style={styles.tcPillText}>T/C 比值 <Text style={styles.tcPillValue}>{record.tc}</Text></Text>
+            )}
           </View>
           <View style={styles.scaleBar}>
             <View style={[styles.scaleNeedle, { left: `${needlePos}` as any }]} />
@@ -389,7 +400,7 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
           </View>
           <View style={styles.signalRow}>
             <Text style={styles.labelDark}>Test line (T) — 樣本反應</Text>
-            <Text style={[styles.signalValue, { color: tcColor }]}>灰階 {tLine}</Text>
+            <Text style={[styles.signalValue, { color: tcColor }]}>{belowThreshold ? tLine : `灰階 ${tLine}`}</Text>
           </View>
           <View style={styles.progressBg}>
             <View style={[styles.progressFill, { width: `${tBarPct}%`, backgroundColor: tcColor }]} />
@@ -407,14 +418,20 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
 
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>影像品質確認</Text>
-          {['C line 訊號', 'T line 偵測', '影像穩定度', '螢幕亮度', '批號匹配'].map((item, i) => (
+          {/* [修正 2026/10/01] 只列後端真的有檢查的項目；
+              「影像穩定度」「螢幕亮度」「批號匹配」後端沒檢查，原本固定顯示通過，已移除 */}
+          {[
+            { label: 'C line 訊號', ok: true, text: '✓ 通過' },
+            { label: 'T line 偵測', ok: !belowThreshold, text: belowThreshold ? '未顯色' : '✓ 通過' },
+          ].map((item, i) => (
             <View key={i} style={styles.qcRow}>
-              <Text style={styles.labelDark}>{item}</Text>
-              <Text style={{ fontSize: typography.sizes.xs, color: colors.success }}>✓ 通過</Text>
+              <Text style={styles.labelDark}>{item.label}</Text>
+              <Text style={{ fontSize: typography.sizes.xs, color: item.ok ? colors.success : colors.gray500 }}>{item.text}</Text>
             </View>
           ))}
         </View>
-        {(record.debugFull || record.debugInner) && (
+        {/* [修正 2026/10/01] 除錯影像只在開發模式（Expo 開發中）顯示，正式版使用者看不到 */}
+        {__DEV__ && (record.debugFull || record.debugInner) && (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>偵測影像（除錯用）</Text>
             {record.debugFull && (
@@ -442,7 +459,7 @@ export default function ReportOverviewScreen({ navigation, route }: any) {
 
         <View style={[styles.warnCard, { backgroundColor: badgeStyle.bg }]}>
           <Text style={[styles.warnTitle, { color: badgeStyle.text }]}>
-            {isNormal ? '✓ 結果說明' : '⚠ 初步建議'}
+            {belowThreshold ? `⚠ ${FAINT_TITLE}` : isNormal ? '✓ 結果說明' : '⚠ 初步建議'}
           </Text>
           <Text style={[styles.warnText, { color: badgeStyle.text }]}>{adviceText}</Text>
         </View>
