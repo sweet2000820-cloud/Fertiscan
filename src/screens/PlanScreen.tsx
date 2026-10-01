@@ -92,7 +92,6 @@ export default function PlanScreen({ navigation }: any) {
             { label: '分享連結', free: true, pro: true },
             { label: 'AI 趨勢解讀', free: false, pro: true },
             { label: '影響因素分析', free: false, pro: true },
-            { label: '個人化複測計畫', free: false, pro: true },
             { label: '診所報告 PDF', free: false, pro: true },
           ].map((item, i) => (
             <View key={i} style={[styles.compareRow, !item.free && { backgroundColor: colors.primaryLight }]}>
