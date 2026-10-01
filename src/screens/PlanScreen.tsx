@@ -1,13 +1,29 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Linking } from 'react-native'
 import { colors, typography } from '../theme'
 import { useState, useEffect } from 'react'
 import { getRecords } from '../storage'
-import { getUserPlan, setUserPlan } from '../plan'
+import { getUserPlan } from '../plan'
+// [新增 2026/10/01] 訂閱共用設定（商品、價格、條款連結、管理訂閱、恢復購買）
+import { PRODUCTS, TRIAL_DAYS, TERMS_URL, PRIVACY_URL, STORE_NAME, autoRenewNotice, openManageSubscriptions, restorePurchases } from '../billing'
 
 export default function PlanScreen({ navigation }: any) {
   const [monthCount, setMonthCount] = useState(0)
   const [selected, setSelected] = useState<'monthly' | 'yearly'>('yearly')
   const [currentPlan, setCurrentPlan] = useState<string>('free')
+  const [restoring, setRestoring] = useState(false)
+
+  // [新增 2026/10/01] 恢復購買（Apple 規定必須提供）
+  async function handleRestore() {
+    setRestoring(true)
+    try {
+      const plan = await restorePurchases()
+      setCurrentPlan(plan)
+      Alert.alert(plan === 'pro' ? '已恢復 Pro 版' : '沒有找到訂閱紀錄', plan === 'pro' ? '你的 Pro 功能已恢復。' : `這個 ${STORE_NAME} 帳號目前沒有有效的 iMotile Pro 訂閱。`)
+    } catch {
+      Alert.alert('恢復失敗', '請確認網路連線後再試一次。')
+    }
+    setRestoring(false)
+  }
 
   useEffect(() => {
     getUserPlan().then(({ plan }) => setCurrentPlan(plan))
@@ -46,7 +62,7 @@ export default function PlanScreen({ navigation }: any) {
                   </Text>
                 </View>
               </View>
-              <Text style={styles.planSub}>基本檢測功能</Text>
+              <Text style={styles.planSub}>{currentPlan === 'pro' ? '已解鎖全部功能' : '基本檢測功能'}</Text>
             </View>
           </View>
           <View style={styles.statsRow}>
@@ -98,7 +114,7 @@ export default function PlanScreen({ navigation }: any) {
             <Text style={styles.planOptionTitle}>月訂閱</Text>
             <Text style={styles.planOptionSub}>隨時取消</Text>
           </View>
-          <Text style={styles.planOptionPrice}>NT$149<Text style={styles.planOptionUnit}> / 月</Text></Text>
+          <Text style={styles.planOptionPrice}>{PRODUCTS.monthly.price}<Text style={styles.planOptionUnit}> / 月</Text></Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -116,7 +132,7 @@ export default function PlanScreen({ navigation }: any) {
             <Text style={[styles.planOptionPrice, selected === 'yearly' && { color: colors.primary }]}>
               NT$89<Text style={styles.planOptionUnit}> / 月</Text>
             </Text>
-            <Text style={styles.planOptionSub}>NT$1,068 / 年</Text>
+            <Text style={styles.planOptionSub}>{PRODUCTS.yearly.priceLine}</Text>
           </View>
         </TouchableOpacity>
 
@@ -124,7 +140,7 @@ export default function PlanScreen({ navigation }: any) {
           <TouchableOpacity style={styles.ctaBtn} onPress={() => {
             navigation.navigate('Payment', { planType: selected })
           }}>
-            <Text style={styles.ctaBtnText}>免費試用 7 天 · 立即解鎖</Text>
+            <Text style={styles.ctaBtnText}>免費試用 {TRIAL_DAYS} 天 · 立即解鎖</Text>
           </TouchableOpacity>
         )}
         {currentPlan === 'pro' && (
@@ -132,21 +148,33 @@ export default function PlanScreen({ navigation }: any) {
             <View style={[styles.ctaBtn, { backgroundColor: colors.success }]}>
               <Text style={styles.ctaBtnText}>✓ 目前為 Pro 版</Text>
             </View>
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => {
-              Alert.alert('取消訂閱', '確定要取消 Pro 訂閱嗎？\n\n取消後將在目前計費週期結束時降回免費版。', [
-                { text: '保留訂閱', style: 'cancel' },
-                { text: '確認取消', style: 'destructive', onPress: async () => {
-                  await setUserPlan('free')
-                  setCurrentPlan('free')
-                  Alert.alert('已取消訂閱', '您的訂閱已取消，將在計費週期結束後降回免費版。')
-                }},
-              ])
-            }}>
-              <Text style={styles.cancelBtnText}>取消訂閱</Text>
+            {/* [修改 2026/10/01] 訂閱由 App Store／Google Play 管理，App 不能自己取消；
+                原本按下去只把帳號改回免費版，商店那邊其實還會繼續扣款 */}
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => openManageSubscriptions().catch(() =>
+              Alert.alert('無法開啟', `請到 ${STORE_NAME} 的「訂閱項目」管理或取消訂閱。`))}>
+              <Text style={styles.manageBtnText}>管理或取消訂閱（{STORE_NAME}）</Text>
             </TouchableOpacity>
           </>
         )}
-        <Text style={styles.ctaHint}>7 天免費，到期前取消不收費 · Apple / Google Pay</Text>
+        <Text style={styles.ctaHint}>{TRIAL_DAYS} 天免費，到期前取消不收費 · 透過 {STORE_NAME} 訂閱</Text>
+
+        {/* [新增 2026/10/01] 自動續訂說明、恢復購買、條款連結（上架審核要求） */}
+        <Text style={styles.legalText}>{autoRenewNotice()}</Text>
+        <View style={styles.legalRow}>
+          <TouchableOpacity onPress={handleRestore} disabled={restoring}>
+            <Text style={styles.legalLink}>{restoring ? '恢復中…' : '恢復購買'}</Text>
+          </TouchableOpacity>
+          {!!TERMS_URL && (
+            <TouchableOpacity onPress={() => Linking.openURL(TERMS_URL)}>
+              <Text style={styles.legalLink}>使用條款</Text>
+            </TouchableOpacity>
+          )}
+          {!!PRIVACY_URL && (
+            <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_URL)}>
+              <Text style={styles.legalLink}>隱私權政策</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
         <View style={{ height: 30 }} />
 
@@ -240,4 +268,8 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', marginTop: 8,
   },
   cancelBtnText: { fontSize: typography.sizes.sm, color: colors.danger },
+  manageBtnText: { fontSize: typography.sizes.sm, color: colors.primary },
+  legalText: { fontSize: 11, color: colors.gray400, lineHeight: 16, marginTop: 8, marginBottom: 8 },
+  legalRow: { flexDirection: 'row', justifyContent: 'center', gap: 18, marginBottom: 8 },
+  legalLink: { fontSize: typography.sizes.xs, color: colors.primary, textDecorationLine: 'underline' },
 })

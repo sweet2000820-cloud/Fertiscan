@@ -3,17 +3,19 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIn
 import { colors, typography } from '../theme'
 import { setUserPlan } from '../plan'
 import { Ionicons } from '@expo/vector-icons'
+import { PRODUCTS, TRIAL_DAYS, STORE_NAME, BILLING_READY, autoRenewNotice } from '../billing'
 
+// [修改 2026/10/01] 價格統一從 billing.ts 讀取；年訂原本寫「訂閱後立即扣款」，但有 7 天試用，改為試用結束後扣款
 const planDetails = {
   monthly: {
-    label: '月訂閱',
-    priceLine: 'NT$149 / 月',
-    billingNote: '訂閱後每月自動扣款 NT$149，隨時可取消',
+    label: PRODUCTS.monthly.label,
+    priceLine: PRODUCTS.monthly.priceLine,
+    billingNote: `${TRIAL_DAYS} 天免費試用結束後，每月自動扣款 ${PRODUCTS.monthly.price}`,
   },
   yearly: {
-    label: '年訂閱',
-    priceLine: 'NT$89 / 月',
-    billingNote: '訂閱後立即扣款 NT$1,068，一年一次，較月訂省 40%',
+    label: PRODUCTS.yearly.label,
+    priceLine: `${PRODUCTS.yearly.price} / 年（約 NT$89 / 月）`,
+    billingNote: `${TRIAL_DAYS} 天免費試用結束後扣款 ${PRODUCTS.yearly.price}，一年一次，較月訂省 40%`,
   },
 }
 
@@ -23,13 +25,18 @@ export default function PaymentScreen({ navigation, route }: any) {
   const [processing, setProcessing] = useState(false)
 
   async function handleConfirm() {
+    // [新增 2026/10/01] 尚未串接內購：正式版不能讓人不付錢就開通 Pro，只有開發模式可以模擬
+    if (!BILLING_READY && !__DEV__) {
+      Alert.alert('即將開放', `訂閱功能即將透過 ${STORE_NAME} 開放，敬請期待！`)
+      return
+    }
     setProcessing(true)
     try {
-      // 目前僅將方案狀態寫入 Firestore，尚未串接真實 Apple/Google IAP 收據驗證
+      // 開發模式模擬訂閱：只寫入 Firestore，尚未串接真實 Apple/Google 內購與收據驗證
       await setUserPlan('pro')
       Alert.alert(
         '訂閱成功',
-        `已為您開通 Pro 版（${plan.label}），7 天免費試用期間可隨時於「方案管理」取消。`,
+        `已為您開通 Pro 版（${plan.label}），${TRIAL_DAYS} 天免費試用期間可隨時到 ${STORE_NAME} 的訂閱設定取消。`,
         [
           { text: '完成', onPress: () => navigation.navigate('Main') },
         ]
@@ -60,7 +67,7 @@ export default function PaymentScreen({ navigation, route }: any) {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.summaryTitle}>Pro 版 · {plan.label}</Text>
-              <Text style={styles.summarySub}>7 天免費試用，到期前取消不收費</Text>
+              <Text style={styles.summarySub}>{TRIAL_DAYS} 天免費試用，到期前取消不收費</Text>
             </View>
           </View>
           <View style={styles.divider} />
@@ -74,7 +81,7 @@ export default function PaymentScreen({ navigation, route }: any) {
           </View>
           <View style={[styles.row, { borderBottomWidth: 0 }]}>
             <Text style={styles.rowLabel}>試用期</Text>
-            <Text style={styles.rowValue}>7 天免費</Text>
+            <Text style={styles.rowValue}>{TRIAL_DAYS} 天免費</Text>
           </View>
         </View>
 
@@ -83,16 +90,16 @@ export default function PaymentScreen({ navigation, route }: any) {
         <Text style={styles.sectionTitle}>付款方式</Text>
         <View style={styles.paymentCard}>
           <View style={styles.paymentIcon}>
-            <Ionicons name="logo-apple" size={18} color={colors.gray900} />
+            <Ionicons name={STORE_NAME === 'App Store' ? 'logo-apple' : 'logo-google-playstore'} size={18} color={colors.gray900} />
           </View>
-          <Text style={styles.paymentLabel}>Apple / Google Pay</Text>
+          <Text style={styles.paymentLabel}>透過 {STORE_NAME} 付款</Text>
           <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
         </View>
 
         <View style={styles.tealCard}>
           <Text style={styles.tealTitle}>訂閱說明</Text>
           <Text style={styles.tealText}>
-            試用期滿後將依所選方案自動續訂，可隨時於「方案管理」頁面取消訂閱。取消後將於目前計費週期結束時降回免費版，已扣款金額恕不退還。
+            {autoRenewNotice()}取消後可使用到目前計費週期結束，之後降回免費版。退款依 {STORE_NAME} 的退款政策辦理。
           </Text>
         </View>
 
